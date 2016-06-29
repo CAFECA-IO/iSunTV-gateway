@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const os = require('os');
 const fs = require('fs');
+const url = require('url');
 const path = require('path');
 const log4js = require('log4js');
 const dvalue = require('dvalue');
@@ -97,7 +98,15 @@ var connectDB = function (options, cb) {
   options = dvalue.default(options, {});
   switch (options.type) {
     case 'mongodb':
-      var path = options.path;
+      var path;
+      if(options.user && options.password) {
+        var tmpURL = url.parse(options.path);
+        tmpURL.auth = dvalue.sprintf('%s:%s', options.user, options.password);
+        path = url.format(tmpURL);
+      }
+      else {
+        path = options.path;
+      }
       mongodb.connect(path, cb);
       break;
     default:
