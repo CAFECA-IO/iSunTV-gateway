@@ -90,12 +90,19 @@ var loadConfig = function () {
     version: packageInfo.version
   };
   config.powerby = packageInfo.name + " v" + packageInfo.version;
+  config.getBot = function (name) {
+    var rs;
+    for(var i in bots) {
+      if(bots[i].name.toLowerCase() == name.toLowerCase()) { return bots[i]; }
+    }
+  };
   return config;
 };
 
 // connect database
-var connectDB = function (options, cb) {
-  options = dvalue.default(options, {});
+var connectDB = function (config, cb) {
+  config = dvalue.default(config, {});
+  options = dvalue.default(config.db, {});
   switch (options.type) {
     case 'mongodb':
       var path;
@@ -111,7 +118,7 @@ var connectDB = function (options, cb) {
       break;
     default:
       var DB = require('tingodb')().Db;
-      db = new DB(dataset, {});
+      db = new DB(config.path.dataset, {});
       cb(null, db);
   }
 };
@@ -120,14 +127,8 @@ var connectDB = function (options, cb) {
 var botFolder = path.join(__dirname, "../bots");
 var files = fs.readdirSync(botFolder);
 var bots = [];
-var getBot = function (name) {
-  var rs;
-  for(var i in bots) {
-    if(bots[i].name.toLowerCase() == name.toLowerCase()) { return bots[i]; }
-  }
-};
 var startBot = function (config) {
-  connectDB(config.db, function (e, db) {
+  connectDB(config, function (e, db) {
     var sub = "js";
     var reg = new RegExp('\.' + sub + '$');
     for(var key in files) {
@@ -137,7 +138,6 @@ var startBot = function (config) {
         bots.push(bot);
         bot.name = files[key].split('.' + sub)[0];
         bot.db = db;
-        bot.getBot = getBot;
       }
     }
 

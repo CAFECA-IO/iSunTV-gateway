@@ -30,8 +30,8 @@ Bot.prototype.init = function(config) {
 	this.result = {};
 	this.callback = {};
 
-	if(!!config) {
-		this.db = config.db;
+	if(!!config && typeof(config.getBot) == 'function') {
+		this.getBot = config.getBot;
 	}
 };
 

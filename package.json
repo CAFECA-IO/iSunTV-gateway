@@ -36,6 +36,7 @@
     "passport-facebook": "^2.1.1",
     "passport-facebook-token": "^3.3.0",
     "serve-favicon": "^2.3.0",
-    "textype": "^1.0.4"
+    "textype": "^1.0.4",
+    "tingodb": "^0.4.2"
   }
 }
