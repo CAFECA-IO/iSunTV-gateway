@@ -23,6 +23,7 @@
     "body-parser": "^1.15.2",
     "dvalue": "^1.0.7",
     "echashcash": "^1.0.1",
+    "ecresult": "^1.0.5",
     "express": "^4.14.0",
     "express-session": "^1.13.0",
     "kerberos": "0.0.21",

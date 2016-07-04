@@ -13,11 +13,12 @@ const bodyParser = require('body-parser');
 const multer  = require('multer');
 const http = require('http');
 const echashcash = require('echashcash');
+const ecresult = require('ecresult');
 const dvalue = require('dvalue');
-const Result = require('../classes/Result.js');
 
 const hashcashLevel = 3;
 const allowDelay = 10000;
+const requestTimeout = 3000;
 
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
 		pathPw = path.join(__dirname, '../config/pw.txt'),
@@ -26,10 +27,8 @@ var pathCert = path.join(__dirname, '../config/cert.pfx'),
 var checkLogin, checkHashCash, errorHandler, returnData;
 checkLogin = function (req, res, next) {
 	if(req.session.uid === undefined) {
-		var result = new Result();
-		result.setResult(-1);
-		result.setMessage('User No Authorized');
-		res.result = result;
+		res.result.setResult(-1);
+		res.result.setMessage('User No Authorized');
 		returnData(req, res, next)
 	}
 	else {
@@ -50,11 +49,9 @@ checkHashCash = function (req, res, next) {
 		};
 		if(new Date().getTime() - t > allowDelay) { d.information = "timeout"; }
 
-		var result = new Result();
-		result.setResult(-2);
-		result.setMessage('Invalid Hashcash');
-		result.setData(d);	//-- for test
-		res.result = result;
+		res.result.setResult(-2);
+		res.result.setMessage('Invalid Hashcash');
+		res.result.setData(d);	//-- for test
 		returnData(req, res, next);
 	};
 
@@ -73,59 +70,50 @@ checkHashCash = function (req, res, next) {
 errorHandler = function (err, req, res, next) {
 	logger.exception.error(err);
 	res.statusCode = 500;
-	res.json({result: 0, message: 'oops, something wrong...'});
+	res.result.setMessage('oops, something wrong...');
+	res.json(res.result.toJSON());
 };
 returnData = function(req, res, next) {
-	var result = res.result, session;
+	var session;
 
-	if(result) {
-		if(typeof(result.getSession) == 'function') {
-			session = result.getSession();
+	if(res.result.isDone()) {
+		session = res.result.getSession();
 
-			for(var key in session) {
-				if(session[key] === null) {
-					delete req.session[key];
-				}
-				else {
-					req.session[key] = session[key];
-				}
+		for(var key in session) {
+			if(session[key] === null) {
+				delete req.session[key];
+			}
+			else {
+				req.session[key] = session[key];
 			}
 		}
 	}
 	else {
 		res.status(404);
-		result = new Result();
-		result.setMessage("Invalid operation");
+		res.result.setMessage("Invalid operation");
 	}
 
-	if(typeof(result.toJSON) == 'function') {
-		var json = result.toJSON();
-		var isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+$").test(json.message);
+	var json = res.result.response();
+	var isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+$").test(json.message);
 
-		if(isFile) {
-			res.header("Content-Type", json.message);
-			res.send(json.data);
+	if(isFile) {
+		res.header("Content-Type", json.message);
+		res.send(json.data);
+	}
+	else if(json.result >= 100) {
+		res.status(json.result);
+		for(var key in json.data) {
+			res.header(key, json.data[key]);
 		}
-		else if(json.result >= 100) {
-			res.status(json.result);
-			for(var key in json.data) {
-				res.header(key, json.data[key]);
-			}
 
-			res.end();
-		}
-		else {
-			res.header("Content-Type", 'application/json');
-			res.send(json);
-		}
+		res.end();
 	}
 	else {
 		res.header("Content-Type", 'application/json');
-		res.send(result);
+		res.send(json);
 	}
 
-	result.attr.data = dvalue.default(result.attr.data, {});
-	var rs = result.attr.data.code? [result.attr.result, result.attr.data.code].join(':'): result.attr.result;
+	var rs = json.errorcode? [json.result, json.errorcode].join(':'): json.result;
 	logger.info.info(req.method, req.url, rs, req.session.ip);
 };
 
@@ -206,18 +194,35 @@ Bot.prototype.init = function(config) {
 	this.app.use(bodyParser.urlencoded({ extended: false }));
 	this.app.use(bodyParser.json({}));
 	this.app.use(function(req, res, next) { self.filter(req, res, next); });
+	this.app.use(function(req, res, next) {
+		setTimeout(function () {
+			if(res.result.isEnd()) { return; }
+			res.result.setMessage('timeout');
+			res.result.setCommand(10239);
+			res.json(res.result.response());
+		}, requestTimeout);
+		next();
+	});
 	this.app.use(this.router);
 	this.app.use(returnData);
 	this.ctrl = [];
 
 	// get system infomation
 	this.router.get('/version/', function (req, res, next) {
-		var result = new Result();
-		result.setResult(1);
-		result.setMessage('Application Information');
-		result.setData(self.config.package);
-		res.result = result;
+		res.result.setResult(1);
+		res.result.setMessage('Application Information');
+		res.result.setData(self.config.package);
 		next();
+	});
+
+	// get system infomation
+	this.router.get('/wait/:timeout', function (req, res, next) {
+		var t = parseInt(req.params.timeout) || 0;
+		setTimeout(function () {
+			res.result.setResult(1);
+			res.result.setMessage('waiting test: ' + t);
+			next();
+		}, t);
 	});
 
 	// passport
@@ -266,6 +271,7 @@ Bot.prototype.filter = function (req, res, next) {
 	if(!req.session.ip) { req.session.ip = ip; }
 	if(!req.session.port) { req.session.port = port; }
 	var powerby = this.config.powerby;
+	res.result = new ecresult();
 	res.header('X-Powered-By', powerby);
 	res.header('Client-IP', ip);
 	res.header("Access-Control-Allow-Origin", "*");
