@@ -15,9 +15,7 @@ bot.done('b', {"msg": "You!"});
 
 */
 
-var child_process = require('child_process')
-,	Result = require('../classes/Result.js')
-;
+var child_process = require('child_process');
 
 var Bot = function(config) {
 	this.init(config);

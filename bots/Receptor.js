@@ -18,7 +18,6 @@ const dvalue = require('dvalue');
 
 const hashcashLevel = 3;
 const allowDelay = 10000;
-const requestTimeout = 3000;
 
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
 		pathPw = path.join(__dirname, '../config/pw.txt'),
@@ -71,50 +70,57 @@ errorHandler = function (err, req, res, next) {
 	logger.exception.error(err);
 	res.statusCode = 500;
 	res.result.setMessage('oops, something wrong...');
-	res.json(res.result.toJSON());
+	res.json(res.result.response());
 };
 returnData = function(req, res, next) {
-	var session;
+	var session, json, isFile;
 
-	if(res.result.isDone()) {
-		session = res.result.getSession();
+	if(!res.result.isResponse()) {
+		json = res.result.response();
+		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+$").test(json.message);
 
-		for(var key in session) {
-			if(session[key] === null) {
-				delete req.session[key];
+		if(res.result.isDone()) {
+			session = res.result.getSession();
+
+			for(var key in session) {
+				if(session[key] === null) {
+					delete req.session[key];
+				}
+				else {
+					req.session[key] = session[key];
+				}
 			}
-			else {
-				req.session[key] = session[key];
+		}
+		else {
+			res.status(404);
+			res.result.setMessage("Invalid operation");
+		}
+
+		if(isFile) {
+			res.header("Content-Type", json.message);
+			res.send(json.data);
+		}
+		else if(json.result >= 100) {
+			res.status(json.result);
+			for(var key in json.data) {
+				res.header(key, json.data[key]);
 			}
+
+			res.end();
+		}
+		else {
+			res.header("Content-Type", 'application/json');
+			res.send(json);
 		}
 	}
 	else {
-		res.status(404);
-		res.result.setMessage("Invalid operation");
-	}
-
-	var json = res.result.response();
-	var isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+$").test(json.message);
-
-	if(isFile) {
-		res.header("Content-Type", json.message);
-		res.send(json.data);
-	}
-	else if(json.result >= 100) {
-		res.status(json.result);
-		for(var key in json.data) {
-			res.header(key, json.data[key]);
-		}
-
-		res.end();
-	}
-	else {
-		res.header("Content-Type", 'application/json');
-		res.send(json);
+		// timeout request
+		json = res.result.response();
+		res.result.resetResponse();
 	}
 
 	var rs = json.errorcode? [json.result, json.errorcode].join(':'): json.result;
-	logger.info.info(req.method, req.url, rs, req.session.ip);
+	logger.info.info(req.method, req.url, rs, req.session.ip, json.cost);
 };
 
 var Bot = function(config) {
@@ -139,6 +145,7 @@ Bot.prototype.init = function(config) {
 	this.shardPath = shards;
 	var logs = folders.logs || "./logs/";
 	var passportBot = this.getBot("Passport");
+	var jobQueue = this.getBot("JobQueue");
 
 	this.router = express.Router();
 	this.app = express();
@@ -194,15 +201,7 @@ Bot.prototype.init = function(config) {
 	this.app.use(bodyParser.urlencoded({ extended: false }));
 	this.app.use(bodyParser.json({}));
 	this.app.use(function(req, res, next) { self.filter(req, res, next); });
-	this.app.use(function(req, res, next) {
-		setTimeout(function () {
-			if(res.result.isEnd()) { return; }
-			res.result.setMessage('timeout');
-			res.result.setCommand(10239);
-			res.json(res.result.response());
-		}, requestTimeout);
-		next();
-	});
+	this.app.use(jobQueue.middleware());
 	this.app.use(this.router);
 	this.app.use(returnData);
 	this.ctrl = [];
@@ -215,12 +214,28 @@ Bot.prototype.init = function(config) {
 		next();
 	});
 
-	// get system infomation
+	// get command Result
+	this.router.get('/command/:id', function (req, res, next) {
+		var commandID = req.params.id;
+		var options = {attr: {command: commandID}};
+		var rs = jobQueue.findJob(options);
+		if(rs) {
+			res.result = rs;
+			rs.resetResponse();
+		}
+		else {
+			res.result.setErrorCode('00002');
+			res.result.setMessage('command not found:', commandID);
+		}
+		next();
+	});
+
+	// timeout test
 	this.router.get('/wait/:timeout', function (req, res, next) {
 		var t = parseInt(req.params.timeout) || 0;
 		setTimeout(function () {
 			res.result.setResult(1);
-			res.result.setMessage('waiting test: ' + t);
+			res.result.setMessage('waiting test:', t);
 			next();
 		}, t);
 	});

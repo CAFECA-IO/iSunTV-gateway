@@ -21,9 +21,9 @@
   "homepage": "https://bitbucket.org/tidenet/isuntv-gateway#readme",
   "dependencies": {
     "body-parser": "^1.15.2",
-    "dvalue": "^1.0.7",
+    "dvalue": "^1.0.8",
     "echashcash": "^1.0.1",
-    "ecresult": "^1.0.5",
+    "ecresult": "^1.0.11",
     "express": "^4.14.0",
     "express-session": "^1.13.0",
     "kerberos": "0.0.21",
