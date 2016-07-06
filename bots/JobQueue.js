@@ -36,9 +36,8 @@ Bot.prototype.middleware = function () {
 Bot.prototype.middlewareProcess = function (req, res, next) {
   var self = this;
   setTimeout(function () {
-    if(res.result.isEnd()) { return; }
+    if(res.finished) { return; }
     self.addJob(res.result);
-
     res.result.setErrorCode('00001')
     res.result.setMessage('timeout');
     res.json(res.result.toJSON());

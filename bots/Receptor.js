@@ -75,7 +75,7 @@ errorHandler = function (err, req, res, next) {
 returnData = function(req, res, next) {
 	var session, json, isFile;
 
-	if(!res.result.isResponse()) {
+	if(!res.finished) {
 		json = res.result.response();
 		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+$").test(json.message);
 
