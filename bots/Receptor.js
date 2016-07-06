@@ -241,9 +241,9 @@ Bot.prototype.init = function(config) {
 	});
 
 	// passport
-	this.router.get('/auth/facebook', passportBot.facebook_authenticate);
-	this.router.get('/auth/facebook/callback', passportBot.facebook_callback);
-	this.router.get('/auth/facebook/token', passportBot.facebook_token, function (req, res) { res.send('Yo') });
+	this.router.get('/auth/facebook', function (req, res, next) { passportBot.facebook_authenticate(req, res, next); });
+	this.router.get('/auth/facebook/callback', function (req, res, next) { passportBot.facebook_callback(req, res, next); });
+	this.router.get('/auth/facebook/token/:access_token', function (req, res, next) { passportBot.facebook_token(req, res, next); });
 };
 
 Bot.prototype.start = function(cb) {

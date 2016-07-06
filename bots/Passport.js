@@ -4,9 +4,6 @@ const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const FacebookTokenStrategy = require('passport-facebook-token');
 
-FACEBOOK_APP_ID = '247935812254565';
-FACEBOOK_APP_SECRET = '8bb4a54d022dd3d7655324b1eeedf16b';
-
 var Bot = function (config) {
 	if (!config) config = {};
 	this.init(config);
@@ -15,43 +12,44 @@ var Bot = function (config) {
 util.inherits(Bot, ParentBot);
 
 Bot.prototype.init = function (config) {
+  var self = this;
   Bot.super_.prototype.init.call(this, config);
   passport.use(new FacebookStrategy({
-      clientID: FACEBOOK_APP_ID,
-      clientSecret: FACEBOOK_APP_SECRET,
+      clientID: config.facebook.id,
+      clientSecret: config.facebook.secret,
       callbackURL: "/auth/facebook/callback"
     },
     function(accessToken, refreshToken, profile, done) {
-      console.log('--- facebook Token ---')
-      console.log(accessToken);
-      console.log(refreshToken);
-      console.log(profile);
+      if(!profile) { done(null, false); return; }
 
-      done(null, profile.id);
+      var user = {
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        profile: profile
+      };
+      self.getUserID(user, done);
     }
   ));
   passport.use(new FacebookTokenStrategy({
-      clientID: FACEBOOK_APP_ID,
-      clientSecret: FACEBOOK_APP_SECRET
+      clientID: config.facebook.id,
+      clientSecret: config.facebook.secret
     },
     function(accessToken, refreshToken, profile, done) {
-      console.log('--- facebook Token ---')
-      console.log(accessToken);
-      console.log(refreshToken);
-      console.log(profile);
+      if(!profile) { done(null, false); return; }
 
-      done(null, profile.id);
+      var user = {
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        profile: profile
+      };
+      self.getUserID(user, done);
     }
   ));
   passport.serializeUser(function(user, done) {
-  console.log('--- serialize ---');
-  console.log(user);
       done(null, user);
   });
 
   passport.deserializeUser(function(user, done) {
-  console.log('--- deserialize ---');
-  console.log(user);
       done(null, user);
   });
 
@@ -68,10 +66,33 @@ Bot.prototype.facebook_authenticate = function (req, res, next) {
   passport.authenticate('facebook', { scope: ['public_profile', 'email'] })(req, res, next);
 };
 Bot.prototype.facebook_callback = function (req, res, next) {
-  passport.authenticate('facebook')(req, res, next);
+  var self = this;
+  passport.authenticate('facebook', function (err, user, info) {
+    self.getToken(user, function (e, d) {
+      console.log(e, d);
+      res.result.setMessage(user);
+      next();
+    });
+  })(req, res, next);
 };
 Bot.prototype.facebook_token = function (req, res, next) {
-  passport.authenticate('facebook-token')(req, res, next);
+  var self = this;
+  req.query.access_token = req.query.access_token || req.params.access_token;
+  passport.authenticate('facebook-token', function (err, user, info) {
+    self.getToken(user, function (e, d) {
+      console.log(e, d);
+      res.result.setMessage(user);
+      next();
+    });
+  })(req, res, next);
+};
+Bot.prototype.getUserID = function (user, cb) {
+  var bot = this.getBot('User');
+  bot.getUserBy3rdParty(user, cb);
+};
+Bot.prototype.getToken = function (user, cb) {
+  var bot = this.getBot('User');
+  bot.createToken(user, cb);
 };
 
 module.exports = Bot;
