@@ -14,39 +14,46 @@ util.inherits(Bot, ParentBot);
 Bot.prototype.init = function (config) {
   var self = this;
   Bot.super_.prototype.init.call(this, config);
+  var facebookProcess = function (accessToken, refreshToken, profile, done) {
+    if(!profile) { done(null, false); return; }
+    var user = {
+      type: 'facebook',
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      condition: {
+        facebook: {
+          id: profile.id
+        }
+      },
+      profile: {
+        username: profile.displayName,
+        emails: profile.emails,
+        photos: profile.photos,
+        facebook: {
+          id: profile.id,
+          username: profile.displayName,
+          emails: profile.emails,
+          photos: profile.photos,
+        }
+      }
+    };
+    self.getUserID(user, done);
+  }
+
   passport.use(new FacebookStrategy({
       clientID: config.facebook.id,
       clientSecret: config.facebook.secret,
       callbackURL: "/auth/facebook/callback",
       profileFields: ['id', 'displayName', 'photos', 'email']
     },
-    function(accessToken, refreshToken, profile, done) {
-      if(!profile) { done(null, false); return; }
-      var user = {
-        type: 'facebook',
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        profile: {
-          username: profile.displayName
-        }
-      };
-      self.getUserID(user, done);
-    }
+    facebookProcess
   ));
   passport.use(new FacebookTokenStrategy({
       clientID: config.facebook.id,
       clientSecret: config.facebook.secret,
       profileFields: ['id', 'displayName', 'photos', 'email']
     },
-    function(accessToken, refreshToken, profile, done) {
-      if(!profile) { done(null, false); return; }
-      var user = {
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        profile: profile
-      };
-      self.getUserID(user, done);
-    }
+    facebookProcess
   ));
   passport.serializeUser(function(user, done) {
       done(null, user);
