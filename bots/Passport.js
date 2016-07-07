@@ -17,26 +17,29 @@ Bot.prototype.init = function (config) {
   passport.use(new FacebookStrategy({
       clientID: config.facebook.id,
       clientSecret: config.facebook.secret,
-      callbackURL: "/auth/facebook/callback"
+      callbackURL: "/auth/facebook/callback",
+      profileFields: ['id', 'displayName', 'photos', 'email']
     },
     function(accessToken, refreshToken, profile, done) {
       if(!profile) { done(null, false); return; }
-
       var user = {
+        type: 'facebook',
         accessToken: accessToken,
         refreshToken: refreshToken,
-        profile: profile
+        profile: {
+          username: profile.displayName
+        }
       };
       self.getUserID(user, done);
     }
   ));
   passport.use(new FacebookTokenStrategy({
       clientID: config.facebook.id,
-      clientSecret: config.facebook.secret
+      clientSecret: config.facebook.secret,
+      profileFields: ['id', 'displayName', 'photos', 'email']
     },
     function(accessToken, refreshToken, profile, done) {
       if(!profile) { done(null, false); return; }
-
       var user = {
         accessToken: accessToken,
         refreshToken: refreshToken,
