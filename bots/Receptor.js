@@ -133,7 +133,7 @@ Bot.prototype.init = function(config) {
 	var self = this;
 	Bot.super_.prototype.init.call(this, config);
 	this.serverPort = [5566, 80];
-	this.httpsPort = [7788];
+	this.httpsPort = [7788, 443];
 	this.nodes = [];
 	this.monitorData = {};
 	this.monitorData.traffic = {in: 0, out: 0};

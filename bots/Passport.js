@@ -21,14 +21,14 @@ Bot.prototype.init = function (config) {
       accessToken: accessToken,
       refreshToken: refreshToken,
       condition: {
-        facebook: {
-          id: profile.id
-        }
+        'facebook.id': profile.id
       },
       profile: {
         username: profile.displayName,
-        emails: profile.emails,
-        photos: profile.photos,
+        email: profile.emails[0].value,
+        emails: profile.emails.map(function (v) { return v.value; }),
+        photo: profile.photos[0].value,
+        photos: profile.photos.map(function (v) { return v.value; }),
         facebook: {
           id: profile.id,
           username: profile.displayName,

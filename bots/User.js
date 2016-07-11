@@ -1,6 +1,7 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
 const mongodb = require('mongodb');
+const q = require('q');
 const url = require('url');
 const crypto = require('crypto');
 const raid2x = require('raid2x');
@@ -73,9 +74,22 @@ var descUser = function (user) {
 		enable: false,
 		status: 1
 	});
+	if(user.username.length == 0) { user.username = user.email; }
 	delete user._id;
 	delete user.password;
 	return user;
+};
+var mergeCondition = function (user) {
+	var condition;
+	var profile = user.profile;
+	switch(user.type) {
+		default:
+			condition = {
+				emails: profile.emails,
+				facebook: {exists: false}
+			};
+	}
+	return condition;
 };
 
 var Bot = function (config) {
@@ -150,20 +164,85 @@ Bot.prototype.addUser = function (user, cb) {
 		});
 	});
 };
-Bot.prototype.checkUserExist = function (condition, cb) {
+Bot.prototype.checkUserExist = function (condition) {
+	var defer = new q.defer();
+	var collection = this.db.collection('Users');
 	collection.find(condition).toArray(function (e, d) {
-		if(e) { cb(e); return; }
-		else { cb(null, d[0]); return; }
+console.log(!!d[0]? 'User Exists': 'User not Exists');
+console.log(condition);
+		if(e) { defer.reject(e); }
+		else { defer.resolve(d[0]); }
+	});
+	return defer.promise;
+};
+Bot.prototype.mergeUser = function (condition, profile) {
+	var self = this;
+	var collection = self.db.collection("Users");
+
+	return self.checkUserExist(condition).then(function (v) {
+		var defer = new q.defer();
+		if(v) {
+			// merge account with profile
+			var cond = {_id: v._id}, set = {}, addToSet, updateQuery;
+			for(var k in profile) {
+				if(v[k] == undefined) {
+					set[k] = profile[k];
+					v[k] = profile[k];
+				}
+			}
+			addToSet = {emails: {$each: profile.emails}};
+			updateQuery = {$set: set, $addToSet: addToSet};
+			collection.findAndModify(con, {}, updateQuery, {}, function (e, d) {
+				if(e) { defer.reject(e); }
+				else if(d.value) {
+					defer.resolve(v);
+				}
+				else {
+					defer.resolve(undefined);
+				}
+			});
+		}
+		else {
+			// no account to merge
+			defer.resolve(undefined);
+		}
+		return defer.promise;
 	});
 };
 
-Bot.prototype.addUserBy3rdParty = function (user, condition, cb) {
+Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
+	var defer = new q.defer();
+	var collection = this.db.collection('Users');
+console.log('--- addUserBy3rdParty ---');
+	collection.insert(USERPROFILE, {}, function (e, d) {
+		if(e) { defer.reject(e); }
+		else { defer.resolve(USERPROFILE); }
+console.log(USERPROFILE);
+	});
+
+	return defer.promise;
 };
 Bot.prototype.getUserBy3rdParty = function (user, cb) {
-	// check account exist
-	// add user if not exist
-	// update data if match
-	cb(null, {_id: 1});
+	var self = this;
+	var USERPROFILE = formatUser(user.profile);
+console.log('--- getUserBy3rdParty ---');
+console.log(user);
+	// check account existing
+	// if account not exists, check mergeable account
+	// if account still not exists, create one
+	var condition = user.condition;
+	var subCondition = mergeCondition(user);
+	q.fcall(function () { return self.checkUserExist(condition); })
+	 .then(function (v) { console.log(v); if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.mergeUser(subCondition, USERPROFILE); }})
+	 .then(function (v) { console.log(v); if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.addUserBy3rdParty(USERPROFILE); }})
+	 .then(function (v) {
+console.log(v);
+			cb(v);
+	  },
+	  function (e) {
+console.log(e);
+			cb(e);
+		});
 };
 
 Bot.prototype.editUser = function (user, cb) {
@@ -333,6 +412,7 @@ Bot.prototype.login = function (data, cb) {
 };
 /* create token by user id */
 Bot.prototype.createToken = function (user, cb) {
+console.log(user);
 	var now = new Date().getTime();
 	var collection = this.db.collection('Tokens');
 	var tbody = dvalue.randomID(24);
