@@ -161,6 +161,7 @@ Bot.prototype.init = function(config) {
 	});
 	this.http.on('listening', function() {
 		config.listening = self.listening;
+		logger.info.info('HTTP:', self.listening);
 	});
 
 	// if has pxf -> create https service
@@ -184,6 +185,7 @@ Bot.prototype.init = function(config) {
 
 		this.https.on('listening', function() {
 			config.listeningHttps = self.listeningHttps;
+			logger.info.info('HTTPS:', self.listeningHttps);
 		});
 	}
 
