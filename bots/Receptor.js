@@ -133,7 +133,7 @@ Bot.prototype.init = function(config) {
 	var self = this;
 	Bot.super_.prototype.init.call(this, config);
 	this.serverPort = [5566, 80];
-	this.httpsPort = [7788];
+	this.httpsPort = [7788, 443];
 	this.nodes = [];
 	this.monitorData = {};
 	this.monitorData.traffic = {in: 0, out: 0};
@@ -161,6 +161,7 @@ Bot.prototype.init = function(config) {
 	});
 	this.http.on('listening', function() {
 		config.listening = self.listening;
+		logger.info.info('HTTP:', self.listening);
 	});
 
 	// if has pxf -> create https service
@@ -184,6 +185,7 @@ Bot.prototype.init = function(config) {
 
 		this.https.on('listening', function() {
 			config.listeningHttps = self.listeningHttps;
+			logger.info.info('HTTPS:', self.listeningHttps);
 		});
 	}
 
