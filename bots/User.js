@@ -85,8 +85,8 @@ var mergeCondition = function (user) {
 	switch(user.type) {
 		default:
 			condition = {
-				emails: profile.emails,
-				facebook: {exists: false}
+				email: {$in: profile.emails},
+				facebook: {$exists: false}
 			};
 	}
 	return condition;
@@ -168,8 +168,6 @@ Bot.prototype.checkUserExist = function (condition) {
 	var defer = new q.defer();
 	var collection = this.db.collection('Users');
 	collection.find(condition).toArray(function (e, d) {
-console.log(!!d[0]? 'User Exists': 'User not Exists');
-console.log(condition);
 		if(e) { defer.reject(e); }
 		else { defer.resolve(d[0]); }
 	});
@@ -177,7 +175,7 @@ console.log(condition);
 };
 Bot.prototype.mergeUser = function (condition, profile) {
 	var self = this;
-	var collection = self.db.collection("Users");
+	var collection = this.db.collection("Users");
 
 	return self.checkUserExist(condition).then(function (v) {
 		var defer = new q.defer();
@@ -190,9 +188,18 @@ Bot.prototype.mergeUser = function (condition, profile) {
 					v[k] = profile[k];
 				}
 			}
-			addToSet = {emails: {$each: profile.emails}};
-			updateQuery = {$set: set, $addToSet: addToSet};
-			collection.findAndModify(con, {}, updateQuery, {}, function (e, d) {
+			updateQuery = {$set: set};
+			var addSet = function (k, v) {
+				if(addToSet == undefined) {
+					addToSet = {};
+					updateQuery['$addToSet'] = addToSet;
+				}
+				addToSet[k] = v;
+			};
+			if(set.emails == undefined) { addSet(addToSet.emails, {$each: profile.emails}); }
+			if(set.photos == undefined) { addSet(addToSet.photos, {$each: profile.photos}); }
+
+			collection.findAndModify(cond, {}, updateQuery, {}, function (e, d) {
 				if(e) { defer.reject(e); }
 				else if(d.value) {
 					defer.resolve(v);
@@ -213,11 +220,9 @@ Bot.prototype.mergeUser = function (condition, profile) {
 Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 	var defer = new q.defer();
 	var collection = this.db.collection('Users');
-console.log('--- addUserBy3rdParty ---');
 	collection.insert(USERPROFILE, {}, function (e, d) {
 		if(e) { defer.reject(e); }
 		else { defer.resolve(USERPROFILE); }
-console.log(USERPROFILE);
 	});
 
 	return defer.promise;
@@ -225,22 +230,18 @@ console.log(USERPROFILE);
 Bot.prototype.getUserBy3rdParty = function (user, cb) {
 	var self = this;
 	var USERPROFILE = formatUser(user.profile);
-console.log('--- getUserBy3rdParty ---');
-console.log(user);
 	// check account existing
 	// if account not exists, check mergeable account
 	// if account still not exists, create one
 	var condition = user.condition;
 	var subCondition = mergeCondition(user);
 	q.fcall(function () { return self.checkUserExist(condition); })
-	 .then(function (v) { console.log(v); if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.mergeUser(subCondition, USERPROFILE); }})
-	 .then(function (v) { console.log(v); if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.addUserBy3rdParty(USERPROFILE); }})
+	 .then(function (v) { if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.mergeUser(subCondition, USERPROFILE); }})
+	 .then(function (v) { if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.addUserBy3rdParty(USERPROFILE); }})
 	 .then(function (v) {
-console.log(v);
-			cb(v);
+			cb(null, v);
 	  },
 	  function (e) {
-console.log(e);
 			cb(e);
 		});
 };
@@ -412,7 +413,11 @@ Bot.prototype.login = function (data, cb) {
 };
 /* create token by user id */
 Bot.prototype.createToken = function (user, cb) {
-console.log(user);
+	if(user._id === undefined) {
+		var e = new Error('Invalid User Account');
+		e.code = '19101'
+		return cb(e);
+	}
 	var now = new Date().getTime();
 	var collection = this.db.collection('Tokens');
 	var tbody = dvalue.randomID(24);
@@ -426,7 +431,7 @@ console.log(user);
 	};
 	collection.insert(token, {}, function (e, d) {
 		delete token._id;
-		cb(e, token);
+		return cb(e, token);
 	});
 };
 Bot.prototype.checkToken = function (token, cb) {
