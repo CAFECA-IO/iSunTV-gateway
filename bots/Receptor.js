@@ -26,8 +26,8 @@ var pathCert = path.join(__dirname, '../config/cert.pfx'),
 var checkLogin, checkHashCash, errorHandler, returnData;
 checkLogin = function (req, res, next) {
 	if(req.session.uid === undefined) {
-		res.result.setResult(-1);
-		res.result.setMessage('User No Authorized');
+		res.result.setErrorCode('10201');
+		res.result.setMessage('User Not Authorized');
 		returnData(req, res, next)
 	}
 	else {
@@ -37,18 +37,18 @@ checkLogin = function (req, res, next) {
 checkHashCash = function (req, res, next) {
 	var invalidHashcash = function () {
 		//-- for test
-		var h = req.headers.hashcash;
-		var t = new Date().getTime();
-		if(h) { t = parseInt(h.split(":")[0]) || t; }
-		var c = [req.url, t, ""].join(":");
+		var t, h = req.headers.hashcash, nt = new Date().getTime();
+		if(h) { t = parseInt(h.split(":")[0]) || nt; }
+		var c = [req.url, nt, ""].join(":");
 		var hc = echashcash(c);
 		var d = {
 			hashcash: req.headers.hashcash,
-			sample: [t, hc].join(":")
+			sample: [nt, hc].join(":")
 		};
 		if(new Date().getTime() - t > allowDelay) { d.information = "timeout"; }
+		if(new Date().getTime() < t) { d.information = "future time"; }
 
-		res.result.setResult(-2);
+		res.result.setErrorCode('10101');
 		res.result.setMessage('Invalid Hashcash');
 		res.result.setData(d);	//-- for test
 		returnData(req, res, next);
@@ -133,7 +133,7 @@ Bot.prototype.init = function(config) {
 	var self = this;
 	Bot.super_.prototype.init.call(this, config);
 	this.serverPort = [5566, 80];
-	this.httpsPort = [7788];
+	this.httpsPort = [7788, 443];
 	this.nodes = [];
 	this.monitorData = {};
 	this.monitorData.traffic = {in: 0, out: 0};
@@ -161,6 +161,7 @@ Bot.prototype.init = function(config) {
 	});
 	this.http.on('listening', function() {
 		config.listening = self.listening;
+		logger.info.info('HTTP:', self.listening);
 	});
 
 	// if has pxf -> create https service
@@ -184,6 +185,7 @@ Bot.prototype.init = function(config) {
 
 		this.https.on('listening', function() {
 			config.listeningHttps = self.listeningHttps;
+			logger.info.info('HTTPS:', self.listeningHttps);
 		});
 	}
 
@@ -223,7 +225,7 @@ Bot.prototype.init = function(config) {
 	});
 
 	// get command Result
-	this.router.get('/command/:id', function (req, res, next) {
+	this.router.get('/command/:id', checkHashCash, function (req, res, next) {
 		var commandID = req.params.id;
 		var options = {attr: {command: commandID}};
 		var rs = jobQueue.findJob(options);
@@ -251,7 +253,7 @@ Bot.prototype.init = function(config) {
 	// passport
 	this.router.get('/auth/facebook', function (req, res, next) { passportBot.facebook_authenticate(req, res, next); });
 	this.router.get('/auth/facebook/callback', function (req, res, next) { passportBot.facebook_callback(req, res, next); });
-	this.router.get('/auth/facebook/token/:access_token', function (req, res, next) { passportBot.facebook_token(req, res, next); });
+	this.router.get('/auth/facebook/token/:access_token', checkHashCash, function (req, res, next) { passportBot.facebook_token(req, res, next); });
 };
 
 Bot.prototype.start = function(cb) {

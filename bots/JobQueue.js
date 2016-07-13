@@ -38,8 +38,8 @@ Bot.prototype.middlewareProcess = function (req, res, next) {
   setTimeout(function () {
     if(res.finished) { return; }
     self.addJob(res.result);
-    res.result.setErrorCode('00001')
-    res.result.setMessage('timeout');
+    res.result.setResult(2);
+    res.result.setMessage('still processing');
     res.json(res.result.toJSON());
     logger.info.warn(req.method, req.url, 'timeout', req.session.ip);
 
