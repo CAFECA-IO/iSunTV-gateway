@@ -137,21 +137,24 @@ Bot.prototype.addUser = function (user, cb) {
 	var self = this;
 	user = formatUser(user);
 	cb = dvalue.default(cb, function () {});
-	/* check email
 	if(!textype.isEmail(email)) {
 		var e = new Error("Invalid e-mail");
-		e.code = 1;
+		e.code = '12001';
 		return cb(e);
 	}
-	*/
+
+	// check exist -> throw exception
+	// check to merge
+	// no merge -> create new account
+	// new account -> send mail
 
 	// check exist
 	var collection = this.db.collection('Users');
 	collection.findOne({account: email, enable: true}, {}, function (e, d) {
 		if(e) { return cb(e); }
 		else if(!!d) {
-			e = new Error("Exist account");
-			e.code = 2;
+			e = new Error("Occupied e-mail");
+			e.code = '22001';
 			return cb(e);
 		}
 
@@ -220,6 +223,7 @@ Bot.prototype.mergeUser = function (condition, profile) {
 Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 	var defer = new q.defer();
 	var collection = this.db.collection('Users');
+	USERPROFILE.enable = true;
 	collection.insert(USERPROFILE, {}, function (e, d) {
 		if(e) { defer.reject(e); }
 		else { defer.resolve(USERPROFILE); }

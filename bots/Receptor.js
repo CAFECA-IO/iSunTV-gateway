@@ -288,13 +288,32 @@ Bot.prototype.filter = function (req, res, next) {
 	if(!req.session.ip) { req.session.ip = ip; }
 	if(!req.session.port) { req.session.port = port; }
 	var powerby = this.config.powerby;
+
 	res.result = new ecresult();
 	res.header('X-Powered-By', powerby);
 	res.header('Client-IP', ip);
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
 	res.header("Access-Control-Allow-Headers", "Hashcash, Authorization, Content-Type");
-	next();
+
+	var bot = this.getBot('User');
+	var auth = req.headers.authorization;
+	var token = !!auth? auth.split(" ")[1]: '';
+	bot.checkToken(token, function (e, d) {
+		if(!!d) { req.session.uid = d.uid; }
+		next();
+	});
+};
+Bot.prototype.tokenParser = function (req, res, next) {
+
+	var auth = req.headers.authorization;
+	var token = !!auth? auth.split(" ")[1]: '';
+	bot.checkToken(token, function (e, d) {
+		if(!!d) {
+			req.session.uid = d.uid;
+		}
+		next();
+	});
 };
 
 module.exports = Bot;
