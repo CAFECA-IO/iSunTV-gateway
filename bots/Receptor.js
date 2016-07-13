@@ -206,6 +206,14 @@ Bot.prototype.init = function(config) {
 	this.app.use(returnData);
 	this.ctrl = [];
 
+	// HOME
+	this.router.get('/', function (req, res, next) {
+		res.result.setResult(1);
+		res.result.setMessage('Application Information');
+		res.result.setData(self.config.package);
+		next();
+	});
+
 	// get system infomation
 	this.router.get('/version/', function (req, res, next) {
 		res.result.setResult(1);
