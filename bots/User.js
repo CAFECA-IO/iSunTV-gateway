@@ -3,6 +3,7 @@ const util = require('util');
 const mongodb = require('mongodb');
 const q = require('q');
 const url = require('url');
+const path = require('path');
 const crypto = require('crypto');
 const raid2x = require('raid2x');
 const dvalue = require('dvalue');
@@ -83,6 +84,13 @@ var mergeCondition = function (user) {
 	var condition;
 	var profile = user.profile;
 	switch(user.type) {
+		case 'email':
+			condition = {
+				emails: {$in: [profile.email]},
+				account: '',
+				enable: true
+			};
+			break;
 		default:
 			condition = {
 				email: {$in: profile.emails},
@@ -135,55 +143,128 @@ Bot.prototype.addMailHistory = function (email) {
 /* 1: invalid e-mail, 2: account exist */
 Bot.prototype.addUser = function (user, cb) {
 	var self = this;
-	user = formatUser(user);
+	var USERPROFILE = formatUser(user);
+	var userdata = {type: 'email', profile: USERPROFILE};
 	cb = dvalue.default(cb, function () {});
-	/* check email
-	if(!textype.isEmail(email)) {
+	if(!textype.isEmail(user.email)) {
 		var e = new Error("Invalid e-mail");
-		e.code = 1;
+		e.code = '12001';
 		return cb(e);
 	}
-	*/
 
-	// check exist
-	var collection = this.db.collection('Users');
-	collection.findOne({account: email, enable: true}, {}, function (e, d) {
-		if(e) { return cb(e); }
-		else if(!!d) {
-			e = new Error("Exist account");
-			e.code = 2;
-			return cb(e);
+	// check to merge
+	// no merge -> create user
+	var condition = {account: user.account, enable: true};
+	var subCondition = mergeCondition(userdata);
+	q.fcall(function () { return self.mergeUser(subCondition, USERPROFILE); })
+	 .then(function (v) { if(v) { return v; } else { return self.createUser(user); }})
+	 .then(function (v) {
+		  cb(null, v);
+	  },
+		function (e) {
+			cb(e);
+	  })
+	 .done();
+};
+Bot.prototype.createUser = function (user) {
+	var deferred = q.defer();
+	var self = this;
+	var condition = {account: user.email, enable: true};
+	var USERPROFILE = formatUser(user);
+	USERPROFILE.account = USERPROFILE.email;
+
+	if(!textype.isEmail(user.email)) {
+		var e = new Error("Invalid e-mail");
+		e.code = '12001';
+		deferred.reject(e);
+	}
+	// check exists
+	// create account
+	// send mail
+	q.fcall(function () { return self.checkUserExist(condition); })
+	 .then(function (v) {
+		var subdeferred = q.defer();
+		if(v) {
+			var e = new Error("Occupied e-mail");
+			e.code = '22001';
+			subdeferred.reject(e);
 		}
-
-		// create account
-		collection.insert(user, {}, function (e1, d1) {
-			if(e1) { return cb(e1); }
-			else {
-				cb(null, {uid: user._id});
-			}
-		});
+		else if(self.addMailHistory(user.email)) {
+			var collection = self.db.collection('Users');
+			USERPROFILE.validcode = dvalue.randomID(12);
+			collection.insert(USERPROFILE, {}, function (e, d) {
+				if(e) {
+					e.code = '01001';
+					subdeferred.reject(e);
+				}
+				else {
+					subdeferred.resolve(USERPROFILE);
+					var bot = self.getBot('Mailer');
+					var uri = dvalue.sprintf('/register/%s/%s', USERPROFILE.email, USERPROFILE.validcode);
+					var comfirmURL = path.join(self.config.url, uri);
+					bot.send(USERPROFILE.email, 'Welcom to iSunTV - Account Verification', comfirmURL, function () {})
+				}
+			});
+		}
+		else {
+			var e = new Error("e-mail sending quota exceeded");
+			e.code = '42001';
+			subdeferred.reject(e);
+		}
+		return subdeferred.promise; })
+		.then(deferred.resolve, deferred.reject)
+		.done();
+	return deferred.promise;
+};
+Bot.prototype.emailVerification = function (user, cb) {
+	var self = this;
+	var condition = {account: user.account, validcode: user.validcode};
+	var updateQuery = {$set: {enable: true}, $unset: {validcode: ""}};
+	var collection = this.db.collection('Users');
+	collection.findAndModify(condition, {}, updateQuery, {}, function (e, d) {
+		if(e) { e.code = '01003'; cb(e); }
+		else if(!d.value) { e = new Error('incorrect code'); e.code = '19101'; cb(e); }
+		else {
+			self.cleanInvalidAccount(condition, function () {});
+			cb(null, d.value);
+		}
 	});
 };
+Bot.prototype.cleanInvalidAccount = function (user, cb) {
+	var collection = this.db.collection('Users');
+	var condition = {account: user.account, enable: {$ne: true}};
+	collection.remove(condition, cb);
+};
+
+Bot.prototype.getProfile = function (user, cb) {
+	var condition = {_id: new mongodb.ObjectID(user.uid)};
+	var collection = this.db.collection('Users');
+	collection.findOne(condition, {}, function (e, user) {
+		if(e) { e.code = '01002'; cb(e); }
+		else if(!user) { e = new Error('User not found'); e.code = '39102'; cb(e); }
+		else { cb(null, descUser(user)); }
+	});
+};
+
 Bot.prototype.checkUserExist = function (condition) {
-	var defer = new q.defer();
+	var deferred = q.defer();
 	var collection = this.db.collection('Users');
 	collection.find(condition).toArray(function (e, d) {
-		if(e) { defer.reject(e); }
-		else { defer.resolve(d[0]); }
+		if(e) { deferred.reject(e); }
+		else { deferred.resolve(d[0]); }
 	});
-	return defer.promise;
+	return deferred.promise;
 };
 Bot.prototype.mergeUser = function (condition, profile) {
 	var self = this;
 	var collection = this.db.collection("Users");
-
 	return self.checkUserExist(condition).then(function (v) {
-		var defer = new q.defer();
+		var deferred = q.defer();
 		if(v) {
 			// merge account with profile
 			var cond = {_id: v._id}, set = {}, addToSet, updateQuery;
 			for(var k in profile) {
-				if(v[k] == undefined) {
+				if(v[k] == undefined || v[k].length == 0) {
 					set[k] = profile[k];
 					v[k] = profile[k];
 				}
@@ -196,36 +277,37 @@ Bot.prototype.mergeUser = function (condition, profile) {
 				}
 				addToSet[k] = v;
 			};
-			if(set.emails == undefined) { addSet(addToSet.emails, {$each: profile.emails}); }
-			if(set.photos == undefined) { addSet(addToSet.photos, {$each: profile.photos}); }
+			if(set.emails == undefined && !!profile.emails) { addSet('emails', {$each: profile.emails}); }
+			if(set.photos == undefined && !!profile.photos) { addSet('photos', {$each: profile.photos}); }
 
 			collection.findAndModify(cond, {}, updateQuery, {}, function (e, d) {
-				if(e) { defer.reject(e); }
+				if(e) { deferred.reject(e); }
 				else if(d.value) {
-					defer.resolve(v);
+					deferred.resolve(v);
 				}
 				else {
-					defer.resolve(undefined);
+					deferred.resolve(undefined);
 				}
 			});
 		}
 		else {
 			// no account to merge
-			defer.resolve(undefined);
+			deferred.resolve(undefined);
 		}
-		return defer.promise;
+		return deferred.promise;
 	});
 };
 
 Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
-	var defer = new q.defer();
+	var deferred = q.defer();
 	var collection = this.db.collection('Users');
+	USERPROFILE.enable = true;
 	collection.insert(USERPROFILE, {}, function (e, d) {
-		if(e) { defer.reject(e); }
-		else { defer.resolve(USERPROFILE); }
+		if(e) { deferred.reject(e); }
+		else { deferred.resolve(USERPROFILE); }
 	});
 
-	return defer.promise;
+	return deferred.promise;
 };
 Bot.prototype.getUserBy3rdParty = function (user, cb) {
 	var self = this;
@@ -236,14 +318,15 @@ Bot.prototype.getUserBy3rdParty = function (user, cb) {
 	var condition = user.condition;
 	var subCondition = mergeCondition(user);
 	q.fcall(function () { return self.checkUserExist(condition); })
-	 .then(function (v) { if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.mergeUser(subCondition, USERPROFILE); }})
-	 .then(function (v) { if(v) { var defer = new q.defer(); defer.resolve(v); return defer.promise; } else { return self.addUserBy3rdParty(USERPROFILE); }})
+	 .then(function (v) { if(v) { return v; } else { return self.mergeUser(subCondition, USERPROFILE); }})
+	 .then(function (v) { if(v) { return v; } else { return self.addUserBy3rdParty(USERPROFILE); }})
 	 .then(function (v) {
 			cb(null, v);
 	  },
 	  function (e) {
 			cb(e);
-		});
+		})
+	 .done();
 };
 
 Bot.prototype.editUser = function (user, cb) {
@@ -392,17 +475,17 @@ Bot.prototype.listUser = function (cb) {
 Bot.prototype.login = function (data, cb) {
 	var self = this;
 	var collection = this.db.collection('Users');
-	var loginData = {account: (data.account || data.email), password: data.password};
+	var loginData = {account: data.account, password: data.password};
 	collection.findOne(loginData, {}, function (e, user) {
 		if(e) { return cb(e); }
 		else if(!user) {
-			e = new Error("Login failed");
-			e.code = 2;
+			e = new Error("incorrect account/password");
+			e.code = '19101';
 			return cb(e);
 		}
-		if(!user.key) {
-			e = new Error("Need to verify email address");
-			e.code = 1;
+		if(!user.enable) {
+			e = new Error("Account not verified");
+			e.code = '69101';
 			e.uid = user._id.toString();
 			return cb(e);
 		}
@@ -476,17 +559,17 @@ Bot.prototype.renew = function (token, cb) {
 		{},
 		function (e, d) {
 			if(e) { return cb(e); }
-			else if(!d) {
+			else if(!d.value) {
 				e = new Error("invalid token");
-				e.code = 1;
+				e.code = '10201';
 				return cb(e);
 			}
-			else if(now - d.create > renewLife) {
+			else if(now - d.value.create > renewLife) {
 				e = new Error("overdue token");
-				e.code = 2;
+				e.code = '70201';
 				return cb(e);
 			}
-			self.createToken({_id: d.uid}, cb);
+			self.createToken({_id: d.value.uid}, cb);
 		}
 	)
 };
