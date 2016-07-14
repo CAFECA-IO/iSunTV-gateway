@@ -30,15 +30,8 @@ Bot.prototype.start = function () {
 };
 
 Bot.prototype.send = function (email, subject, content, cb) {
-	var mailTransport = nodemailer.createTransport(smtpTransport({
-    host:"us2.smtp.mailhostbox.com",//server位置
-    secure: false,//可不給,預設false
-    port: 25,//可不給,預設25
-    auth: {
-      user: 'noreply@isuncloud.com',
-      pass: 'VNfjML#0'
-    }
-	}));
+	var self = this;
+	var mailTransport = nodemailer.createTransport(smtpTransport(self.config.mail));
 
 	var mailOptions = {
 		from: 'noreply@isuncloud.com',
