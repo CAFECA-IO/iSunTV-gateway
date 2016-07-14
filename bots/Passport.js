@@ -102,21 +102,49 @@ Bot.prototype.facebook_callback = function (req, res, next) {
           res.result.setResult(1);
           res.result.setMessage('Login with Facebook');
           res.result.setData(d);
+          res.result.setSession({uid: d.uid});
         }
         next();
       });
     }
-
   })(req, res, next);
 };
 Bot.prototype.facebook_token = function (req, res, next) {
   var self = this;
   req.query.access_token = req.query.access_token || req.params.access_token;
   passport.authenticate('facebook-token', function (err, user, info) {
-    self.getToken(user, function (e, d) {
-      res.result.setMessage(user);
+    if(!user) {
+      // auth failed
+      var e = new Error('Facebook authorization failed');
+      e.code = '68101';
+      res.result.setErrorCode(e.code);
+      res.result.setMessage(e.message);
       next();
-    });
+    }
+    else {
+      self.getToken(user, function (e, d) {
+        if(e) {
+          res.result.setErrorCode(e.code);
+          res.result.setMessage(e.message);
+        }
+        else if(!d) {
+          var e = new Error('Facebook authorization failed');
+          e.code = '68101';
+          res.result.setErrorCode(e.code);
+          res.result.setMessage(e.message);
+        }
+        else {
+          res.result.setResult(1);
+          res.result.setMessage('Login with Facebook');
+          res.result.setData(d);
+          res.setSession({
+            uid: d.uid,
+            test: 123
+          });
+        }
+        next();
+      });
+    }
   })(req, res, next);
 };
 Bot.prototype.getUserID = function (user, cb) {

@@ -249,6 +249,122 @@ Bot.prototype.init = function(config) {
 			next();
 		}, t);
 	});
+	// session data
+	this.router.get('/session', function (req, res, next) {
+		res.result.setResult(1);
+		res.result.setMessage('session data');
+		res.result.setData(req.session);
+		next();
+	});
+
+	// user profile
+	this.router.get('/profile', checkLogin, function (req, res, next) {
+		var bot = self.getBot('User');
+		var condition = {uid: req.session.uid};
+		bot.getProfile(condition, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('user profile');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// user register
+	this.router.post('/register', checkHashCash, function (req, res, next) {
+		var user = {
+			account: req.body.email,
+			email: req.body.email,
+			password: req.body.password
+		};
+		var bot = self.getBot('User');
+		bot.addUser(user, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('user register');
+				res.result.setData({uid: d._id});
+			}
+			next();
+		});
+	});
+	// user verification
+	this.router.get('/register/:account/:validcode', function (req, res, next) {
+		var user = {account: req.params.account, validcode: req.params.validcode};
+		var bot = self.getBot('User');
+		bot.emailVerification(user, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('user verification');
+				res.result.setData({uid: d._id});
+				res.result.setSession({uid: d._id});
+			}
+			next();
+		});
+	});
+	// user login
+	this.router.post('/login', function (req, res, next) {
+		var user = {account: req.body.account, password: req.body.password};
+		var bot = self.getBot('User');
+		bot.login(user, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+				res.result.setData({uid: e.uid});
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('login successfully');
+				res.result.setData(d);
+				res.result.setSession({uid: d.uid});
+			}
+			next();
+		});
+	});
+	// user logout
+	this.router.get('/logout', function (req, res, next) {
+		res.result.setResult(1);
+		res.result.setMessage('logout successfully');
+		res.result.setSession({uid: null});
+		next();
+	});
+	this.router.get('/logout/:token', function (req, res, next) {
+		var token = req.params.token;
+		var bot = self.getBot('User');
+		bot.destroyToken(token, function () {});
+		res.result.setResult(1);
+		res.result.setMessage('logout successfully');
+		res.result.setSession({uid: null});
+		next();
+	});
+	// renew token
+	this.router.get('/renew/:token/:renew', function (req, res, next) {
+		var token = {token: req.params.token, renew: req.params.renew};
+		var bot = self.getBot('User');
+		bot.renew(token, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('token renew');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 
 	// passport
 	this.router.get('/auth/facebook', function (req, res, next) { passportBot.facebook_authenticate(req, res, next); });
@@ -296,13 +412,32 @@ Bot.prototype.filter = function (req, res, next) {
 	if(!req.session.ip) { req.session.ip = ip; }
 	if(!req.session.port) { req.session.port = port; }
 	var powerby = this.config.powerby;
+
 	res.result = new ecresult();
 	res.header('X-Powered-By', powerby);
 	res.header('Client-IP', ip);
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
 	res.header("Access-Control-Allow-Headers", "Hashcash, Authorization, Content-Type");
-	next();
+
+	var bot = this.getBot('User');
+	var auth = req.headers.authorization;
+	var token = !!auth? auth.split(" ")[1]: '';
+	bot.checkToken(token, function (e, d) {
+		if(!!d) { req.session.uid = d.uid; }
+		next();
+	});
+};
+Bot.prototype.tokenParser = function (req, res, next) {
+
+	var auth = req.headers.authorization;
+	var token = !!auth? auth.split(" ")[1]: '';
+	bot.checkToken(token, function (e, d) {
+		if(!!d) {
+			req.session.uid = d.uid;
+		}
+		next();
+	});
 };
 
 module.exports = Bot;
