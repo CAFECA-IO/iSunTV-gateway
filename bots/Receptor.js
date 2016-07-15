@@ -77,7 +77,7 @@ returnData = function(req, res, next) {
 
 	if(!res.finished) {
 		json = res.result.response();
-		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+$").test(json.message);
+		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-\.]+$").test(json.message);
 
 		if(res.result.isDone()) {
 			session = res.result.getSession();
@@ -98,7 +98,7 @@ returnData = function(req, res, next) {
 
 		if(isFile) {
 			res.header("Content-Type", json.message);
-			res.send(json.data);
+			res.end(json.data);
 		}
 		else if(json.result >= 100) {
 			res.status(json.result);
@@ -370,6 +370,14 @@ Bot.prototype.init = function(config) {
 	this.router.get('/auth/facebook', function (req, res, next) { passportBot.facebook_authenticate(req, res, next); });
 	this.router.get('/auth/facebook/callback', function (req, res, next) { passportBot.facebook_callback(req, res, next); });
 	this.router.get('/auth/facebook/token/:access_token', checkHashCash, function (req, res, next) { passportBot.facebook_token(req, res, next); });
+
+	// test stream
+	this.router.get('/channel/:channel/streaming', function (req, res, next) {
+		res.result.setResult(1);
+		res.result.setMessage('application/vnd.apple.mpegurl');
+		res.result.setData(new Buffer('#EXTM3U\r\n#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=680000\r\nhttp://vodcdn.newsun.tv/vod/WoDiJiaRen_07/video_index.m3u8\r\n#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=32000, CODECS="mp4a.40.2"\r\nhttp://vodcdn.newsun.tv/vod/WoDiJiaRen_07/aacaudio_index.m3u8', 'binary'));
+		next();
+	});
 };
 
 Bot.prototype.start = function(cb) {
