@@ -9,6 +9,7 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
+const url = require('url');
 const bodyParser = require('body-parser');
 const multer  = require('multer');
 const http = require('http');
@@ -73,11 +74,12 @@ errorHandler = function (err, req, res, next) {
 	res.json(res.result.response());
 };
 returnData = function(req, res, next) {
-	var session, json, isFile;
+	var session, json, isFile, isURL;
 
 	if(!res.finished) {
 		json = res.result.response();
 		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-\.]+$").test(json.message);
+		isURL = new RegExp("https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,}").test(json.message);
 
 		if(res.result.isDone()) {
 			session = res.result.getSession();
@@ -97,8 +99,21 @@ returnData = function(req, res, next) {
 		}
 
 		if(isFile) {
-			res.header("Content-Type", json.message);
+			res.header('Content-Type', json.message);
 			res.end(json.data);
+		}
+		else if(isURL) {
+			var options = url.parse(json.message);
+			options.method = 'GET';
+			var crawler = http.request(options, function (cRes) {
+			  res.header('Content-Type', cRes.headers['content-type']);
+			  cRes.on('data', function (chunk) {
+			    res.send(chunk);
+			  });
+			  cRes.on('end', function () {
+			    res.end();
+			  })
+			}).end();
 		}
 		else if(json.result >= 100) {
 			res.status(json.result);
@@ -375,8 +390,19 @@ Bot.prototype.init = function(config) {
 	this.router.get('/channel/:channel/streaming', function (req, res, next) {
 		res.result.setResult(1);
 		res.result.setMessage('application/vnd.apple.mpegurl');
-		res.result.setData(new Buffer('#EXTM3U\r\n#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=680000\r\nhttp://vodcdn.newsun.tv/vod/WoDiJiaRen_07/video_index.m3u8\r\n#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=32000, CODECS="mp4a.40.2"\r\nhttp://vodcdn.newsun.tv/vod/WoDiJiaRen_07/aacaudio_index.m3u8', 'binary'));
-		next();
+		var options = url.parse('http://vodcdn.newsun.tv/vod/WoDiJiaRen_07.m3u8');
+		options.method = 'GET';
+		var crawler = http.request(options, function (cRes) {
+
+			var remotedata = '';
+			cRes.on('data', function (chunk) {
+				remotedata += chunk.toString();
+			});
+			cRes.on('end', function () {
+				res.result.setData(remotedata);
+				next();
+			})
+		}).end();
 	});
 };
 
