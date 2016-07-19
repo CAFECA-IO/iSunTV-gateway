@@ -419,14 +419,16 @@ Bot.prototype.init = function(config) {
 					res.result.setMessage(e.message);
 				}
 				else {
+					res.result.setResult(1);
+					res.result.setMessage(d);
+					/*
 					if(path.parse(d).ext == '.m3u8') {
-						res.result.setResult(1);
-						res.result.setMessage(d);
 					}
 					else {
 						res.result.setResult(302);
 						res.result.setData({Location: d});
 					}
+					*/
 				}
 				next();
 			});
