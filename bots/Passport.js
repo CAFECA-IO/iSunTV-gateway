@@ -1,5 +1,6 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
+const url = require('url');
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const FacebookTokenStrategy = require('passport-facebook-token');
@@ -80,17 +81,29 @@ Bot.prototype.facebook_callback = function (req, res, next) {
   passport.authenticate('facebook', function (err, user, info) {
     if(!user) {
       // auth failed
-      var e = new Error('Facebook authorization failed');
-      e.code = '68101';
-      res.result.setErrorCode(e.code);
-      res.result.setMessage(e.message);
+    	var e = new Error('Facebook authorization failed');
+    	e.code = '68101';
+    	res.result.setErrorCode(e.code);
+    	res.result.setMessage(e.message);
+
+			if(self.config.facebook.redirect) {
+				var redirectURL, tmp = url.parse(self.config.facebook.redirect);
+				tmp.query = {
+					result: 0,
+					errorcode: e.code,
+					message: e.message
+				};
+				res.result.setResult(302);
+				res.result.setData({Location: url.format(tmp)});
+			}
+
       next();
     }
     else {
       self.getToken(user, function (e, d) {
         if(e) {
-          res.result.setErrorCode(e.code);
-          res.result.setMessage(e.message);
+        	res.result.setErrorCode(e.code);
+        	res.result.setMessage(e.message);
         }
         else if(!d) {
           var e = new Error('Facebook authorization failed');
@@ -104,6 +117,15 @@ Bot.prototype.facebook_callback = function (req, res, next) {
           res.result.setData(d);
           res.result.setSession({uid: d.uid});
         }
+
+				if(self.config.facebook.redirect) {
+					var redirectURL, tmp = url.parse(self.config.facebook.redirect);
+					tmp.query = res.result.toJSON();
+					tmp.query.data = JSON.stringify(tmp.query.data);
+					res.result.setResult(302);
+					res.result.setData({Location: url.format(tmp)});
+				}
+
         next();
       });
     }
