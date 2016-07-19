@@ -69,9 +69,14 @@ checkHashCash = function (req, res, next) {
 };
 errorHandler = function (err, req, res, next) {
 	logger.exception.error(err);
-	res.statusCode = 500;
-	res.result.setMessage('oops, something wrong...');
-	res.json(res.result.response());
+	if(!res.finished) {
+		try {
+			res.statusCode = 500;
+			res.result.setMessage('oops, something wrong...');
+			res.send(res.result.response());
+		}
+		catch(e) {}
+	}
 };
 returnData = function(req, res, next) {
 	var session, json, isFile, isURL;
@@ -393,7 +398,7 @@ Bot.prototype.init = function(config) {
 			channel: req.params.channel,
 			path: req.path.replace(skip, '')
 		};
-		if(resource.path == '/streaming') {
+		if(resource.path == '/streaming.m3u8') {
 			bot.parseChannel(resource, function (e, d) {
 				if(e) {
 					res.result.setErrorCode(e.code);
@@ -402,19 +407,8 @@ Bot.prototype.init = function(config) {
 				}
 				else {
 					res.result.setResult(1);
-					res.result.setMessage('application/vnd.apple.mpegurl');
-					var options = url.parse(d);
-					options.method = 'GET';
-					var crawler = http.request(options, function (cRes) {
-						var remotedata = '';
-						cRes.on('data', function (chunk) {
-							remotedata += chunk.toString();
-						});
-						cRes.on('end', function () {
-							res.result.setData(remotedata);
-							next();
-						})
-					}).end();
+					res.result.setMessage(d);
+					next();
 				}
 			});
 		}
@@ -425,7 +419,7 @@ Bot.prototype.init = function(config) {
 					res.result.setMessage(e.message);
 				}
 				else {
-					if(path.parse(d).ext == 'm3u8') {
+					if(path.parse(d).ext == '.m3u8') {
 						res.result.setResult(1);
 						res.result.setMessage(d);
 					}
