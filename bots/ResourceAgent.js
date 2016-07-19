@@ -42,6 +42,7 @@ Bot.prototype.channelResource = function (resource, cb) {
   if(channel === undefined) {
     var e = new Error('channel not found');
     e.code = '39201';
+		cb(e);
   }
   else {
     var link, tmp = url.parse(channel.path);
