@@ -2,7 +2,7 @@ const ParentBot = require('./_Bot.js');
 const util = require('util');
 const dvalue = require('dvalue');
 
-const requestTimeout = 3000;
+const requestTimeout = 5000;
 const gc = 3600000;
 
 var logger;
@@ -40,7 +40,7 @@ Bot.prototype.middlewareProcess = function (req, res, next) {
     self.addJob(res.result);
     res.result.setResult(2);
     res.result.setMessage('still processing');
-    res.json(res.result.toJSON());
+    try{ res.json(res.result.toJSON()); } catch(e) {}
     logger.info.warn(req.method, req.url, 'timeout', req.session.ip);
 
     res.result.resetError();

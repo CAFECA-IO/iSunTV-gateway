@@ -80,7 +80,6 @@ returnData = function(req, res, next) {
 		json = res.result.response();
 		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-\.]+$").test(json.message);
 		isURL = new RegExp("https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,}").test(json.message);
-
 		if(res.result.isDone()) {
 			session = res.result.getSession();
 
@@ -108,12 +107,12 @@ returnData = function(req, res, next) {
 			var crawler = http.request(options, function (cRes) {
 			  res.header('Content-Type', cRes.headers['content-type']);
 			  cRes.on('data', function (chunk) {
-			    res.send(chunk);
+			    res.write(chunk);
 			  });
 			  cRes.on('end', function () {
 			    res.end();
 			  })
-			}).end();
+			}).on('error', function (e) {}).end();
 		}
 		else if(json.result >= 100) {
 			res.status(json.result);
@@ -387,22 +386,57 @@ Bot.prototype.init = function(config) {
 	this.router.get('/auth/facebook/token/:access_token', checkHashCash, function (req, res, next) { passportBot.facebook_token(req, res, next); });
 
 	// test stream
-	this.router.get('/channel/:channel/streaming', function (req, res, next) {
-		res.result.setResult(1);
-		res.result.setMessage('application/vnd.apple.mpegurl');
-		var options = url.parse('http://vodcdn.newsun.tv/vod/WoDiJiaRen_07.m3u8');
-		options.method = 'GET';
-		var crawler = http.request(options, function (cRes) {
-
-			var remotedata = '';
-			cRes.on('data', function (chunk) {
-				remotedata += chunk.toString();
+	this.router.get('/channel/:channel/*', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var skip = new RegExp('^/channel/' + req.params.channel);
+		var resource = {
+			channel: req.params.channel,
+			path: req.path.replace(skip, '')
+		};
+		if(resource.path == '/streaming') {
+			bot.parseChannel(resource, function (e, d) {
+				if(e) {
+					res.result.setErrorCode(e.code);
+					res.result.setMessage(e.message);
+					next();
+				}
+				else {
+					res.result.setResult(1);
+					res.result.setMessage('application/vnd.apple.mpegurl');
+					var options = url.parse(d);
+					options.method = 'GET';
+					var crawler = http.request(options, function (cRes) {
+						var remotedata = '';
+						cRes.on('data', function (chunk) {
+							remotedata += chunk.toString();
+						});
+						cRes.on('end', function () {
+							res.result.setData(remotedata);
+							next();
+						})
+					}).end();
+				}
 			});
-			cRes.on('end', function () {
-				res.result.setData(remotedata);
+		}
+		else {
+			bot.channelResource(resource, function (e, d) {
+				if(e) {
+					res.result.setErrorCode(e.code);
+					res.result.setMessage(e.message);
+				}
+				else {
+					if(path.parse(d).ext == 'm3u8') {
+						res.result.setResult(1);
+						res.result.setMessage(d);
+					}
+					else {
+						res.result.setResult(302);
+						res.result.setData({Location: d});
+					}
+				}
 				next();
-			})
-		}).end();
+			});
+		}
 	});
 };
 
