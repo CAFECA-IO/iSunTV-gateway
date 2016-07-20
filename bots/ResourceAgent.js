@@ -1,6 +1,7 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
 const http = require('http');
+const https = require('https');
 const url = require('url');
 const path = require('path');
 const dvalue = require('dvalue');
@@ -8,11 +9,20 @@ const dvalue = require('dvalue');
 var logger;
 
 var request = function (options, cb) {
+	var operator;
 	if(typeof(options) == 'string') { options = url.parse(options); }
 	options = dvalue.default(options, {
 		method: 'GET'
 	});
-	http.request(options, function (res) {
+	switch(options.protocol) {
+		case 'https:':
+			operator = https;
+			options.rejectUnauthorized = false;
+			break;
+		default:
+			operator = http;
+	}
+	var crawler = operator.request(options, function (res) {
 		var rs = {
 			headers: res.headers,
 			data: new Buffer([])
@@ -23,13 +33,15 @@ var request = function (options, cb) {
 		res.on('end', function () {
 			switch(options.datatype) {
 				case 'json':
-					try { rs.data = JSON.parse(rs.data); }
-					catch(e) { return cb(e); }
+					try { rs.data = JSON.parse(rs.data); } catch(e) { return cb(e); }
 					break;
 			}
 			cb(null, rs)
 		})
-	}).on('error', function (e) { cb(e); }).end();
+	});
+	crawler.on('error', function (e) { cb(e); })
+	crawler.write(JSON.stringify(options.post));
+	crawler.end();
 };
 
 var Bot = function (config) {
@@ -50,7 +62,7 @@ Bot.prototype.start = function () {
 };
 
 Bot.prototype.descChannel = function (resource, cb) {
-	
+
 };
 Bot.prototype.parseChannel = function (resource, cb) {
 	var self = this;
