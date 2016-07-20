@@ -40,7 +40,7 @@ var request = function (options, cb) {
 		})
 	});
 	crawler.on('error', function (e) { cb(e); })
-	crawler.write(JSON.stringify(options.post));
+	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
 };
 
