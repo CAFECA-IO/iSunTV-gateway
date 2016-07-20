@@ -1,5 +1,6 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
+const path = require('path');
 const dvalue = require('dvalue');
 
 const requestTimeout = 5000;
@@ -36,7 +37,8 @@ Bot.prototype.middleware = function () {
 Bot.prototype.middlewareProcess = function (req, res, next) {
   var self = this;
   setTimeout(function () {
-    if(res.finished) { return; }
+		var message = res.result.toJSON().message;
+    if(res.finished || message) { return; }
     self.addJob(res.result);
     res.result.setResult(2);
     res.result.setMessage('still processing');
