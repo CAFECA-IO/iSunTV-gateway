@@ -117,7 +117,7 @@ returnData = function(req, res, next) {
 			  cRes.on('end', function () {
 			    res.end();
 			  })
-			}).on('error', function (e) {}).end();
+			}).on('error', function (e) { res.end(); }).end();
 		}
 		else if(json.result >= 100) {
 			res.status(json.result);
@@ -298,7 +298,8 @@ Bot.prototype.init = function(config) {
 		var user = {
 			account: req.body.email,
 			email: req.body.email,
-			password: req.body.password
+			password: req.body.password,
+			allowmail: req.body.allowmail
 		};
 		var bot = self.getBot('User');
 		bot.addUser(user, function (e, d) {
@@ -309,7 +310,8 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('user register');
-				res.result.setData({uid: d._id});
+				res.result.setData(d);
+				res.result.setSession({uid: d.uid});
 			}
 			next();
 		});
@@ -326,8 +328,8 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('user verification');
-				res.result.setData({uid: d._id});
-				res.result.setSession({uid: d._id});
+				res.result.setData({uid: d.uid});
+				res.result.setSession({uid: d.uid});
 			}
 			next();
 		});

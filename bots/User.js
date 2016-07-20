@@ -57,7 +57,9 @@ var formatUser = function (user) {
 		email: "",
 		ctime: new Date().getTime(),
 		ltime: 0,
-		enable: false,
+		enable: true,
+		verified: false,
+		allowmail: false,
 		status: 1
 	});
 	return user;
@@ -72,7 +74,9 @@ var descUser = function (user) {
 		email: "",
 		ctime: new Date().getTime(),
 		ltime: 0,
-		enable: false,
+		enable: true,
+		verified: false,
+		allowmail: false,
 		status: 1
 	});
 	if(user.username.length == 0) { user.username = user.email; }
@@ -156,8 +160,19 @@ Bot.prototype.addUser = function (user, cb) {
 	// no merge -> create user
 	var condition = {account: user.account, enable: true};
 	var subCondition = mergeCondition(userdata);
+	/*
 	q.fcall(function () { return self.mergeUser(subCondition, USERPROFILE); })
 	 .then(function (v) { if(v) { return v; } else { return self.createUser(user); }})
+	 */
+	q.fcall(function () { return self.createUser(user); })
+	 .then(function (v) {
+		 var deferred = q.defer();
+		 self.createToken(v, function (e, d) {
+			 if(e) { deferred.reject(e); }
+			 else { deferred.resolve(d); }
+		 });
+		 return deferred.promise;
+	 })
 	 .then(function (v) {
 		  cb(null, v);
 	  },
@@ -219,14 +234,14 @@ Bot.prototype.createUser = function (user) {
 Bot.prototype.emailVerification = function (user, cb) {
 	var self = this;
 	var condition = {account: user.account, validcode: user.validcode};
-	var updateQuery = {$set: {enable: true}, $unset: {validcode: ""}};
+	var updateQuery = {$set: {verified: true}, $unset: {validcode: ""}};
 	var collection = this.db.collection('Users');
 	collection.findAndModify(condition, {}, updateQuery, {}, function (e, d) {
 		if(e) { e.code = '01003'; cb(e); }
 		else if(!d.value) { e = new Error('incorrect code'); e.code = '19101'; cb(e); }
 		else {
 			self.cleanInvalidAccount(condition, function () {});
-			cb(null, d.value);
+			self.createToken(d.value, cb);
 		}
 	});
 };
@@ -301,7 +316,6 @@ Bot.prototype.mergeUser = function (condition, profile) {
 Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 	var deferred = q.defer();
 	var collection = this.db.collection('Users');
-	USERPROFILE.enable = true;
 	collection.insert(USERPROFILE, {}, function (e, d) {
 		if(e) { deferred.reject(e); }
 		else { deferred.resolve(USERPROFILE); }
@@ -312,6 +326,8 @@ Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 Bot.prototype.getUserBy3rdParty = function (user, cb) {
 	var self = this;
 	var USERPROFILE = formatUser(user.profile);
+	USERPROFILE.enable = true;
+	USERPROFILE.verified = true;
 	// check account existing
 	// if account not exists, check mergeable account
 	// if account still not exists, create one
