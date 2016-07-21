@@ -4,6 +4,8 @@ logs
 
 # Runtime data
 pids
+PID
+UUID
 *.pid
 *.seed
 
