@@ -11,7 +11,7 @@ const crypto = require('crypto');
 const path = require('path');
 const url = require('url');
 const bodyParser = require('body-parser');
-const multer  = require('multer');
+const multer = require('multer');
 const http = require('http');
 const echashcash = require('echashcash');
 const ecresult = require('ecresult');
@@ -110,13 +110,13 @@ returnData = function(req, res, next) {
 			var options = url.parse(json.message);
 			options.method = 'GET';
 			var crawler = http.request(options, function (cRes) {
-			  res.header('Content-Type', cRes.headers['content-type']);
-			  cRes.on('data', function (chunk) {
-			    res.write(chunk);
-			  });
-			  cRes.on('end', function () {
-			    res.end();
-			  })
+				res.header('Content-Type', cRes.headers['content-type']);
+				cRes.on('data', function (chunk) {
+					res.write(chunk);
+				});
+				cRes.on('end', function () {
+					res.end();
+				})
 			}).on('error', function (e) { res.end(); }).end();
 		}
 		else if(json.result >= 100) {

@@ -54,7 +54,7 @@ util.inherits(Bot, ParentBot);
 Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
 	logger = config.logger;
-  this.channels = [];
+	this.channels = [];
 };
 
 Bot.prototype.start = function () {
@@ -66,8 +66,8 @@ Bot.prototype.descChannel = function (resource, cb) {
 };
 Bot.prototype.parseChannel = function (resource, cb) {
 	var self = this;
-  var channel = dvalue.search({id: resource.channel}, this.channels);
-  if(channel === undefined) {
+	var channel = dvalue.search({id: resource.channel}, this.channels);
+	if(channel === undefined) {
 		var options = url.parse('http://app.chinasuntv.com/index.php/api/getLiveStreamUrl');
 		options.datatype = 'json';
 		request(options, function (e, d) {
@@ -85,25 +85,25 @@ Bot.prototype.parseChannel = function (resource, cb) {
 				cb(null, link);
 			}
 		});
-  }
-  else {
-    cb(null, channel.url);
-  }
+	}
+	else {
+		cb(null, channel.url);
+	}
 };
 // resource.path, resource.channel
 Bot.prototype.channelResource = function (resource, cb) {
-  var channel = dvalue.search({id: resource.channel}, this.channels);
-  if(channel === undefined) {
-    var e = new Error('channel not found');
-    e.code = '39201';
+	var channel = dvalue.search({id: resource.channel}, this.channels);
+	if(channel === undefined) {
+		var e = new Error('channel not found');
+		e.code = '39201';
 		cb(e);
-  }
-  else {
-    var link, tmp = url.parse(channel.path);
-    tmp.pathname = path.join(tmp.path, resource.path);
-    var link = url.format(tmp);
-    cb(null, link);
-  }
+	}
+	else {
+		var link, tmp = url.parse(channel.path);
+		tmp.pathname = path.join(tmp.path, resource.path);
+		var link = url.format(tmp);
+		cb(null, link);
+	}
 };
 
 Bot.prototype.request = request;
