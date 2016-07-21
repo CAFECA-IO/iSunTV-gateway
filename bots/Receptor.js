@@ -299,7 +299,7 @@ Bot.prototype.init = function(config) {
 			account: req.body.email,
 			email: req.body.email,
 			password: req.body.password,
-			allowmail: req.body.allowmail
+			allowmail: !!req.body.allowmail
 		};
 		var bot = self.getBot('User');
 		bot.addUser(user, function (e, d) {

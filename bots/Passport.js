@@ -30,6 +30,7 @@ Bot.prototype.init = function (config) {
         emails: profile.emails.map(function (v) { return v.value; }),
         photo: profile.photos[0].value,
         photos: profile.photos.map(function (v) { return v.value; }),
+				allowmail: true,
         facebook: {
           id: profile.id,
           username: profile.displayName,
@@ -159,10 +160,7 @@ Bot.prototype.facebook_token = function (req, res, next) {
           res.result.setResult(1);
           res.result.setMessage('Login with Facebook');
           res.result.setData(d);
-          res.setSession({
-            uid: d.uid,
-            test: 123
-          });
+          res.setSession({uid: d.uid});
         }
         next();
       });
