@@ -55,6 +55,7 @@ var formatUser = function (user) {
 		username: "",
 		role: 1,
 		email: "",
+		photo: "",
 		ctime: new Date().getTime(),
 		ltime: 0,
 		enable: true,
@@ -72,6 +73,7 @@ var descUser = function (user) {
 		username: "",
 		role: 1,
 		email: "",
+		photo: "",
 		ctime: new Date().getTime(),
 		ltime: 0,
 		enable: true,
@@ -80,6 +82,8 @@ var descUser = function (user) {
 		status: 1
 	});
 	if(user.username.length == 0) { user.username = user.email; }
+	if(user.email.length == 0 && user.emails.length > 0) { user.email = user.emails[0]; }
+	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
 	delete user._id;
 	delete user.password;
 	return user;
