@@ -579,6 +579,13 @@ Bot.prototype.logout = function (token, cb) {
 /* forget password */
 /* require: user.email */
 Bot.prototype.forgetPassword = function (user, cb) {
+	var code = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
+	var collection = this.db.collection('Users');
+	collection.findOne(condition, {}, function (e, user) {
+		if(e) { e.code = '01002'; cb(e); }
+		else if(!user) { e = new Error('User not found'); e.code = '39102'; cb(e); }
+		else { cb(null, addMailHistory(user.email); }
+	});
 };
 
 /* reset password */
