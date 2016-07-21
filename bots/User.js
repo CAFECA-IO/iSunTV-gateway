@@ -13,6 +13,8 @@ var tokenLife = 86400000;
 var renewLife = 8640000000;
 var maxUser = 10;
 
+var logger;
+
 var CRCTable = (function() {
 	var c = 0, table = new Array(256);
 
@@ -86,7 +88,8 @@ var descUser = function (user) {
 	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
 	delete user._id;
 	delete user.password;
-	return user;
+	delete user.validcode
+	return user.reset;
 };
 var mergeCondition = function (user) {
 	var condition;
@@ -117,6 +120,7 @@ util.inherits(Bot, ParentBot);
 
 Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
+	logger = config.logger;
 	this.mailHistory = {};
 };
 
@@ -441,33 +445,6 @@ Bot.prototype.deleteUser = function (user, cb) {
 		}
 	});
 };
-Bot.prototype.changePassword = function (user, cb) {
-	if(typeof(user) != 'object' || user.uid !== undefined) {
-		var e = new Error('Invalid data');
-		e.code = -1;
-		return cb(e);
-	}
-	var cond = {_id: user.uid, password: user.oldpassword};
-	var updateQuery = {$set: {password: user.password}};
-	var collection = this.db.collection('Users');
-	collection.findAndModify(
-		cond,
-		{},
-		updateQuery,
-		{},
-		function (e, d) {
-			if(e) { e.code = 0; return cb(e); }
-			else if(!d) {
-				e = new Error("user not found");
-				e.code = 1;
-				return cb(e);
-			}
-			else {
-				return cb(null, {});
-			}
-		}
-	);
-};
 
 Bot.prototype.getUserList = function () {
 	return this.userlist;
@@ -599,81 +576,41 @@ Bot.prototype.logout = function (token, cb) {
 	cb(null);
 };
 
+/* forget password */
+/* require: user.email */
+Bot.prototype.forgetPassword = function (user, cb) {
+};
+
 /* reset password */
-/* require: email */
-Bot.prototype.resetPassword = function (email, cb) {
-	var self = this;
-	var collection = this.db.collection('Users');
-	collection.findOne({account: email}, {}, function (e, user) {
-		if(e) { return cb(e); }
-		else if(!user) {
-			e = new Error("email not found: " + email);
-			e.code = 3;
-			return cb(e);
-		}
-		else if(!user.key) {
-			e = new Error("Need to verify email address");
-			e.code = 1;
-			e.uid = user._id.toString();
-			return cb(e);
-		}
-		else {
-			if(this.addMailHistory(email)) {
-				var bot = self.getBot("Mailer");
-				var password = dvalue.randomID(12);
-				var encPassword = crypto.createHash('md5').update(password).update(':iSunCloud').digest('hex');
-				var subject = 'iSunCloud - Reset Password'
-				var content = dvalue.sprintf('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>iSunCloud</title></head><body style="margin: 0px;  font-family: Trebuchet MS, sans-serif, Helvetica, Microsoft JhengHei;  font-size: .8em;color: #332e3c;"><div style="width: 500px;margin: 10px auto;padding: 10px;border-radius: 5px;background: #E8DCB9;text-align: center;"><div style="font-size: 2em;text-align: center;">iSunCloud - forget password</div><div><div style="margin-top: 20px;">New Password:</div><div style="color: #885533;font-size: 1.5em;">%s</div></div></div></body></html>', password);
-				bot.send(email, subject, content, function () {});
-				collection.findAndModify(
-					{_id: user._id},
-					{},
-					{$set: {password: encPassword}},
-					{},
-					function (e, d) {
-						if(e) { return cb(e); }
-						else {
-							var rs = { uid: user._id.toString(), password: password };
-							return cb(null, rs);
-						}
-					}
-				);
-			}
-			else {
-				var e = new Error("You have reached a limit for sending email: " + email);
-				e.code = 2;
-				return cb(e);
-			}
-		}
-	});
+/* require: options.resetcode, options.password */
+Bot.prototype.resetPassword = function (options, cb) {
 };
 
 /* change password */
-/* require: uid, oldpassword, newpassword */
-Bot.prototype.changePassword = function (options, cb) {
-	options = dvalue.default(options, {
-		uid: "",
-		oldpassword: "",
-		password: ""
-	});
+/* require: user.uid, user.password_old, user.password_new */
+Bot.prototype.changePassword = function (user, cb) {
+	if(typeof(user) != 'object' || user.uid == undefined) {
+		var e = new Error('Invalid user data');
+		e.code = '19102';
+		return cb(e);
+	}
+	var cond = {_id: new mongodb.ObjectID(user.uid), password: user.password_old};
+	var updateQuery = {$set: {password: user.password_new}};
 	var collection = this.db.collection('Users');
-	var uid = options.uid;
-	var oldpassword = options.oldpassword;
-	var password = options.passwrod;
 	collection.findAndModify(
-		{_id: uid, password: oldpassword},
+		cond,
 		{},
-		{$set: {password: password}},
+		updateQuery,
 		{},
 		function (e, d) {
-			if(e) { return cb(e); }
-			else if(!d) {
-				e = new Error("password error");
-				e.code = 1;
+			if(e) { e.code = 0; return cb(e); }
+			else if(!d.value) {
+				e = new Error("incorrect old password");
+				e.code = '19103';
 				return cb(e);
 			}
 			else {
-				return cb();
+				return cb(null, {});
 			}
 		}
 	);

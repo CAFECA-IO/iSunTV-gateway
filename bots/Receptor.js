@@ -335,7 +335,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// user login
-	this.router.post('/login', function (req, res, next) {
+	this.router.post('/login', checkHashCash, function (req, res, next) {
 		var user = {account: req.body.account, password: req.body.password};
 		var bot = self.getBot('User');
 		bot.login(user, function (e, d) {
@@ -381,6 +381,64 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('token renew');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// forget password
+	this.router.post('/password/forget', checkHashCash, function (req, res, next) {
+		var user = {email: req.body.email};
+		var bot = self.getBot('User');
+		bot.forgetPassword(user, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('request change password');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// reset password
+	this.router.put('/password/forget', checkHashCash, function (req, res, next) {
+		var options = {
+			resetcode: req.body.resetcode,
+			password: req.body.password
+		};
+		var bot = self.getBot('User');
+		bot.resetPassword(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('successful password reset');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// change password
+	this.router.put('/password/', checkLogin, function (req, res, next) {
+		var user = {
+			uid: req.session.uid,
+			password_old: req.body.password_old,
+			password_new: req.body.password_new
+		};
+		var bot = self.getBot('User');
+		bot.changePassword(user, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('successful password change');
 				res.result.setData(d);
 			}
 			next();
