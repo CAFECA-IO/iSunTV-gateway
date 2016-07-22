@@ -404,8 +404,9 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// reset password
-	this.router.put('/password/forget', checkHashCash, function (req, res, next) {
+	this.router.put('/password/reset/:uid', checkHashCash, function (req, res, next) {
 		var options = {
+			uid: req.params.uid,
 			resetcode: req.body.resetcode,
 			password: req.body.password
 		};

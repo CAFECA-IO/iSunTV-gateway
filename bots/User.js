@@ -12,6 +12,7 @@ const textype = require('textype');
 var tokenLife = 86400000;
 var renewLife = 8640000000;
 var maxUser = 10;
+var ResetLife = 86400000;
 
 var logger;
 
@@ -580,11 +581,69 @@ Bot.prototype.logout = function (token, cb) {
 /* forget password */
 /* require: user.email */
 Bot.prototype.forgetPassword = function (user, cb) {
+	var self = this;
+	if(!textype.isEmail(user.email)) {
+		var e = new Error("Invalid e-mail");
+		e.code = '12001';
+		return cb(e);
+	}
+	var create = new Date().getTime();
+	var code = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
+	var json = { code: code, create: create };
+	var updateQuery = {$set: {reset: json}};
+	var collection = this.db.collection('Users');
+	var cond = {account: user.email, enable: true};
+	collection.findAndModify(
+		cond,
+		{},
+		updateQuery,
+		{},
+		function (e, d) {
+			if(e) { e.code = '01002' ; return cb(e); }
+			else if(!d.value) {
+				e = new Error('User not found');
+				e.code = '39102';
+				cb(e);
+			}
+			else {
+				if(self.addMailHistory(d.value.email)){
+					var bot = self.getBot('Mailer');
+					bot.send(user.email, 'Welcome to iSunTV - Forget password', code, function () {});
+					cb(null, { uid:d.value._id });
+				}
+				else{
+					e = new Error('e-mail sending quota exceeded');
+					e.code = '42001';
+					cb(e);
+				}
+			}
+		}
+	);
 };
 
 /* reset password */
-/* require: options.resetcode, options.password */
+/* require: options.resetcode, options.password, options.uid */
 Bot.prototype.resetPassword = function (options, cb) {
+	var cond = {_id: new mongodb.ObjectID(options.uid), 'reset.code': options.resetcode, 'reset.create': {$gt: new Date().getTime() - ResetLife}};
+	var updateQuery = {$set: {password: options.password}, $unset: {reset: ''}};
+	var collection = this.db.collection('Users');
+	collection.findAndModify(
+		cond,
+		{},
+		updateQuery,
+		{},
+		function (e, d) {
+			if(e) { e.code = '01002'; return cb(e); }
+			else if(!d.value) {
+				e = new Error("invalid reset code");
+				e.code = '19104';
+				return cb(e);
+			}
+			else {
+				return cb(null, {});
+			}
+		}
+	);
 };
 
 /* change password */
