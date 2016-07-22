@@ -225,9 +225,8 @@ Bot.prototype.createUser = function (user) {
 				else {
 					subdeferred.resolve(USERPROFILE);
 					var bot = self.getBot('Mailer');
-					var uri = dvalue.sprintf('/register/%s/%s', USERPROFILE.email, USERPROFILE.validcode);
-					var comfirmURL = path.join(self.config.url, uri);
-					bot.send(USERPROFILE.email, 'Welcom to iSunTV - Account Verification', comfirmURL, function () {})
+					var opt = {email: user.email, validcode: USERPROFILE.validcode};
+					self.sendVericicationMail(opt, function () {});
 				}
 			});
 		}
@@ -240,6 +239,48 @@ Bot.prototype.createUser = function (user) {
 		.then(deferred.resolve, deferred.reject)
 		.done();
 	return deferred.promise;
+};
+Bot.prototype.sendVericicationMail = function (options, cb) {
+	var self = this;
+	var bot = this.getBot('Mailer');
+	var send;
+	if(!textype.isEmail(options.email)) {
+		var e = new Error("Invalid e-mail");
+		e.code = '12001';
+		return cb(e);
+	}
+
+	send = function (data) {
+		if(self.addMailHistory(data.mail)) {
+			var tmp = url.parse(self.config.url);
+			var uri = dvalue.sprintf('/register/%s/%s', data.email, data.validcode);
+			tmp.pathname = path.join(tmp.pathname, uri);
+			data.comfirmURL = url.format(tmp);
+			bot.send(data.email, 'Welcom to iSunTV - Account Verification', data.comfirmURL, function () {});
+			cb(null, {});
+		}
+		else {
+			var e = new Error('e-mail sending quota exceeded');
+			e.code = '42001';
+			cb(e);
+		}
+	}
+
+	if(options.validcode) {
+		send(options);
+	}
+	else {
+		var condition = {account: options.email, verified: {$ne: true}, validcode: {$exists: true}};
+		var collection = this.db.collection('Users');
+		collection.findOne(condition, {}, function (e, d) {
+			if(e) { e.code = '01002'; cb(e); }
+			else if(!d) { e = new Error('User not found'); e.code = '39102'; cb(e); }
+			else {
+				options.validcode = d.validcode;
+				send(options);
+			}
+		});
+	}
 };
 Bot.prototype.emailVerification = function (user, cb) {
 	var self = this;
