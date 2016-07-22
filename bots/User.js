@@ -12,6 +12,7 @@ const textype = require('textype');
 var tokenLife = 86400000;
 var renewLife = 8640000000;
 var maxUser = 10;
+var ResetLife = 86400000;
 
 var logger;
 
@@ -224,9 +225,8 @@ Bot.prototype.createUser = function (user) {
 				else {
 					subdeferred.resolve(USERPROFILE);
 					var bot = self.getBot('Mailer');
-					var uri = dvalue.sprintf('/register/%s/%s', USERPROFILE.email, USERPROFILE.validcode);
-					var comfirmURL = path.join(self.config.url, uri);
-					bot.send(USERPROFILE.email, 'Welcom to iSunTV - Account Verification', comfirmURL, function () {})
+					var opt = {email: user.email, validcode: USERPROFILE.validcode};
+					self.sendVericicationMail(opt, function () {});
 				}
 			});
 		}
@@ -239,6 +239,48 @@ Bot.prototype.createUser = function (user) {
 		.then(deferred.resolve, deferred.reject)
 		.done();
 	return deferred.promise;
+};
+Bot.prototype.sendVericicationMail = function (options, cb) {
+	var self = this;
+	var bot = this.getBot('Mailer');
+	var send;
+	if(!textype.isEmail(options.email)) {
+		var e = new Error("Invalid e-mail");
+		e.code = '12001';
+		return cb(e);
+	}
+
+	send = function (data) {
+		if(self.addMailHistory(data.mail)) {
+			var tmp = url.parse(self.config.url);
+			var uri = dvalue.sprintf('/register/%s/%s', data.email, data.validcode);
+			tmp.pathname = path.join(tmp.pathname, uri);
+			data.comfirmURL = url.format(tmp);
+			bot.send(data.email, 'Welcom to iSunTV - Account Verification', data.comfirmURL, function () {});
+			cb(null, {});
+		}
+		else {
+			var e = new Error('e-mail sending quota exceeded');
+			e.code = '42001';
+			cb(e);
+		}
+	}
+
+	if(options.validcode) {
+		send(options);
+	}
+	else {
+		var condition = {account: options.email, verified: {$ne: true}, validcode: {$exists: true}};
+		var collection = this.db.collection('Users');
+		collection.findOne(condition, {}, function (e, d) {
+			if(e) { e.code = '01002'; cb(e); }
+			else if(!d) { e = new Error('User not found'); e.code = '39102'; cb(e); }
+			else {
+				options.validcode = d.validcode;
+				send(options);
+			}
+		});
+	}
 };
 Bot.prototype.emailVerification = function (user, cb) {
 	var self = this;
@@ -580,11 +622,69 @@ Bot.prototype.logout = function (token, cb) {
 /* forget password */
 /* require: user.email */
 Bot.prototype.forgetPassword = function (user, cb) {
+	var self = this;
+	if(!textype.isEmail(user.email)) {
+		var e = new Error("Invalid e-mail");
+		e.code = '12001';
+		return cb(e);
+	}
+	var create = new Date().getTime();
+	var code = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
+	var json = { code: code, create: create };
+	var updateQuery = {$set: {reset: json}};
+	var collection = this.db.collection('Users');
+	var cond = {account: user.email, enable: true};
+	collection.findAndModify(
+		cond,
+		{},
+		updateQuery,
+		{},
+		function (e, d) {
+			if(e) { e.code = '01002' ; return cb(e); }
+			else if(!d.value) {
+				e = new Error('User not found');
+				e.code = '39102';
+				cb(e);
+			}
+			else {
+				if(self.addMailHistory(d.value.email)){
+					var bot = self.getBot('Mailer');
+					bot.send(user.email, 'Welcome to iSunTV - Forget password', code, function () {});
+					cb(null, { uid:d.value._id });
+				}
+				else{
+					e = new Error('e-mail sending quota exceeded');
+					e.code = '42001';
+					cb(e);
+				}
+			}
+		}
+	);
 };
 
 /* reset password */
-/* require: options.resetcode, options.password */
+/* require: options.resetcode, options.password, options.uid */
 Bot.prototype.resetPassword = function (options, cb) {
+	var cond = {_id: new mongodb.ObjectID(options.uid), 'reset.code': options.resetcode, 'reset.create': {$gt: new Date().getTime() - ResetLife}};
+	var updateQuery = {$set: {password: options.password}, $unset: {reset: ''}};
+	var collection = this.db.collection('Users');
+	collection.findAndModify(
+		cond,
+		{},
+		updateQuery,
+		{},
+		function (e, d) {
+			if(e) { e.code = '01002'; return cb(e); }
+			else if(!d.value) {
+				e = new Error("invalid reset code");
+				e.code = '19104';
+				return cb(e);
+			}
+			else {
+				return cb(null, {});
+			}
+		}
+	);
 };
 
 /* change password */

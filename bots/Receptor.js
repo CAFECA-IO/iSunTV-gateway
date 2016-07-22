@@ -316,6 +316,22 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// resend verify email
+	this.router.get('/resend/:email', checkHashCash, function (req, res, next) {
+		var options = { email: req.params.email };
+		var bot = self.getBot('User');
+		bot.sendVericicationMail(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Resend verify code');
+			}
+			next();
+		});
+	});
 	// user verification
 	this.router.get('/register/:account/:validcode', function (req, res, next) {
 		var user = {account: req.params.account, validcode: req.params.validcode};
@@ -404,8 +420,9 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// reset password
-	this.router.put('/password/forget', checkHashCash, function (req, res, next) {
+	this.router.put('/password/reset/:uid', checkHashCash, function (req, res, next) {
 		var options = {
+			uid: req.params.uid,
 			resetcode: req.body.resetcode,
 			password: req.body.password
 		};

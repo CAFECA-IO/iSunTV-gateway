@@ -39,7 +39,7 @@ Bot.prototype.send = function (email, subject, content, cb) {
 		subject: subject,
 		html: content
 	};
-	mailTransport.sendMail(mailOptions, function(e, d) {});
+	mailTransport.sendMail(mailOptions, cb);
 };
 
 module.exports = Bot;
