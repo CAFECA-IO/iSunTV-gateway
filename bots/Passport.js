@@ -30,7 +30,7 @@ Bot.prototype.init = function (config) {
 				emails: profile.emails.map(function (v) { return v.value; }),
 				photo: profile.photos[0].value,
 				photos: profile.photos.map(function (v) { return v.value; }),
-				allowmail: true,
+				allowmail: false,
 				facebook: {
 					id: profile.id,
 					username: profile.displayName,
