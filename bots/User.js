@@ -580,7 +580,12 @@ Bot.prototype.logout = function (token, cb) {
 /* require: user.email */
 Bot.prototype.forgetPassword = function (user, cb) {
 	var self = this;
-	var create = new Date().getTime().toString();
+	if(!textype.isEmail(user.email)) {
+		var e = new Error("Invalid e-mail");
+		e.code = '12001';
+		return cb(e);
+	}
+	var create = new Date().getTime();
 	var code = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
 	var json = { code: code, create: create };
 	var updateQuery = {$set: {reset: json}};
