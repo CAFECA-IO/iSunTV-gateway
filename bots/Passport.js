@@ -159,9 +159,8 @@ Bot.prototype.facebook_token = function (req, res, next) {
           res.result.setResult(1);
           res.result.setMessage('Login with Facebook');
           res.result.setData(d);
-          res.setSession({
-            uid: d.uid,
-            test: 123
+          res.result.setSession({
+            uid: d.uid
           });
         }
         next();
