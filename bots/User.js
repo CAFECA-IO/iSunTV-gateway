@@ -91,6 +91,7 @@ var descUser = function (user) {
 	delete user.password;
 	delete user.validcode
 	delete user.reset;
+	delete user.facebook;
 	return user;
 };
 var mergeCondition = function (user) {
