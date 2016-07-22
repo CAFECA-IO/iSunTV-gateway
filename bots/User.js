@@ -579,13 +579,39 @@ Bot.prototype.logout = function (token, cb) {
 /* forget password */
 /* require: user.email */
 Bot.prototype.forgetPassword = function (user, cb) {
+	var self = this;
+	var create = new Date().getTime().toString();
 	var code = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
+	var json = { code: code, create: create };
+	var updateQuery = {$set: {reset: json}};
 	var collection = this.db.collection('Users');
-	collection.findOne(condition, {}, function (e, user) {
-		if(e) { e.code = '01002'; cb(e); }
-		else if(!user) { e = new Error('User not found'); e.code = '39102'; cb(e); }
-		else { cb(null, addMailHistory(user.email); }
-	});
+	var cond = {account: user.email, enable: true};
+	collection.findAndModify(
+		cond,
+		{},
+		updateQuery,
+		{},
+		function (e, d) {
+			if(e) { e.code = '01002' ; return cb(e); }
+			else if(!d.value) {
+				e = new Error('User not found');
+				e.code = '39102';
+				cb(e);
+			}
+			else {
+				if(self.addMailHistory(d.value.email)){
+					var bot = self.getBot('Mailer');
+					bot.send(user.email, 'Welcome to iSunTV - Forget password', code, function () {});
+					cb(null, { uid:d.value._id });
+				}
+				else{
+					e = new Error('e-mail sending quota exceeded');
+					e.code = '42001';
+					cb(e);
+				}
+			}
+		}
+	);
 };
 
 /* reset password */
