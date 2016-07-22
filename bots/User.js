@@ -89,7 +89,8 @@ var descUser = function (user) {
 	delete user._id;
 	delete user.password;
 	delete user.validcode
-	return user.reset;
+	delete user.reset;
+	return user;
 };
 var mergeCondition = function (user) {
 	var condition;
