@@ -147,6 +147,117 @@ Bot.prototype.channelResource = function (resource, cb) {
 	}
 };
 
+/*
+	paymentPlans = [
+		{pid: {$pid}, text: '單租', price: {currency: 'TWD', value: 30}},
+		{pid: {$pid}, text: '月租', price: {currency: 'TWD', value: 300}},
+		{pid: {$pid}, text: '套餐', price: {currency: 'TWD', value: 90}}
+	]
+ */
+
+// banner program
+/* optional: options.page, options.limit */
+Bot.prototype.listBannerProgram = function (options, cb) {};
+
+// list featured (精選節目)
+/* optional: options.page, options.limit */
+/*
+{
+
+}
+ */
+Bot.prototype.listFeaturedProgram = function (options, cb) {};
+
+// list series
+// http://app.chinasuntv.com/index.php/api/shows?page=3&limit=10
+/* optional: options.page, options.limit */
+/*
+[{
+	eid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'episode',
+	duration: (minutes),
+	paymentPlans: []
+}]
+ */
+Bot.prototype.listSeries = function (options, cb) {};
+
+// series program data
+// http://app.chinasuntv.com/index.php/api/show?id=9
+// http://app.chinasuntv.com/index.php/api/episodes?show_id=9&page=1&limit=10
+/* optional: options.page, options.limit */
+/*
+[{
+	sid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'series',
+	programs: [
+		{eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
+	],
+	paymentPlans: []
+}]
+ */
+Bot.prototype.getSeriesProgram = function (options, cb) {};
+
+// episodes program data
+// http://app.chinasuntv.com/index.php/api/episode?id=9&page=1&limit=10
+/*
+[{
+	eid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	publish: date,
+	update: unix_timestamp,
+	type: 'episode',
+	duration: (minutes),
+	paymentPlans: []
+}]
+ */
+Bot.prototype.getEpisodeProgram = function (options, cb) {};
+
+// special series
+/* random pick series
+{
+  sid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'series/episode',
+	duration: (minutes),
+	programs: [
+	  {eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
+	],
+	paymentPlans: []
+}
+ */
+Bot.prototype.getSpecialSeries = function (options, cb) {};
+
+// latest program
+// http://app.chinasuntv.com/index.php/api/latest
+/*
+[
+	episodeProgram,
+	seriesProgram
+]
+ */
+Bot.getLatestProgram = function (cb) {};
+
 Bot.prototype.request = request;
 
 module.exports = Bot;
