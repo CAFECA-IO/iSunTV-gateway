@@ -666,26 +666,48 @@ Bot.prototype.forgetPassword = function (user, cb) {
 /* reset password */
 /* require: options.resetcode, options.password, options.uid */
 Bot.prototype.resetPassword = function (options, cb) {
-	var cond = {_id: new mongodb.ObjectID(options.uid), 'reset.code': options.resetcode, 'reset.create': {$gt: new Date().getTime() - ResetLife}};
-	var updateQuery = {$set: {password: options.password}, $unset: {reset: ''}};
+	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	var cond = {
+		_id: new mongodb.ObjectID(options.uid), 
+		'reset.code': options.resetcode, 
+		'reset.create': {$gt: new Date().getTime() - ResetLife},
+		enable: true,
+	};
 	var collection = this.db.collection('Users');
-	collection.findAndModify(
-		cond,
-		{},
-		updateQuery,
-		{},
-		function (e, d) {
-			if(e) { e.code = '01002'; return cb(e); }
-			else if(!d.value) {
-				e = new Error("invalid reset code");
-				e.code = '19104';
-				return cb(e);
-			}
-			else {
-				return cb(null, {});
-			}
+	collection.findOne(cond, {}, function (e, user) {
+		console.log(user)
+		if(e) { return cb(e); }
+		else if(!user) {
+			e = new Error("invalid reset code");
+			e.code = '19104';
+			return cb(e);
+		} 
+		else if (user.password == options.password){
+			e = new Error("duplicate password");
+			e.code = '29201';
+			return cb(e);
+		} 
+		else {
+			var updateQuery = {$set: {password: options.password}, $unset: {reset: ''}};
+			collection.findAndModify(
+				cond,
+				{},
+				updateQuery,
+				{},
+				function (e, d) {
+					if(e) { e.code = '01002'; return cb(e); }
+					else if(!d.value) {
+						e = new Error("invalid reset code");
+						e.code = '19104';
+						return cb(e);
+					}
+					else {
+						return cb(null, {});
+					}
+				}
+			);
 		}
-	);
+	});
 };
 
 /* change password */
