@@ -450,7 +450,42 @@ Bot.prototype.init = function(config) {
 	this.router.get('/auth/facebook/callback', function (req, res, next) { passportBot.facebook_callback(req, res, next); });
 	this.router.get('/auth/facebook/token/:access_token', checkHashCash, function (req, res, next) { passportBot.facebook_token(req, res, next); });
 
-	// test stream
+	// channel list
+	this.router.get('/channel/', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		bot.listChannel(function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+				next();
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Live Channel List');
+				res.result.setData(d);
+				next();
+			}
+		});
+	});
+	// channel information
+	this.router.get('/channel/:channel', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var channel = {cid: req.params.channel};
+		bot.descChannel(channel, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+				next();
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Channel Information:', d.title);
+				res.result.setData(d);
+				next();
+			}
+		});
+	});
+	// channel stream data
 	this.router.get('/channel/:channel/*', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var skip = new RegExp('^/channel/' + req.params.channel);
