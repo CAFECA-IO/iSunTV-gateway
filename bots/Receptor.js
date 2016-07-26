@@ -566,7 +566,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// Featured programs
-	this.router.get('/featured/:page/:limit', function (req, res, next) {
+	this.router.get(['/featured', '/featured/:page', '/featured/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {page: req.params.page, limit: req.params.limit};
 		bot.listFeaturedProgram(options, function (e, d) {
@@ -576,14 +576,14 @@ Bot.prototype.init = function(config) {
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('Banner Programs List');
+				res.result.setMessage('Featured Programs List');
 				res.result.setData(d);
 			}
 			next();
 		});
 	});
 	// Series List
-	this.router.get('/series/:page/:limit', function (req, res, next) {
+	this.router.get(['/series', '/series/:page', '/series/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {page: req.params.page, limit: req.params.limit};
 		bot.listSeries(options, function (e, d) {
@@ -600,7 +600,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// Series Programs List
-	this.router.get('/series/programs/:sid/:page/:limit', function (req, res, next) {
+	this.router.get(['/series/programs/:sid', '/series/programs/:sid/:page', '/series/programs/:sid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit};
 		bot.getSeriesProgram(options, function (e, d) {
@@ -617,7 +617,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// Special Series List
-	this.router.get('/special/series/:page/:limit', function (req, res, next) {
+	this.router.get(['/special/series', '/special/series/:page', '/special/series/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit};
 		bot.getSpecialSeries(options, function (e, d) {

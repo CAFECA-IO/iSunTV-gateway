@@ -185,15 +185,17 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var url = 'https://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
-	url = dvalue.sprintf(url, options.page, options.limit);
-	request(url, function(e, res){
+	var featuredUrl = 'https://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
+	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
+	featuredUrl = url.parse(featuredUrl);
+	featuredUrl.datatype = 'json';
+	request(featuredUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 		// mapping data
 		var result = [];
-		var programs = JSON.parse(res.data);
+		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
 			result.push({
@@ -244,15 +246,17 @@ Bot.prototype.listSeries = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var url = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
-	url = dvalue.sprintf(url, options.page, options.limit);
-	request(url, function(e, res){
+	var seriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	seriesUrl = dvalue.sprintf(seriesUrl, options.page, options.limit);
+	seriesUrl = url.parse(seriesUrl);
+	seriesUrl.datatype = 'json';
+	request(seriesUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 		// mapping data
 		var result = [];
-		var programs = JSON.parse(res.data);
+		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
 			result.push({
@@ -306,20 +310,24 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 	// crawl show
 	var showUrl = 'https://app.chinasuntv.com/index.php/api/show?id=%s'
 	showUrl = dvalue.sprintf(showUrl, options.sid);
+	showUrl = url.parse(showUrl);
+	showUrl.datatype = 'json';
 	request(showUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var show = JSON.parse(res.data);
+		var show = res.data;
 
 		// crawl episodes
 		var episodesUrl = 'https://app.chinasuntv.com/index.php/api/episodes?show_id=%s&page=%s&limit=%s';
 		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
+		episodesUrl = url.parse(episodesUrl);
+		episodesUrl.datatype = 'json';
 		request(episodesUrl, function(e, episodes){
 			// error
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-			var episodes = JSON.parse(res.data);
+			var episodes = res.data;
 
 			// mapping data except programs
 			var result = {
@@ -335,7 +343,6 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				paymentPlans: [], // fake data
 				playable: true,
 			}
-			console.log("AAAAAAAAAAAAa")
 			// mapping data with programs
 			for (var i = 0, len = episodes.length; i < len; i++){
 				var episode = episodes[i];
@@ -386,23 +393,21 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	// crawl the tv program api
 	var episodeUrl = 'https://app.chinasuntv.com/index.php/api/episode?id=%s'
 	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
+	episodeUrl = url.parse(episodeUrl);
+	episodeUrl.datatype = 'json';
 	request(episodeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		console.log("12345644989498984");
-		console.log(res);
-		console.log(res.data);
-		var episode = JSON.parse(res.data);
+		var episode = res.data;
 
 		// fetch valid img resources as a array
 		var imgResources = [
 			"image_cover1", "image_cover2", "image_cover3",
-		    "image_cover4" , "image_cover5" , "image_cover6",
-		    "image_cover1_full", "image_cover2_full", "image_cover3_full",
-		    "image_cover4_full", "image_cover5_full", "image_cover6_full",
+		  "image_cover4", "image_cover5", "image_cover6",
+		  "image_cover1_full", "image_cover2_full", "image_cover3_full",
+		  "image_cover4_full", "image_cover5_full", "image_cover6_full",
 		];
 		var validImgResources = imgResources.reduce(function(prev, curr){
-			console.log(prev)
 			var imageResource = episode[curr];
 			if (imageResource){ prev.push(imageResource) };
 			return prev
@@ -442,13 +447,15 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
-	var url = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
-	url = dvalue.sprintf(url, 1, 8);
-	request(url, function(e, res){
+	var specialSeriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
+	specialSeriesUrl = url.parse(specialSeriesUrl);
+	specialSeriesUrl.datatype = 'json';
+	request(specialSeriesUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var programs = JSON.parse(res.data);
+		var programs = res.data;
 		// mapping data
 		var result = {
 		    title: '中國文化專題',
@@ -487,13 +494,15 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 ]
  */
 Bot.getLatestProgram = function (cb) {
-    // crawl
-	request('https://app.chinasuntv.com/index.php/api/latest', function(e, res){
+  // crawl
+	var latestUrl = url.parse('https://app.chinasuntv.com/index.php/api/latest');
+	latestUrl.datatype = 'json';
+	request(latestUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var result = []
-		var programs = JSON.parse(res.data);
+		var result = [];
+		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
 			if (program === 'show'){
