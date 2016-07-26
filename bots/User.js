@@ -95,6 +95,7 @@ var descUser = function (user) {
 	delete user.password;
 	delete user.validcode;
 	delete user.reset;
+	delete user.facebook;
 	return user;
 };
 var mergeCondition = function (user) {
@@ -389,7 +390,7 @@ Bot.prototype.getUserBy3rdParty = function (user, cb) {
 	var condition = user.condition;
 	var subCondition = mergeCondition(user);
 	q.fcall(function () { return self.checkUserExist(condition); })
-	 .then(function (v) { if(v) { return v; } else { return self.mergeUser(subCondition, USERPROFILE); }})
+	// .then(function (v) { if(v) { return v; } else { return self.mergeUser(subCondition, USERPROFILE); }})
 	 .then(function (v) { if(v) { return v; } else { return self.addUserBy3rdParty(USERPROFILE); }})
 	 .then(function (v) {
 			cb(null, v);
