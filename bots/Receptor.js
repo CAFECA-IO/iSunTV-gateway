@@ -546,6 +546,127 @@ Bot.prototype.init = function(config) {
 			});
 		}
 	});
+
+	/* program */
+	// Banner programs
+	this.router.get('/banner/:page/:limit', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {page: req.params.page, limit: req.params.limit};
+		bot.listBannerProgram(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Banner Programs List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Featured programs
+	this.router.get('/featured/:page/:limit', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {page: req.params.page, limit: req.params.limit};
+		bot.listFeaturedProgram(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Banner Programs List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Series List
+	this.router.get('/series/:page/:limit', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {page: req.params.page, limit: req.params.limit};
+		bot.listSeries(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Series List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Series Programs List
+	this.router.get('/series/programs/:sid/:page/:limit', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit};
+		bot.getSeriesProgram(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Series Programs List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Special Series List
+	this.router.get('/special/series/:page/:limit', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit};
+		bot.getSpecialSeries(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Special Series List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// GET Program
+	this.router.get('/program/:pid', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var program = {
+			type: req.params.pid.substr(0, 1).toLowerCase(),
+			id: req.params.pid.substr(1)
+		};
+		var callbackFunction = function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Program:', req.params.pid);
+				res.result.setData(d);
+			}
+			next();
+		}
+
+		switch(program.type) {
+			case 's':
+				var options = {sid: program.id};
+				bot.getSeriesProgram(options, callbackFunction);
+				break;
+			case 'e':
+				var options = {eid: program.id};
+				bot.getEpisodeProgram(options, callbackFunction);
+			 	break;
+			default:
+				var options = {eid: program.id};
+				bot.getEpisodeProgram(options, callbackFunction);
+		}
+	});
 };
 
 Bot.prototype.start = function(cb) {
