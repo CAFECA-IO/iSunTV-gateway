@@ -160,16 +160,7 @@ Bot.prototype.channelResource = function (resource, cb) {
 Bot.prototype.listBannerProgram = function (options, cb) {};
 
 // list featured (精選節目)
-/* optional: options.page, options.limit */
-/*
-{
-
-}
- */
-Bot.prototype.listFeaturedProgram = function (options, cb) {};
-
-// list series
-// http://app.chinasuntv.com/index.php/api/shows?page=3&limit=10
+// http://app.chinasuntv.com/index.php/api/featured?page=3&limit=10
 /* optional: options.page, options.limit */
 /*
 [{
@@ -185,11 +176,45 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {};
 	paymentPlans: []
 }]
  */
-Bot.prototype.listSeries = function (options, cb) {};
+Bot.prototype.listFeaturedProgram = function (options, cb) {
+	// default value
+	options = dvalue.default(options, {
+		page: 1,
+		limit: 10,
+	});
 
-// series program data
-// http://app.chinasuntv.com/index.php/api/show?id=9
-// http://app.chinasuntv.com/index.php/api/episodes?show_id=9&page=1&limit=10
+	// crawl the tv program api
+	var url = 'http://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
+	url = dvalue.sprintf(url, options.page, options.limit);
+	request({url: url}, function(e, programs){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		// mapping data
+		var result = [];
+		for (var i = 0, len = programs.length; i <= len; i++){
+			var program = programs[i];
+			result.push({
+				eid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: 'episode',
+				duration: 2*60, // 2h, fake data
+				paymentPlans: [] // fake data
+			})
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+};
+
+// list series
+// http://app.chinasuntv.com/index.php/api/shows?page=3&limit=10
 /* optional: options.page, options.limit */
 /*
 [{
@@ -202,15 +227,127 @@ Bot.prototype.listSeries = function (options, cb) {};
 	update: unix_timestamp,
 	type: 'series',
 	programs: [
-		{eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
+		{eid: int, title: '嘿！阿弟牯'}
 	],
 	paymentPlans: []
 }]
  */
-Bot.prototype.getSeriesProgram = function (options, cb) {};
+Bot.prototype.listSeries = function (options, cb) {
+	// default value
+	options = dvalue.default(options, {
+		page: 1,
+		limit: 10,
+	});
+
+	// crawl the tv program api
+	var url = 'http://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	url = dvalue.sprintf(url, options.page, options.limit);
+	request({url: url}, function(e, programs){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		// mapping data
+		var result = [];
+		for (var i = 0, len = programs.length; i <= len; i++){
+			var program = programs[i];
+			result.push({
+				sid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: 'show',
+				duration: 2*60, // 2h, fake data
+				programs: [
+					{eid: "123", title: '嘿！阿弟牯'}
+				], // fake data
+				paymentPlans: [] // fake data
+			})
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+};
+
+// series program data
+// http://app.chinasuntv.com/index.php/api/show?id=9
+// http://app.chinasuntv.com/index.php/api/episodes?show_id=9&page=1&limit=10
+/* required: options.sid, optional: options: options.page, options.limit */
+/*
+{
+	sid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'series',
+	programs: [
+		{eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
+	],
+	paymentPlans: []
+}
+ */
+Bot.prototype.getSeriesProgram = function (options, cb) {
+	// error
+	if(!options.sid) { e = new Error('series not found'); e.code = '39401' ; return cb(e); }
+
+	// crawl show
+	var showUrl = 'http://app.chinasuntv.com/index.php/api/show?id=%s'
+	showUrl = dvalue.sprintf(showUrl, options.sid);
+	request({url: showUrl}, function(e, show){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		// crawl episodes
+		var episodesUrl = 'http://app.chinasuntv.com/index.php/api/episodes?show_id=%s&page=%s&limit=%s';
+		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
+		request({url: episodesUrl}, function(e, episodes){
+			// error
+			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+			// mapping data except programs
+			var result = {
+				sid: show.id,
+				title: show.title,
+				description: show.description,
+				cover: show.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: show.updated_at,
+				type: 'series',
+				programs: [],
+				paymentPlans: [] // fake data
+			}
+			// mapping data with programs
+			for (var i = 0, len = episodes.length; i <= len; i++){
+				var episode = episodes[i];
+				result.programs.push({
+					eid: episode.id,
+					title: episode.title,
+					description: episode.description,
+					cover: episode.image_thumb,
+					createYear: 2099, // fake data
+					publish: '2099-12-31',
+					duration: 2*60, // 2h, fake data
+					paymentPlans: [] // fake data
+				})
+			}
+
+			// return data when correct
+			cb(null, result);
+		})
+
+	})
+};
 
 // episodes program data
 // http://app.chinasuntv.com/index.php/api/episode?id=9&page=1&limit=10
+/* required: options.eid */
 /*
 [{
 	eid: '',
@@ -226,7 +363,9 @@ Bot.prototype.getSeriesProgram = function (options, cb) {};
 	paymentPlans: []
 }]
  */
-Bot.prototype.getEpisodeProgram = function (options, cb) {};
+Bot.prototype.getEpisodeProgram = function (options, cb) {
+
+};
 
 // special series
 /* random pick series
@@ -246,7 +385,9 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {};
 	paymentPlans: []
 }
  */
-Bot.prototype.getSpecialSeries = function (options, cb) {};
+Bot.prototype.getSpecialSeries = function (options, cb) {
+
+};
 
 // latest program
 // http://app.chinasuntv.com/index.php/api/latest
@@ -256,7 +397,9 @@ Bot.prototype.getSpecialSeries = function (options, cb) {};
 	seriesProgram
 ]
  */
-Bot.getLatestProgram = function (cb) {};
+Bot.getLatestProgram = function (cb) {
+	
+};
 
 Bot.prototype.request = request;
 
