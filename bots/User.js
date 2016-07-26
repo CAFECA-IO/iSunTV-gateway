@@ -76,10 +76,12 @@ var descUser = function (user) {
 		username: "",
 		role: 1,
 		email: "",
+		emails: [],
 		photo: "",
+		photos: [],
 		ctime: new Date().getTime(),
 		ltime: 0,
-		enable: true,
+		enable: false,
 		verified: false,
 		allowmail: false,
 		status: 1
@@ -88,8 +90,10 @@ var descUser = function (user) {
 	if(user.email.length == 0 && user.emails.length > 0) { user.email = user.emails[0]; }
 	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
 	delete user._id;
+	delete user.emails;
+	delete user.photos;
 	delete user.password;
-	delete user.validcode
+	delete user.validcode;
 	delete user.reset;
 	delete user.facebook;
 	return user;
@@ -511,6 +515,25 @@ Bot.prototype.listUser = function (cb) {
 	});
 };
 
+/* require: options.uid */
+Bot.prototype.updateLoginTime  = function (options, cb) {
+	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	var condition = {_id: new mongodb.ObjectID(options.uid), enable: true};
+	var updateQuery = {$set: {ltime: new Date().getTime()}};
+	var collection = this.db.collection('Users');
+	collection.findAndModify(
+		condition,
+		{},
+		updateQuery,
+		{},
+		function (e, d) {
+			if(e) { e.code = '01001'; return cb(e); }
+			else if(!d.value) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+			else { cb(null, {}); }
+		}
+	);
+};
+
 /* require: mail, password(md5) */
 /* 1: not verify, 2: failed */
 Bot.prototype.login = function (data, cb) {
@@ -537,6 +560,7 @@ Bot.prototype.login = function (data, cb) {
 };
 /* create token by user id */
 Bot.prototype.createToken = function (user, cb) {
+	var self = this;
 	if(user._id === undefined) {
 		var e = new Error('Invalid User Account');
 		e.code = '19101'
@@ -555,6 +579,7 @@ Bot.prototype.createToken = function (user, cb) {
 	};
 	collection.insert(token, {}, function (e, d) {
 		delete token._id;
+		self.updateLoginTime(token, function () {});
 		return cb(e, token);
 	});
 };
@@ -668,8 +693,8 @@ Bot.prototype.forgetPassword = function (user, cb) {
 Bot.prototype.resetPassword = function (options, cb) {
 	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
 	var cond = {
-		_id: new mongodb.ObjectID(options.uid), 
-		'reset.code': options.resetcode, 
+		_id: new mongodb.ObjectID(options.uid),
+		'reset.code': options.resetcode,
 		'reset.create': {$gt: new Date().getTime() - ResetLife},
 		enable: true,
 	};
@@ -681,12 +706,12 @@ Bot.prototype.resetPassword = function (options, cb) {
 			e = new Error("invalid reset code");
 			e.code = '19104';
 			return cb(e);
-		} 
+		}
 		else if (user.password == options.password){
 			e = new Error("duplicate password");
 			e.code = '29201';
 			return cb(e);
-		} 
+		}
 		else {
 			var updateQuery = {$set: {password: options.password}, $unset: {reset: ''}};
 			collection.findAndModify(
