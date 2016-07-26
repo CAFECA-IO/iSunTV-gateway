@@ -173,7 +173,8 @@ Bot.prototype.listBannerProgram = function (options, cb) {};
 	update: unix_timestamp,
 	type: 'episode',
 	duration: (minutes),
-	paymentPlans: []
+	paymentPlans: [],
+	playable: boolean,
 }]
  */
 Bot.prototype.listFeaturedProgram = function (options, cb) {
@@ -184,15 +185,16 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var url = 'http://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
+	var url = 'https://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
 	url = dvalue.sprintf(url, options.page, options.limit);
-	request({url: url}, function(e, programs){
+	request(url, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 		// mapping data
 		var result = [];
-		for (var i = 0, len = programs.length; i <= len; i++){
+		var programs = JSON.parse(res.data);
+		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
 			result.push({
 				eid: program.id,
@@ -204,7 +206,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 				update: program.updated_at,
 				type: 'episode',
 				duration: 2*60, // 2h, fake data
-				paymentPlans: [] // fake data
+				paymentPlans: [], // fake data
+				playable: true,
 			})
 		}
 
@@ -229,7 +232,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	programs: [
 		{eid: int, title: '嘿！阿弟牯'}
 	],
-	paymentPlans: []
+	paymentPlans: [],
+	playable: boolean,
 }]
  */
 Bot.prototype.listSeries = function (options, cb) {
@@ -240,15 +244,16 @@ Bot.prototype.listSeries = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var url = 'http://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	var url = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
 	url = dvalue.sprintf(url, options.page, options.limit);
-	request({url: url}, function(e, programs){
+	request(url, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 		// mapping data
 		var result = [];
-		for (var i = 0, len = programs.length; i <= len; i++){
+		var programs = JSON.parse(res.data);
+		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
 			result.push({
 				sid: program.id,
@@ -258,12 +263,13 @@ Bot.prototype.listSeries = function (options, cb) {
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
 				update: program.updated_at,
-				type: 'show',
+				type: 'series',
 				duration: 2*60, // 2h, fake data
 				programs: [
 					{eid: "123", title: '嘿！阿弟牯'}
 				], // fake data
-				paymentPlans: [] // fake data
+				paymentPlans: [], // fake data
+				playable: true,
 			})
 		}
 
@@ -289,7 +295,8 @@ Bot.prototype.listSeries = function (options, cb) {
 	programs: [
 		{eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
 	],
-	paymentPlans: []
+	paymentPlans: [],
+	playable: boolean,
 }
  */
 Bot.prototype.getSeriesProgram = function (options, cb) {
@@ -297,18 +304,22 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 	if(!options.sid) { e = new Error('series not found'); e.code = '39401' ; return cb(e); }
 
 	// crawl show
-	var showUrl = 'http://app.chinasuntv.com/index.php/api/show?id=%s'
+	var showUrl = 'https://app.chinasuntv.com/index.php/api/show?id=%s'
 	showUrl = dvalue.sprintf(showUrl, options.sid);
-	request({url: showUrl}, function(e, show){
+	request(showUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		var show = JSON.parse(res.data);
+
 		// crawl episodes
-		var episodesUrl = 'http://app.chinasuntv.com/index.php/api/episodes?show_id=%s&page=%s&limit=%s';
+		var episodesUrl = 'https://app.chinasuntv.com/index.php/api/episodes?show_id=%s&page=%s&limit=%s';
 		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
-		request({url: episodesUrl}, function(e, episodes){
+		request(episodesUrl, function(e, episodes){
 			// error
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+			var episodes = JSON.parse(res.data);
 
 			// mapping data except programs
 			var result = {
@@ -321,10 +332,12 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				update: show.updated_at,
 				type: 'series',
 				programs: [],
-				paymentPlans: [] // fake data
+				paymentPlans: [], // fake data
+				playable: true,
 			}
+			console.log("AAAAAAAAAAAAa")
 			// mapping data with programs
-			for (var i = 0, len = episodes.length; i <= len; i++){
+			for (var i = 0, len = episodes.length; i < len; i++){
 				var episode = episodes[i];
 				result.programs.push({
 					eid: episode.id,
@@ -334,7 +347,8 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 					createYear: 2099, // fake data
 					publish: '2099-12-31',
 					duration: 2*60, // 2h, fake data
-					paymentPlans: [] // fake data
+					paymentPlans: [], // fake data
+					playable: true,
 				})
 			}
 
@@ -346,47 +360,122 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 };
 
 // episodes program data
-// http://app.chinasuntv.com/index.php/api/episode?id=9&page=1&limit=10
+// http://app.chinasuntv.com/index.php/api/episode?id=9
 /* required: options.eid */
 /*
-[{
+{
 	eid: '',
 	title: '',
 	description: '',
 	cover: '',
+	images: [];
 	isEnd: boolean,
 	createYear: 2002,
 	publish: date,
 	update: unix_timestamp,
 	type: 'episode',
 	duration: (minutes),
-	paymentPlans: []
-}]
+	paymentPlans: [],
+	playable: boolean,
+}
  */
 Bot.prototype.getEpisodeProgram = function (options, cb) {
+	// error
+	if(!options.eid) { e = new Error('episode not found'); e.code = '39402' ; return cb(e); }
 
+	// crawl the tv program api
+	var episodeUrl = 'https://app.chinasuntv.com/index.php/api/episode?id=%s'
+	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
+	request(episodeUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+		console.log("12345644989498984");
+		console.log(res);
+		console.log(res.data);
+		var episode = JSON.parse(res.data);
+
+		// fetch valid img resources as a array
+		var imgResources = [
+			"image_cover1", "image_cover2", "image_cover3",
+		    "image_cover4" , "image_cover5" , "image_cover6",
+		    "image_cover1_full", "image_cover2_full", "image_cover3_full",
+		    "image_cover4_full", "image_cover5_full", "image_cover6_full",
+		];
+		var validImgResources = imgResources.reduce(function(prev, curr){
+			console.log(prev)
+			var imageResource = episode[curr];
+			if (imageResource){ prev.push(imageResource) };
+			return prev
+		}, []);
+
+		// mapping data
+		var result = {
+			sid: episode.id,
+			title: episode.title,
+			description: episode.description,
+			cover: episode.image_thumb,
+			images: validImgResources,
+			isEnd: true, // fake data
+			createYear: 2099, // fake data
+			update: episode.updated_at,
+			type: 'episode',
+			duration: 2*60, // 2h, fake data
+			paymentPlans: [], // fake data
+			playable: true,
+		};
+
+		// return data when correct
+		cb(null, result);
+	})
 };
 
 // special series
 /* random pick series
 {
-  sid: '',
-	title: '',
+    title: '',
 	description: '',
 	cover: '',
-	isEnd: boolean,
-	createYear: 2002,
-	update: unix_timestamp,
-	type: 'series/episode',
-	duration: (minutes),
 	programs: [
 	  {eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
 	],
-	paymentPlans: []
+	playable: boolean,
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
+	var url = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	url = dvalue.sprintf(url, 1, 8);
+	request(url, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		var programs = JSON.parse(res.data);
+		// mapping data
+		var result = {
+		    title: '中國文化專題',
+			description: '',
+			cover: '',
+			programs: [],
+		};
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			result.programs.push({
+				sid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: (program.type !== 'episode') ? 'episode': program.type,
+				duration: 2*60, // 2h, fake data
+				paymentPlans: [], // fake data
+				playable: true,
+			})
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
 };
 
 // latest program
@@ -398,7 +487,54 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 ]
  */
 Bot.getLatestProgram = function (cb) {
-	
+    // crawl
+	request('https://app.chinasuntv.com/index.php/api/latest', function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var result = []
+		var programs = JSON.parse(res.data);
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			if (program === 'show'){
+				result.push({
+					sid: 's' + program.id,
+					title: program.title,
+					description: program.description,
+					cover: program.image_thumb,
+					isEnd: true, // fake data
+					createYear: 2099, // fake data
+					update: show.updated_at,
+					type: 'series',
+					programs: [{eid: int, title: '嘿！阿弟牯'}],
+					paymentPlans: [], // fake data
+					playable: true,
+				})
+			}
+			else {
+				result.push({
+					sid: 'e' + program.id,
+					title: program.title,
+					description: program.description,
+					cover: program.image_thumb,
+					isEnd: true, // fake data
+					createYear: 2099, // fake data
+					update: program.updated_at,
+					type: 'episode',
+					duration: 2*60,
+					paymentPlans: [], // fake data
+					playable: true,
+				})
+			}
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+
+
+
+
 };
 
 Bot.prototype.request = request;
