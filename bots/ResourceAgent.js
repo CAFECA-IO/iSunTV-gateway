@@ -529,7 +529,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 	seriesProgram
 ]
  */
-Bot.getLatestProgram = function (cb) {
+Bot.getLatestProgram = function (options, cb) {
   // crawl
 	var latestUrl = url.parse('https://app.chinasuntv.com/index.php/api/latest');
 	latestUrl.datatype = 'json';

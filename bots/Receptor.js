@@ -668,6 +668,23 @@ Bot.prototype.init = function(config) {
 		}
 	});
 };
+// GET Latest Programs
+this.router.get(['/latest/program'], function (req, res, next) {
+	var bot = self.getBot('ResourceAgent');
+	var options = {};
+	bot.getLatestProgram(options, function (e, d) {
+		if(e) {
+			res.result.setErrorCode(e.code);
+			res.result.setMessage(e.message);
+		}
+		else {
+			res.result.setResult(1);
+			res.result.setMessage('Latest Programs List');
+			res.result.setData(d);
+		}
+		next();
+	});
+});
 
 Bot.prototype.start = function(cb) {
 	Bot.super_.prototype.start.apply(this);
