@@ -70,8 +70,8 @@ Bot.prototype.listChannel = function (cb) {
 				cover: d.cover,
 				title: d.title,
 				description: d.description,
-				program_now: d.program_now,
-				program_next: d.program_next
+				current_program: d.current_program,
+				next_program: d.next_program
 			}]);
 		}
 	});
@@ -85,7 +85,7 @@ Bot.prototype.descChannel = function (resource, cb) {
 		title: '陽光衛視',
 		description: '陽光下的新鮮事',
 		programs: [],
-		relation_progreams: [],
+		relation_programs: [],
 		current_program: {},
 		next_program: {},
 		paymentPlans: []
@@ -101,8 +101,8 @@ Bot.prototype.descChannel = function (resource, cb) {
 	for(var i = 0; i < 336; i++) {
 		data.programs.push(new program());
 	}
-	data.program_now = data.programs[0];
-	data.program_next = data.programs[1];
+	data.current_program = data.programs[0];
+	data.next_program = data.programs[1];
 	cb(null, data);
 };
 Bot.prototype.parseChannel = function (resource, cb) {

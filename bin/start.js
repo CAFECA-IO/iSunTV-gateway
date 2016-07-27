@@ -97,8 +97,8 @@ var loadConfig = function () {
 		}
 	};
 	config.getTemplate = function (name) {
-		var tpath = path.join('../', name);
-		if(fs.existsSync(tpath)) { return fs.readFileSync(tpath); }
+		var tpath = path.join('./templates/', name);
+		if(fs.existsSync(tpath)) { return fs.readFileSync(tpath).toString(); }
 	}
 	return config;
 };
