@@ -301,6 +301,15 @@ Bot.prototype.listSeries = function (options, cb) {
 	],
 	paymentPlans: [],
 	playable: boolean,
+	grading: "G",
+	movieType: ["紀錄片"],
+	director: ["卜釋仁"],
+	actors: ["路人甲", "路人乙", "路人丙"],
+	source: ["陽光衛視"],
+	subtitle: ["zh-cn", "zh-tw", "en-us"],
+	soundtrack: ["chinese", "english"],
+	scenarist: ["路平"],
+	trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
 }
  */
 Bot.prototype.getSeriesProgram = function (options, cb) {
@@ -342,6 +351,15 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				programs: [],
 				paymentPlans: [], // fake data
 				playable: true,
+				grading: "G",
+				movieType: ["紀錄片"],
+				director: ["卜釋仁"],
+				actors: ["路人甲", "路人乙", "路人丙"],
+				source: ["陽光衛視"],
+				subtitle: ["zh-cn", "zh-tw", "en-us"],
+				soundtrack: ["chinese", "english"],
+				scenarist: ["路平"],
+				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
 			}
 			// mapping data with programs
 			for (var i = 0, len = episodes.length; i < len; i++){
@@ -384,6 +402,15 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 	duration: (minutes),
 	paymentPlans: [],
 	playable: boolean,
+	"grading": "G",
+	"movieType": ["紀錄片"],
+	"director": ["卜釋仁"],
+	"actors": ["路人甲", "路人乙", "路人丙"],
+	"source": ["陽光衛視"],
+	"subtitle": ["zh-cn", "zh-tw", "en-us"],
+	"soundtrack": ["chinese", "english"],
+	"scenarist": ["路平"],
+	"trailers" ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"]
 }
  */
 Bot.prototype.getEpisodeProgram = function (options, cb) {
@@ -415,7 +442,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 
 		// mapping data
 		var result = {
-			sid: episode.id,
+			eid: episode.id,
 			title: episode.title,
 			description: episode.description,
 			cover: episode.image_thumb,
@@ -427,6 +454,15 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			duration: 2*60, // 2h, fake data
 			paymentPlans: [], // fake data
 			playable: true,
+			grading: "G",
+			movieType: ["紀錄片"],
+			director: ["卜釋仁"],
+			actors: ["路人甲", "路人乙", "路人丙"],
+			source: ["陽光衛視"],
+			subtitle: ["zh-cn", "zh-tw", "en-us"],
+			soundtrack: ["chinese", "english"],
+			scenarist: ["路平"],
+			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
 		};
 
 		// return data when correct
@@ -437,7 +473,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 // special series
 /* random pick series
 {
-    title: '',
+	title: '',
 	description: '',
 	cover: '',
 	programs: [
@@ -458,7 +494,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		var programs = res.data;
 		// mapping data
 		var result = {
-		    title: '中國文化專題',
+			title: '中國文化專題',
 			description: '',
 			cover: '',
 			programs: [],
