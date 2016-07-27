@@ -147,6 +147,441 @@ Bot.prototype.channelResource = function (resource, cb) {
 	}
 };
 
+/*
+	paymentPlans = [
+		{pid: {$pid}, text: '單租', price: {currency: 'TWD', value: 30}},
+		{pid: {$pid}, text: '月租', price: {currency: 'TWD', value: 300}},
+		{pid: {$pid}, text: '套餐', price: {currency: 'TWD', value: 90}}
+	]
+ */
+
+// banner program
+/* optional: options.page, options.limit */
+Bot.prototype.listBannerProgram = function (options, cb) {};
+
+// list featured (精選節目)
+// http://app.chinasuntv.com/index.php/api/featured?page=3&limit=10
+/* optional: options.page, options.limit */
+/*
+[{
+	eid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'episode',
+	duration: (minutes),
+	paymentPlans: [],
+	playable: boolean,
+}]
+ */
+Bot.prototype.listFeaturedProgram = function (options, cb) {
+	// default value
+	options = dvalue.default(options, {
+		page: 1,
+		limit: 10,
+	});
+
+	// crawl the tv program api
+	var featuredUrl = 'https://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
+	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
+	featuredUrl = url.parse(featuredUrl);
+	featuredUrl.datatype = 'json';
+	request(featuredUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		// mapping data
+		var result = [];
+		var programs = res.data;
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			result.push({
+				eid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: 'episode',
+				duration: 2*60, // 2h, fake data
+				paymentPlans: [], // fake data
+				playable: true,
+			})
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+};
+
+// list series
+// http://app.chinasuntv.com/index.php/api/shows?page=3&limit=10
+/* optional: options.page, options.limit */
+/*
+[{
+	sid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'series',
+	programs: [
+		{eid: int, title: '嘿！阿弟牯'}
+	],
+	paymentPlans: [],
+	playable: boolean,
+}]
+ */
+Bot.prototype.listSeries = function (options, cb) {
+	// default value
+	options = dvalue.default(options, {
+		page: 1,
+		limit: 10,
+	});
+
+	// crawl the tv program api
+	var seriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	seriesUrl = dvalue.sprintf(seriesUrl, options.page, options.limit);
+	seriesUrl = url.parse(seriesUrl);
+	seriesUrl.datatype = 'json';
+	request(seriesUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		// mapping data
+		var result = [];
+		var programs = res.data;
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			result.push({
+				sid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: 'series',
+				duration: 2*60, // 2h, fake data
+				programs: [
+					{eid: "123", title: '嘿！阿弟牯'}
+				], // fake data
+				paymentPlans: [], // fake data
+				playable: true,
+			})
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+};
+
+// series program data
+// http://app.chinasuntv.com/index.php/api/show?id=9
+// http://app.chinasuntv.com/index.php/api/episodes?show_id=9&page=1&limit=10
+/* required: options.sid, optional: options: options.page, options.limit */
+/*
+{
+	sid: '',
+	title: '',
+	description: '',
+	cover: '',
+	isEnd: boolean,
+	createYear: 2002,
+	update: unix_timestamp,
+	type: 'series',
+	programs: [
+		{eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
+	],
+	paymentPlans: [],
+	playable: boolean,
+	grading: "G",
+	movieType: ["紀錄片"],
+	director: ["卜釋仁"],
+	actors: ["路人甲", "路人乙", "路人丙"],
+	source: ["陽光衛視"],
+	subtitle: ["zh-cn", "zh-tw", "en-us"],
+	soundtrack: ["chinese", "english"],
+	scenarist: ["路平"],
+	trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+}
+ */
+Bot.prototype.getSeriesProgram = function (options, cb) {
+	// error
+	if(!options.sid) { e = new Error('series not found'); e.code = '39401' ; return cb(e); }
+
+	// crawl show
+	var showUrl = 'https://app.chinasuntv.com/index.php/api/show?id=%s'
+	showUrl = dvalue.sprintf(showUrl, options.sid);
+	showUrl = url.parse(showUrl);
+	showUrl.datatype = 'json';
+	request(showUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var show = res.data;
+
+		// crawl episodes
+		var episodesUrl = 'https://app.chinasuntv.com/index.php/api/episodes?show_id=%s&page=%s&limit=%s';
+		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
+		episodesUrl = url.parse(episodesUrl);
+		episodesUrl.datatype = 'json';
+		request(episodesUrl, function(e, episodes){
+			// error
+			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+			var episodes = res.data;
+
+			// mapping data except programs
+			var result = {
+				sid: show.id,
+				title: show.title,
+				description: show.description,
+				cover: show.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: show.updated_at,
+				type: 'series',
+				programs: [],
+				paymentPlans: [], // fake data
+				playable: true,
+				grading: "G",
+				movieType: ["紀錄片"],
+				director: ["卜釋仁"],
+				actors: ["路人甲", "路人乙", "路人丙"],
+				source: ["陽光衛視"],
+				subtitle: ["zh-cn", "zh-tw", "en-us"],
+				soundtrack: ["chinese", "english"],
+				scenarist: ["路平"],
+				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+			}
+			// mapping data with programs
+			for (var i = 0, len = episodes.length; i < len; i++){
+				var episode = episodes[i];
+				result.programs.push({
+					eid: episode.id,
+					title: episode.title,
+					description: episode.description,
+					cover: episode.image_thumb,
+					createYear: 2099, // fake data
+					publish: '2099-12-31',
+					duration: 2*60, // 2h, fake data
+					paymentPlans: [], // fake data
+					playable: true,
+				})
+			}
+
+			// return data when correct
+			cb(null, result);
+		})
+
+	})
+};
+
+// episodes program data
+// http://app.chinasuntv.com/index.php/api/episode?id=9
+/* required: options.eid */
+/*
+{
+	eid: '',
+	title: '',
+	description: '',
+	cover: '',
+	images: [];
+	isEnd: boolean,
+	createYear: 2002,
+	publish: date,
+	update: unix_timestamp,
+	type: 'episode',
+	duration: (minutes),
+	paymentPlans: [],
+	playable: boolean,
+	"grading": "G",
+	"movieType": ["紀錄片"],
+	"director": ["卜釋仁"],
+	"actors": ["路人甲", "路人乙", "路人丙"],
+	"source": ["陽光衛視"],
+	"subtitle": ["zh-cn", "zh-tw", "en-us"],
+	"soundtrack": ["chinese", "english"],
+	"scenarist": ["路平"],
+	"trailers" ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"]
+}
+ */
+Bot.prototype.getEpisodeProgram = function (options, cb) {
+	// error
+	if(!options.eid) { e = new Error('episode not found'); e.code = '39402' ; return cb(e); }
+
+	// crawl the tv program api
+	var episodeUrl = 'https://app.chinasuntv.com/index.php/api/episode?id=%s'
+	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
+	episodeUrl = url.parse(episodeUrl);
+	episodeUrl.datatype = 'json';
+	request(episodeUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+		var episode = res.data;
+
+		// fetch valid img resources as a array
+		var imgResources = [
+			"image_cover1", "image_cover2", "image_cover3",
+		  "image_cover4", "image_cover5", "image_cover6",
+		  "image_cover1_full", "image_cover2_full", "image_cover3_full",
+		  "image_cover4_full", "image_cover5_full", "image_cover6_full",
+		];
+		var validImgResources = imgResources.reduce(function(prev, curr){
+			var imageResource = episode[curr];
+			if (imageResource){ prev.push(imageResource) };
+			return prev
+		}, []);
+
+		// mapping data
+		var result = {
+			eid: episode.id,
+			title: episode.title,
+			description: episode.description,
+			cover: episode.image_thumb,
+			images: validImgResources,
+			isEnd: true, // fake data
+			createYear: 2099, // fake data
+			update: episode.updated_at,
+			type: 'episode',
+			duration: 2*60, // 2h, fake data
+			paymentPlans: [], // fake data
+			playable: true,
+			grading: "G",
+			movieType: ["紀錄片"],
+			director: ["卜釋仁"],
+			actors: ["路人甲", "路人乙", "路人丙"],
+			source: ["陽光衛視"],
+			subtitle: ["zh-cn", "zh-tw", "en-us"],
+			soundtrack: ["chinese", "english"],
+			scenarist: ["路平"],
+			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+		};
+
+		// return data when correct
+		cb(null, result);
+	})
+};
+
+// special series
+/* random pick series
+{
+	title: '',
+	description: '',
+	cover: '',
+	programs: [
+	  {eid: int, title: '嘿！阿弟牯', description: '...', cover: '', createYear: 2005, publish: date, duration: (minute), paymentPlans: []}
+	],
+	playable: boolean,
+}
+ */
+Bot.prototype.getSpecialSeries = function (options, cb) {
+	var specialSeriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
+	specialSeriesUrl = url.parse(specialSeriesUrl);
+	specialSeriesUrl.datatype = 'json';
+	request(specialSeriesUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var programs = res.data;
+		// mapping data
+		var result = {
+			title: '中國文化專題',
+			description: '',
+			cover: '',
+			programs: [],
+		};
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			result.programs.push({
+				sid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: (program.type !== 'episode') ? 'episode': program.type,
+				duration: 2*60, // 2h, fake data
+				paymentPlans: [], // fake data
+				playable: true,
+			})
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+};
+
+// latest program
+// http://app.chinasuntv.com/index.php/api/latest
+/*
+[
+	episodeProgram,
+	seriesProgram
+]
+ */
+Bot.prototype.getLatestProgram = function (options, cb) {
+  // crawl
+	var latestUrl = url.parse('https://app.chinasuntv.com/index.php/api/latest');
+	latestUrl.datatype = 'json';
+	request(latestUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var result = [];
+		var programs = res.data;
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			if (program === 'show'){
+				result.push({
+					sid: 's' + program.id,
+					title: program.title,
+					description: program.description,
+					cover: program.image_thumb,
+					isEnd: true, // fake data
+					createYear: 2099, // fake data
+					update: show.updated_at,
+					type: 'series',
+					programs: [{eid: int, title: '嘿！阿弟牯'}],
+					paymentPlans: [], // fake data
+					playable: true,
+				})
+			}
+			else {
+				result.push({
+					sid: 'e' + program.id,
+					title: program.title,
+					description: program.description,
+					cover: program.image_thumb,
+					isEnd: true, // fake data
+					createYear: 2099, // fake data
+					update: program.updated_at,
+					type: 'episode',
+					duration: 2*60,
+					paymentPlans: [], // fake data
+					playable: true,
+				})
+			}
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+
+
+
+
+};
+
 Bot.prototype.request = request;
 
 module.exports = Bot;
