@@ -198,19 +198,32 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
-			result.push({
-				eid: program.id,
+			var programData = {
 				title: program.title,
 				description: program.description,
 				cover: program.image_thumb,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
-				update: program.updated_at,
-				type: 'episode',
-				duration: 2*60, // 2h, fake data
 				paymentPlans: [], // fake data
 				playable: true,
-			})
+			}
+			if (program === 'show'){
+				programData.pid = 's' + program.id;
+				programData.updated_at = program.updated_at;
+				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
+				programData.type = 'series'
+			}
+			else if (program === 'episode'){
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			else {
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			result.push(programData);
 		}
 
 		// return data when correct
@@ -483,7 +496,6 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
-
 	var specialSeriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
@@ -500,21 +512,35 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			cover: '',
 			programs: [],
 		};
+
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
-			result.programs.push({
-				sid: program.id,
+			var programData = {
 				title: program.title,
 				description: program.description,
 				cover: program.image_thumb,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
-				update: program.updated_at,
-				type: (program.type !== 'episode') ? 'episode': program.type,
-				duration: 2*60, // 2h, fake data
 				paymentPlans: [], // fake data
 				playable: true,
-			})
+			}
+			if (program === 'show'){
+				programData.pid = 's' + program.id;
+				programData.updated_at = program.updated_at;
+				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
+				programData.type = 'series'
+			}
+			else if (program === 'episode'){
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			else {
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			result.programs.push(programData);
 		}
 
 		// return data when correct
@@ -542,45 +568,37 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
+			var programData = {
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				paymentPlans: [], // fake data
+				playable: true,
+			}
 			if (program === 'show'){
-				result.push({
-					sid: 's' + program.id,
-					title: program.title,
-					description: program.description,
-					cover: program.image_thumb,
-					isEnd: true, // fake data
-					createYear: 2099, // fake data
-					update: show.updated_at,
-					type: 'series',
-					programs: [{eid: int, title: '嘿！阿弟牯'}],
-					paymentPlans: [], // fake data
-					playable: true,
-				})
+				programData.pid = 's' + program.id;
+				programData.updated_at = program.updated_at;
+				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
+				programData.type = 'series'
+			}
+			else if (program === 'episode'){
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
 			}
 			else {
-				result.push({
-					sid: 'e' + program.id,
-					title: program.title,
-					description: program.description,
-					cover: program.image_thumb,
-					isEnd: true, // fake data
-					createYear: 2099, // fake data
-					update: program.updated_at,
-					type: 'episode',
-					duration: 2*60,
-					paymentPlans: [], // fake data
-					playable: true,
-				})
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
 			}
+			result.push(programData)
 		}
 
 		// return data when correct
 		cb(null, result);
 	})
-
-
-
-
 };
 
 Bot.prototype.request = request;
