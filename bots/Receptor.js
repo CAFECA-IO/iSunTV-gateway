@@ -351,7 +351,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// user login
-	this.router.post('/login', checkHashCash, function (req, res, next) {
+	this.router.post('/login',  function (req, res, next) {
 		var user = {account: req.body.account, password: req.body.password};
 		var bot = self.getBot('User');
 		bot.login(user, function (e, d) {
@@ -588,6 +588,19 @@ Bot.prototype.filter = function (req, res, next) {
 	if(!req.session.ip) { req.session.ip = ip; }
 	if(!req.session.port) { req.session.port = port; }
 	var powerby = this.config.powerby;
+
+	var processLanguage = function (acceptLanguage) {
+		var regex = /((([a-zA-Z]+(-[a-zA-Z]+)?)|\*)(;q=[0-1](\.[0-9]+)?)?)*/g;
+		var l = acceptLanguage.toLowerCase().replace(/_+/g, '-');
+		var la = l.match(regex);
+		la = la.filter(function (v) {return v;}).map(function (v) {
+			var bits = v.split(';');
+			var quality = bits[1]? parseFloat(bits[1].split("=")[1]): 1.0;
+			return {locale: bits[0], quality: quality};
+		}).sort(function (a, b) { return b.quality > a.quality; });
+		return la;
+	};
+	res.language = processLanguage(req.headers['accept-language'] || 'en-US');
 
 	res.result = new ecresult();
 	res.header('X-Powered-By', powerby);

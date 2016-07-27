@@ -96,6 +96,10 @@ var loadConfig = function () {
 			if(bots[i].name.toLowerCase() == name.toLowerCase()) { return bots[i]; }
 		}
 	};
+	config.getTemplate = function (name) {
+		var tpath = path.join('../', name);
+		if(fs.existsSync(tpath)) { return fs.readFileSync(tpath); }
+	}
 	return config;
 };
 
