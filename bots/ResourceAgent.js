@@ -483,6 +483,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
+
 	var specialSeriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
