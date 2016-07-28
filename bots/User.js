@@ -13,6 +13,7 @@ var tokenLife = 86400000;
 var renewLife = 8640000000;
 var maxUser = 10;
 var ResetLife = 86400000;
+var historyPeriod = 1800000;
 
 var logger;
 
@@ -129,6 +130,9 @@ Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
 	logger = config.logger;
 	this.mailHistory = {};
+	this.loginHistory = {};
+	this.verifyHistory = {};
+	this.resetHistory = {};
 };
 
 Bot.prototype.start = function (cb) {
@@ -136,24 +140,89 @@ Bot.prototype.start = function (cb) {
 	Bot.super_.prototype.start.call(this);
 };
 
+Bot.prototype.addVerifyHistory = function (uid) {
+	var self = this;
+	var now = new Date().getTime();
+	var rs;
+	this.verifyHistory[uid] = dvalue.default(this.verifyHistory[uid], []);
+	var t = this.verifyHistory[uid].reduce(function (pre, curr) {
+		if(now - curr < historyPeriod) { pre++; }
+		return pre;
+	}, 0);
+	this.verifyHistory[uid].map(function (v, i) {
+		if(now - v > historyPeriod) {
+			self.verifyHistory[uid].splice(i, 1);
+		}
+	});
+
+	rs = (t < 3);
+	if(rs) { this.verifyHistory[uid].push(now); }
+	return rs;
+};
+Bot.prototype.cleanVerifyHistory = function (uid) {
+	return this.verifyHistory[uid] = [];
+};
+Bot.prototype.addResetHistory = function (uid) {
+	var self = this;
+	var now = new Date().getTime();
+	var rs;
+	this.resetHistory[uid] = dvalue.default(this.resetHistory[uid], []);
+	var t = this.resetHistory[uid].reduce(function (pre, curr) {
+		if(now - curr < historyPeriod) { pre++; }
+		return pre;
+	}, 0);
+	this.resetHistory[uid].map(function (v, i) {
+		if(now - v > historyPeriod) {
+			self.resetHistory[uid].splice(i, 1);
+		}
+	});
+
+	rs = (t < 3);
+	if(rs) { this.resetHistory[uid].push(now); }
+	return rs;
+};
+Bot.prototype.cleanResetHistory = function (uid) {
+	return this.resetHistory[uid] = [];
+};
+Bot.prototype.addLoginHistory = function (uid) {
+	var self = this;
+	var now = new Date().getTime();
+	var rs;
+	this.loginHistory[uid] = dvalue.default(this.loginHistory[uid], []);
+	var t = this.loginHistory[uid].reduce(function (pre, curr) {
+		if(now - curr < historyPeriod) { pre++; }
+		return pre;
+	}, 0);
+	this.loginHistory[uid].map(function (v, i) {
+		if(now - v > historyPeriod) {
+			self.loginHistory[uid].splice(i, 1);
+		}
+	});
+
+	rs = (t < 3);
+	if(rs) { this.loginHistory[uid].push(now); }
+	return rs;
+};
+Bot.prototype.cleanLoginHistory = function (uid) {
+	return this.loginHistory[uid] = [];
+};
 Bot.prototype.addMailHistory = function (email) {
 	var self = this;
 	var now = new Date().getTime();
 	var rs;
 	this.mailHistory[email] = dvalue.default(this.mailHistory[email], []);
 	var t = this.mailHistory[email].reduce(function (pre, curr) {
-		if(now - curr < 1800000) { pre++; }
+		if(now - curr < historyPeriod) { pre++; }
 		return pre;
 	}, 0);
 	this.mailHistory[email].map(function (v, i) {
-		if(now - v > 1800000) {
+		if(now - v > historyPeriod) {
 			self.mailHistory[email].splice(i, 1);
 		}
 	});
 
 	rs = (t < 3);
 	if(rs) { this.mailHistory[email].push(now); }
-
 	return rs;
 };
 
@@ -293,6 +362,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 	}
 };
 Bot.prototype.emailVerification = function (user, cb) {
+	if(!this.addVerifyHistory(user.account)) { var e = new Error("verification failed too many times"); e.code = 40301; return cb(e); }
 	var self = this;
 	var condition = {account: user.account, validcode: user.validcode};
 	var updateQuery = {$set: {verified: true}, $unset: {validcode: ""}};
@@ -301,6 +371,7 @@ Bot.prototype.emailVerification = function (user, cb) {
 		if(e) { e.code = '01003'; cb(e); }
 		else if(!d.value) { e = new Error('incorrect code'); e.code = '19101'; cb(e); }
 		else {
+			self.cleanVerifyHistory(user.account);
 			self.cleanInvalidAccount(condition, function () {});
 			self.createToken(d.value, cb);
 		}
@@ -562,6 +633,7 @@ Bot.prototype.updateLoginTime  = function (options, cb) {
 /* require: mail, password(md5) */
 /* 1: not verify, 2: failed */
 Bot.prototype.login = function (data, cb) {
+	if(!this.addLoginHistory(data.account)) { var e = new Error("login failed too many times"); e.code = 49101; return cb(e); }
 	var self = this;
 	var collection = this.db.collection('Users');
 	var loginData = {account: data.account, password: data.password};
@@ -579,6 +651,7 @@ Bot.prototype.login = function (data, cb) {
 			return cb(e);
 		}
 		else {
+			self.cleanLoginHistory(data.account);
 			self.createToken(user, cb);
 		}
 	});
@@ -716,10 +789,12 @@ Bot.prototype.forgetPassword = function (user, cb) {
 	);
 };
 
-/* reset password */
-/* require: options.resetcode, options.password, options.uid */
-Bot.prototype.resetPassword = function (options, cb) {
+/* check reset password code */
+/* require: options.resetcode, options.uid */
+Bot.prototype.checkResetPassword = function (options, cb) {
 	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	if(!this.addResetHistory(options.uid)) { var e = new Error("reset failed too many times"); e.code = 49102; return cb(e); }
+	var self = this;
 	var cond = {
 		_id: new mongodb.ObjectID(options.uid),
 		'reset.code': options.resetcode,
@@ -728,7 +803,34 @@ Bot.prototype.resetPassword = function (options, cb) {
 	};
 	var collection = this.db.collection('Users');
 	collection.findOne(cond, {}, function (e, user) {
-		if(e) { return cb(e); }
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(!user) {
+			e = new Error("invalid reset code");
+			e.code = '19104';
+			return cb(e);
+		}
+		else {
+			self.cleanResetHistory(options.uid);
+			return cb(null, {});
+		}
+	});
+};
+
+/* reset password */
+/* require: options.resetcode, options.password, options.uid */
+Bot.prototype.resetPassword = function (options, cb) {
+	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	if(!this.addResetHistory(options.uid)) { var e = new Error("reset failed too many times"); e.code = 49102; return cb(e); }
+	var self = this;
+	var cond = {
+		_id: new mongodb.ObjectID(options.uid),
+		'reset.code': options.resetcode,
+		'reset.create': {$gt: new Date().getTime() - ResetLife},
+		enable: true,
+	};
+	var collection = this.db.collection('Users');
+	collection.findOne(cond, {}, function (e, user) {
+		if(e) { e.code = '01002'; return cb(e); }
 		else if(!user) {
 			e = new Error("invalid reset code");
 			e.code = '19104';
@@ -754,6 +856,7 @@ Bot.prototype.resetPassword = function (options, cb) {
 						return cb(e);
 					}
 					else {
+						self.cleanResetHistory(options.uid);
 						return cb(null, {});
 					}
 				}

@@ -434,6 +434,25 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// check reset password
+	this.router.get('/password/reset/:uid/:resetcode', checkHashCash, function (req, res, next) {
+		var options = {
+			uid: req.params.uid,
+			resetcode: req.params.resetcode,
+		};
+		var bot = self.getBot('User');
+		bot.checkResetPassword(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('password reset code is valid');
+			}
+			next();
+		});
+	});
 	// reset password
 	this.router.put('/password/reset/:uid', checkHashCash, function (req, res, next) {
 		var options = {
