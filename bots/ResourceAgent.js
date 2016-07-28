@@ -159,7 +159,68 @@ Bot.prototype.channelResource = function (resource, cb) {
 
 // banner program
 /* optional: options.page, options.limit */
-Bot.prototype.listBannerProgram = function (options, cb) {};
+/*
+[{
+    pid: {$pid},
+    title: 節目標題,
+    description: 說明文字,
+    banner: 網路上隨便找好看的 banner 圖片連結
+}]
+ */
+Bot.prototype.listBannerProgram = function (options, cb) {
+	// default value
+	options = dvalue.default(options, {
+		page: 1,
+		limit: 10,
+	});
+
+	// crawl the tv program api
+	var bannerUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	bannerUrl = dvalue.sprintf(bannerUrl, options.page, options.limit);
+	bannerUrl = url.parse(bannerUrl);
+	bannerUrl.datatype = 'json';
+	request(bannerUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		// mapping data
+		var result = [];
+		var programs = res.data;
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			var programData = {
+				title: program.title,
+				description: program.description,
+				//cover: program.image_thumb,
+				//isEnd: true, // fake data
+				//createYear: 2099, // fake data
+				//paymentPlans: [], // fake data
+				//playable: true,
+				banner: "http://files.snacktools.net.s3.amazonaws.com/snacktools/site/blog/Your%20Guide%20to%20Banner%20Web%20Sizes%20Bannersnack%20blog.png",
+			}
+			if (program.type === 'show'){
+				programData.pid = 's' + program.id;
+				//programData.updated_at = program.updated_at;
+				//programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
+				//programData.type = 'series'
+			}
+			else if (program.type === 'episode'){
+				programData.pid = 'e' + program.id;
+				//programData.duration = 2 * 60;
+				//programData.type = 'episode'
+			}
+			else {
+				programData.pid = 'e' + program.id;
+				//programData.duration = 2 * 60;
+				//programData.type = 'episode'
+			}
+			result.push(programData);
+		}
+
+		// return data when correct
+		cb(null, result);
+	})
+};
 
 // list featured (精選節目)
 // http://app.chinasuntv.com/index.php/api/featured?page=3&limit=10
@@ -209,13 +270,13 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 				paymentPlans: [], // fake data
 				playable: true,
 			}
-			if (program === 'show'){
+			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
 				programData.updated_at = program.updated_at;
 				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
 				programData.type = 'series'
 			}
-			else if (program === 'episode'){
+			else if (program.type === 'episode'){
 				programData.pid = 'e' + program.id;
 				programData.duration = 2 * 60;
 				programData.type = 'episode'
@@ -526,13 +587,13 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 				paymentPlans: [], // fake data
 				playable: true,
 			}
-			if (program === 'show'){
+			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
 				programData.updated_at = program.updated_at;
 				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
 				programData.type = 'series'
 			}
-			else if (program === 'episode'){
+			else if (program.type === 'episode'){
 				programData.pid = 'e' + program.id;
 				programData.duration = 2 * 60;
 				programData.type = 'episode'
@@ -579,13 +640,13 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 				paymentPlans: [], // fake data
 				playable: true,
 			}
-			if (program === 'show'){
+			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
 				programData.updated_at = program.updated_at;
 				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
 				programData.type = 'series'
 			}
-			else if (program === 'episode'){
+			else if (program.type === 'episode'){
 				programData.pid = 'e' + program.id;
 				programData.duration = 2 * 60;
 				programData.type = 'episode'
