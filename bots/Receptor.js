@@ -700,6 +700,17 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+
+	/* comments */
+	// write comment
+
+	// delete comment
+
+	// verify comment
+
+	// list program comment
+
+	// list user comment
 };
 
 Bot.prototype.start = function(cb) {
