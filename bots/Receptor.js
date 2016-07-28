@@ -564,7 +564,7 @@ Bot.prototype.init = function(config) {
 
 	/* program */
 	// Banner programs
-	this.router.get('/banner/:page/:limit', function (req, res, next) {
+	this.router.get(['/banner', '/banner/:page', '/banner/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {page: req.params.page, limit: req.params.limit};
 		bot.listBannerProgram(options, function (e, d) {
