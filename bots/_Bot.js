@@ -28,8 +28,9 @@ Bot.prototype.init = function(config) {
 	this.result = {};
 	this.callback = {};
 
-	if(!!config && typeof(config.getBot) == 'function') {
-		this.getBot = config.getBot;
+	if(!!config) {
+		if(typeof(config.getBot) == 'function') { this.getBot = config.getBot; }
+		if(typeof(config.getTemplate) == 'function') { this.getTemplate = config.getTemplate; }
 	}
 };
 
