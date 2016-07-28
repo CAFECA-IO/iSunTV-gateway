@@ -221,7 +221,7 @@ Bot.prototype.createUser = function (user) {
 		}
 		else if(self.addMailHistory(user.email)) {
 			var collection = self.db.collection('Users');
-			USERPROFILE.validcode = dvalue.randomID(12);
+			USERPROFILE.validcode = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
 			collection.insert(USERPROFILE, {}, function (e, d) {
 				if(e) {
 					e.code = '01001';
@@ -249,7 +249,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 	var self = this;
 	var bot = this.getBot('Mailer');
 	var send;
-	if(!textype.isEmail(options.email)) {
+	if(!textype.isEmail(options.email) && !textype.isObjectID(options.uid)) {
 		var e = new Error("Invalid e-mail");
 		e.code = '12001';
 		return cb(e);
@@ -257,11 +257,13 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 
 	send = function (data) {
 		if(self.addMailHistory(data.mail)) {
+			var content, template = self.getTemplate('mail_signup.html');
 			var tmp = url.parse(self.config.url);
 			var uri = dvalue.sprintf('/register/%s/%s', data.email, data.validcode);
 			tmp.pathname = path.join(tmp.pathname, uri);
 			data.comfirmURL = url.format(tmp);
-			bot.send(data.email, 'Welcom to iSunTV - Account Verification', data.comfirmURL, function () {});
+			content = dvalue.sprintf(template, data.comfirmURL, data.comfirmURL, data.validcode);
+			bot.send(data.email, 'Welcom to iSunTV - Account Verification', content, function () {});
 			cb(null, {});
 		}
 		else {
@@ -275,12 +277,15 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 		send(options);
 	}
 	else {
-		var condition = {account: options.email, verified: {$ne: true}, validcode: {$exists: true}};
+		var condition;
+		if(textype.isObjectID(options.uid)) { condition = {_id: new mongodb.ObjectID(options.uid), verified: {$ne: true}, validcode: {$exists: true}}; }
+		else { condition = {account: options.email, verified: {$ne: true}, validcode: {$exists: true}}; }
 		var collection = this.db.collection('Users');
 		collection.findOne(condition, {}, function (e, d) {
 			if(e) { e.code = '01002'; cb(e); }
 			else if(!d) { e = new Error('User not found'); e.code = '39102'; cb(e); }
 			else {
+				if(!textype.isEmail(options.email)) { options.email = d.email; }
 				options.validcode = d.validcode;
 				send(options);
 			}
@@ -675,7 +680,10 @@ Bot.prototype.forgetPassword = function (user, cb) {
 			else {
 				if(self.addMailHistory(d.value.email)){
 					var bot = self.getBot('Mailer');
-					bot.send(user.email, 'Welcome to iSunTV - Forget password', code, function () {});
+					var template = self.getTemplate('mail_pw_reset.html');
+					var resetUrl = dvalue.sprintf(self.config.frontend + '?uid=%s&code=%s', d.value._id, code);
+					var content = dvalue.sprintf(template, resetUrl, code);
+					bot.send(user.email, 'Welcome to iSunTV - Forget password', content, function () {});
 					cb(null, { uid:d.value._id });
 				}
 				else{
@@ -700,7 +708,6 @@ Bot.prototype.resetPassword = function (options, cb) {
 	};
 	var collection = this.db.collection('Users');
 	collection.findOne(cond, {}, function (e, user) {
-		console.log(user)
 		if(e) { return cb(e); }
 		else if(!user) {
 			e = new Error("invalid reset code");

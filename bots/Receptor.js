@@ -317,8 +317,23 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// resend verify email
+	this.router.get('/resend', checkLogin, function (req, res, next) {
+		var options = { uid: req.session.uid };
+		var bot = self.getBot('User');
+		bot.sendVericicationMail(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Resend verify code');
+			}
+			next();
+		});
+	});
 	this.router.get('/resend/:email', checkHashCash, function (req, res, next) {
-		var options = { email: req.params.email };
+		var options = { email: req.params.email, uid: req.session.uid };
 		var bot = self.getBot('User');
 		bot.sendVericicationMail(options, function (e, d) {
 			if(e) {
@@ -487,8 +502,8 @@ Bot.prototype.init = function(config) {
 	// channel information
 	this.router.get('/channel/:channel', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var channel = {cid: req.params.channel};
-		bot.descChannel(channel, function (e, d) {
+		var options = {cid: req.params.channel, time: req.query.time};
+		bot.descChannel(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -727,6 +742,19 @@ Bot.prototype.filter = function (req, res, next) {
 	if(!req.session.ip) { req.session.ip = ip; }
 	if(!req.session.port) { req.session.port = port; }
 	var powerby = this.config.powerby;
+
+	var processLanguage = function (acceptLanguage) {
+		var regex = /((([a-zA-Z]+(-[a-zA-Z]+)?)|\*)(;q=[0-1](\.[0-9]+)?)?)*/g;
+		var l = acceptLanguage.toLowerCase().replace(/_+/g, '-');
+		var la = l.match(regex);
+		la = la.filter(function (v) {return v;}).map(function (v) {
+			var bits = v.split(';');
+			var quality = bits[1]? parseFloat(bits[1].split("=")[1]): 1.0;
+			return {locale: bits[0], quality: quality};
+		}).sort(function (a, b) { return b.quality > a.quality; });
+		return la;
+	};
+	res.language = processLanguage(req.headers['accept-language'] || 'en-US');
 
 	res.result = new ecresult();
 	res.header('X-Powered-By', powerby);

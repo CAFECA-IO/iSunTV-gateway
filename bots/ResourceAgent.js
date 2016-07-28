@@ -70,39 +70,41 @@ Bot.prototype.listChannel = function (cb) {
 				cover: d.cover,
 				title: d.title,
 				description: d.description,
-				program_now: d.program_now,
-				program_next: d.program_next
+				current_program: d.current_program,
+				next_program: d.next_program
 			}]);
 		}
 	});
 };
-Bot.prototype.descChannel = function (resource, cb) {
+Bot.prototype.descChannel = function (options, cb) {
+	var picks = 336;
+	if(options.time > 0) { picks = 48; }
 	var data = {
-		cid: resource.cid,
+		cid: options.cid,
 		playable: true,
-		url: dvalue.sprintf('https://api.isuntv.com/channel/%s/streaming.m3u8', resource.cid),
+		url: dvalue.sprintf('https://api.isuntv.com/channel/%s/streaming.m3u8', options.cid),
 		cover: 'http://74.82.1.158/uploads/advertisement/isuntv-app-horizontal.jpg',
 		title: '陽光衛視',
 		description: '陽光下的新鮮事',
 		programs: [],
-		relation_progreams: [],
+		relation_programs: [],
 		current_program: {},
 		next_program: {},
 		paymentPlans: []
 	};
 	var program = function () {
 		var datas = [{"title":"友好的城市 善良的人民","type":"歷史人文"},{"title":"蘇丹迷失男孩的回鄉路(上)","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"鄺衛華回家種樹","type":"歷史人文"},{"title":"朱辛莊往事","type":"人物傳記"},{"title":"鏡海-華洋共處","type":"人物傳記"},{"title":"方寸之間話美國","type":"歷史人文"},{"title":"財新時間-劉曉光 踐行環保的企業家","type":"訪談"},{"title":"我與三十萬言書","type":"紀錄片"},{"title":"火熱的蘇丹","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"景觀文化-翠湖之舞","type":"紀錄片"},{"title":"佩德拉薩隔世風景","type":"歷史人文"},{"title":"照片裡的故事","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"飄","type":"紀錄片"},{"title":"友好的城市 善良的人民","type":"歷史人文"},{"title":"蘇丹迷失男孩的回鄉路(上)","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"鄺衛華回家種樹","type":"歷史人文"},{"title":"朱辛莊往事","type":"人物傳記"},{"title":"鏡海-華洋共處","type":"人物傳記"},{"title":"方寸之間話美國","type":"歷史人文"},{"title":"財新時間-劉曉光 踐行環保的企業家","type":"訪談"},{"title":"我與三十萬言書","type":"紀錄片"},{"title":"火熱的蘇丹","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"景觀文化-翠湖之舞","type":"紀錄片"},{"title":"佩德拉薩隔世風景","type":"歷史人文"},{"title":"照片裡的故事","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"飄","type":"紀錄片"},{"title":"友好的城市 善良的人民","type":"歷史人文"},{"title":"蘇丹迷失男孩的回鄉路(上)","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"鄺衛華回家種樹","type":"歷史人文"},{"title":"朱辛莊往事","type":"人物傳記"},{"title":"鏡海-華洋共處","type":"人物傳記"},{"title":"方寸之間話美國","type":"歷史人文"},{"title":"財新時間-劉曉光 踐行環保的企業家","type":"訪談"},{"title":"我與三十萬言書","type":"紀錄片"},{"title":"火熱的蘇丹","type":"歷史人文"},{"title":"景觀文化-翠湖之舞","type":"紀錄片"},{"title":"佩德拉薩隔世風景","type":"歷史人文"},{"title":"照片裡的故事","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"飄","type":"紀錄片"},{"title":"孩子與俄羅斯","type":"紀錄片"},{"title":"蘇丹迷失男孩的回鄉路(下)","type":"歷史人文"},{"title":"郭惠勇回家辦廠","type":"紀錄片"},{"title":"我的青春之歌(上)","type":"人物傳記"},{"title":"國殤-喋血長空","type":"人物傳記"},{"title":"元昊之死","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"文革50年祭-魯利玲","type":"歷史人文"},{"title":"友誼之路","type":"歷史人文"},{"title":"子夜-蘇維埃的興亡6-王康","type":"紀錄片"},{"title":"大自然啓示錄","type":"歷史人文"},{"title":"我的伯父(上)","type":"歷史人文"},{"title":"眾籌之門","type":"紀錄片"},{"title":"向天而歌","type":"紀錄片"}];
-		var t = new Date().getTime();
+		var t = options.time > 0? options.time: new Date().getTime();
 		var ft = t - (t % 1800000);
 		var pg = dvalue.randomPick(datas, 1)[0];
 		pg.start = ft + (1800000 * i);
 		return pg;
 	};
-	for(var i = 0; i < 336; i++) {
+	for(var i = 0; i < picks; i++) {
 		data.programs.push(new program());
 	}
-	data.program_now = data.programs[0];
-	data.program_next = data.programs[1];
+	data.current_program = data.programs[0];
+	data.next_program = data.programs[1];
 	cb(null, data);
 };
 Bot.prototype.parseChannel = function (resource, cb) {
