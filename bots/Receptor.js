@@ -317,8 +317,23 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// resend verify email
+	this.router.get('/resend', checkLogin, function (req, res, next) {
+		var options = { uid: req.session.uid };
+		var bot = self.getBot('User');
+		bot.sendVericicationMail(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Resend verify code');
+			}
+			next();
+		});
+	});
 	this.router.get('/resend/:email', checkHashCash, function (req, res, next) {
-		var options = { email: req.params.email };
+		var options = { email: req.params.email, uid: req.session.uid };
 		var bot = self.getBot('User');
 		bot.sendVericicationMail(options, function (e, d) {
 			if(e) {
@@ -351,7 +366,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// user login
-	this.router.post('/login',  function (req, res, next) {
+	this.router.post('/login', checkHashCash, function (req, res, next) {
 		var user = {account: req.body.account, password: req.body.password};
 		var bot = self.getBot('User');
 		bot.login(user, function (e, d) {

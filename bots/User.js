@@ -249,7 +249,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 	var self = this;
 	var bot = this.getBot('Mailer');
 	var send;
-	if(!textype.isEmail(options.email)) {
+	if(!textype.isEmail(options.email) && !textype.isObjectID(options.uid)) {
 		var e = new Error("Invalid e-mail");
 		e.code = '12001';
 		return cb(e);
@@ -277,12 +277,15 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 		send(options);
 	}
 	else {
-		var condition = {account: options.email, verified: {$ne: true}, validcode: {$exists: true}};
+		var condition;
+		if(textype.isObjectID(options.uid)) { condition = {_id: new mongodb.ObjectID(options.uid), verified: {$ne: true}, validcode: {$exists: true}}; }
+		else { condition = {account: options.email, verified: {$ne: true}, validcode: {$exists: true}}; }
 		var collection = this.db.collection('Users');
 		collection.findOne(condition, {}, function (e, d) {
 			if(e) { e.code = '01002'; cb(e); }
 			else if(!d) { e = new Error('User not found'); e.code = '39102'; cb(e); }
 			else {
+				if(!textype.isEmail(options.email)) { options.email = d.email; }
 				options.validcode = d.validcode;
 				send(options);
 			}
@@ -677,7 +680,7 @@ Bot.prototype.forgetPassword = function (user, cb) {
 			else {
 				if(self.addMailHistory(d.value.email)){
 					var bot = self.getBot('Mailer');
-					var template = self.getTemplate('mail_resetPW.html');
+					var template = self.getTemplate('mail_pw_reset.html');
 					var resetUrl = dvalue.sprintf(self.config.frontend + '?uid=%s&code=%s', d.value._id, code);
 					var content = dvalue.sprintf(template, resetUrl, code);
 					bot.send(user.email, 'Welcome to iSunTV - Forget password', content, function () {});
