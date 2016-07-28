@@ -599,7 +599,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
 				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
+				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
 				programData.type = 'series'
 			}
 			else if (program.type === 'episode'){
