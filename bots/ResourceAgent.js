@@ -171,8 +171,17 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 	// default value
 	options = dvalue.default(options, {
 		page: 1,
-		limit: 10,
+		limit: 6,
 	});
+
+	var pics = [
+		'http://s3.foxmovies.com/foxmovies/production/films/126/images/feature/morgan-film-page-header-s1-front-main-stage.jpg',
+		'http://s3.foxmovies.com/foxmovies/production/films/107/images/tickets/background-image-front-6764916802.jpg',
+		'http://s3.foxmovies.com/foxmovies/production/films/34/images/feature/film-page-feature-image-front-main-stage.jpg',
+		'http://s3.foxmovies.com/foxmovies/production/films/109/images/feature/aa-joy-header-may3-front-main-stage.jpg',
+		'http://s3.foxmovies.com/foxmovies/production/films/94/images/feature/tlr-film-header-now-front-main-stage.jpg',
+		'http://s3.foxmovies.com/foxmovies/production/films/33/images/feature/film-page-feature-image-front-main-stage.jpg'
+	]
 
 	// crawl the tv program api
 	var bannerUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
@@ -196,7 +205,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 				//createYear: 2099, // fake data
 				//paymentPlans: [], // fake data
 				//playable: true,
-				banner: "http://files.snacktools.net.s3.amazonaws.com/snacktools/site/blog/Your%20Guide%20to%20Banner%20Web%20Sizes%20Bannersnack%20blog.png",
+				banner: pics[(i % pics.length)],
 			}
 			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
