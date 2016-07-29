@@ -2,6 +2,7 @@ const ParentBot = require('./_Bot.js');
 const util = require('util');
 const dvalue = require('dvalue');
 const textype = require('textype');
+const mongodb = require('mongodb');
 
 var logger;
 
@@ -47,32 +48,53 @@ Bot.prototype.start = function () {
 
 };
 
-/* require: options.uid, options.pid, options.rating, options.title, options.comment */
+/* require: options.uid ,options.pid
+/* optional: options.rating, options.title, options.comment */
 // 檢查 uid 並取得 User.verified 帶入 comment
 // 一組 uid/pid 只能存在一則 comment, 若已存在則修改 title, comment, rating, verified 欄位並設定 mtime = atime = new Date().getTime()
 // 若不存在則寫入值需經 formatComment function 處理
 // 成功後回傳 cmid (= _id)
 Bot.prototype.writeComment = function (options, cb) {
-	if (!options.uid){ e = new Error(); e.code = 9527; return cb(e);}
+	// Verified optins
+	if (typeof options.rating === 'string' ||
+		(int(options.rating) < 1 && int(options.rating)) > 5){
+		var e = new Error("Incorrect rating"); e.code = "19501"; return cb(e);
+	}
+	if (options.title.length > 100) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
+	if (options.comment.length > 1000) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
+	options.rating = int(options.rating);
 
 	// Fetch user
 	var usersCollection = this.db.collection('Users');
 	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
 	usersCollection.findOne(usersCond, {}, function (e, user) {
 		if(e) { e.code = '01002'; return cb(e); }
+		if(!user){ e = new Error('User not found'); e.code = '39102'; cb(e); }
 
 		// Fetch comment
 		var commentsCollection = this.db.collection('Comments');
 		var commentsCond = { uid: options.uid, pid: options.pid };
-		commentsCollection.findOne(usersCond, {}, function (e, comment) {
+		commentsCollection.findOne(usersCond, {}, function (e, foundComment) {
 			if(e) { e.code = '01002'; return cb(e); }
-			if(!comment){
+			if(!foundComment){
 				// Insert comment
 				// 成功後回傳 cmid (= _id)
+				commentsCollection.insertOne(formatComment(comment), function(e, comment){
+					if(e) { e.code = '01002'; return cb(e); }
+					if(!comment){ e = new Error('Comment not found'); e.code = '39501'; cb(e); }
+					cb(null, {cmid: comment._id})
+				})
 			}
 			else {
-				// update comment
+				// Update comment
 				// 成功後回傳 cmid (= _id)
+				var cond = {_id: foundComment._id}
+				var update = { $set: formatComment(comment)};
+				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
+					if(e) { e.code = '01002'; return cb(e); }
+					if(!comment){ e = new Error('Comment not found'); e.code = ''; cb(e); }
+					cb(null, {cmid: d.value._id})
+				});
 			}
 		});
 	});
@@ -82,15 +104,13 @@ Bot.prototype.writeComment = function (options, cb) {
 // Comment.verified 設為 true
 Bot.prototype.verifyComment = function (options, cb) {
 	var collection = this.db.collection('Comments');
-	var cond = { uid: options.uid, pid: options.pid };
-	var update = {}
-	collection.findOne(cond, update, function (e, comment) {
+	var cond = { _id: new mongodb.ObjectID(options.uid) };
+	var update = { $set: { verified: true } };
+	commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		if(!comment){
-			// not found comment
-		}
-		// update
-	}
+		if(!d.vaule){ e = new Error('Comment not found'); e.code = ''; cb(e); }
+		cb(null, {cmid: result._id})
+	});
 };
 
 /* require: options.uid, options.cmid */
@@ -106,18 +126,14 @@ Bot.prototype.deleteComment = function (options, cb) {
 	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
 	usersCollection.findOne(usersCond, {}, function (e, user) {
 		if(e) { e.code = '01002'; return cb(e); }
+		if(!user){ e = new Error('User not found'); e.code = '39102'; cb(e); }
 
-		// delete comment
+		// Delete comment
 		var commentsCollection = this.db.collection('Comments');
-		var commentsCond = {
-			_id: new mongodb.ObjectID(options.cmid),
-			uid: options.uid,
-		};
+		var commentsCond = { _id: new mongodb.ObjectID(options.cmid), uid: options.uid };
 		commentsCollection.deleteOne(commentsCond, function (e, comment) {
 			if(e) { e.code = '01002'; return cb(e); }
-			if(!comment){
-			}
-
+			if(!comment){ e = new Error('Comment not found'); e.code = '39102'; cb(e); }
 			cb(null, {});
 		});
 	});
@@ -145,19 +161,31 @@ Bot.prototype.deleteComment = function (options, cb) {
  */
 Bot.prototype.listProgramComments = function (options, cb) {
 	var collection = this.db.collection('Comments');
-	var cond = {
-		pid: new mongodb.ObjectID(options.cmid),
-		uid: options.uid,
-		page: options.page,
-		limit: options.limit,
-	};
+	var cond = dvalue.default( options, { page: 1, limit: 7 });
 	collection.find(cond, function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }
-		if(!comments){
+
+		// Init ret
+		var ret = {
+			pid: options.pid,
+			average: 0,
+			count: new Array(5).fill(0),
+			comments: []
+		};
+		// fill count porperty
+		for(var idx = 0, len = comments.length; idx < len ;idx++){
+			var comment = comments[idx];
+			var ratingIdx = comment.rating - 1;
+			ret.count[ratingIdx] += 1;
+			ret.push(descComment(comment);
 		}
+		// fill average porperty
+		ret.average = ret.count.reduce(function(prev, curr, idx){
+			return prev + curr * (idx + 1)
+		});
 
 		// list data
-		cb(null, {});
+		cb(null, ret);
 	});
 };
 
@@ -176,23 +204,27 @@ Bot.prototype.listProgramComments = function (options, cb) {
 ]
 */
 Bot.prototype.listUserComments = function (options, cb) {
-
-	var collection = this.db.collection('Comments');
-	var cond = {
-		pid: new mongodb.ObjectID(options.cmid),
-		uid: options.uid,
-		page: options.page,
-		limit: options.limit,
-	};
-	collection.find(cond, function (e, comments) {
+	// Fetch user
+	var usersCollection = this.db.collection('Users');
+	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
+	userCollection.findOne(usersCond, {}, function(e, user){
 		if(e) { e.code = '01002'; return cb(e); }
-		if(!comments){
-		}
+		if(!user){ e = new Error('User not found'); e.code = '39102'; cb(e); }
 
-		// list data
-		cb(null, {});
+		// List user comments
+		var commentsCollection = this.db.collection('Comments');
+		var commentsCond = dvalue.default( options, { page: 1, limit: 7 });
+		commentsCollection.find(commentsCond, function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			//
+			var ret = [];
+			for(var idx = 0, len = comments.length; idx < len ;idx++){
+				ret.push(descComment(comments[idx]));
+			}
+			cb(null, ret);
+		});
 	});
-
 };
 
 module.exports = Bot;
