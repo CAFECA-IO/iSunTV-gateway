@@ -703,6 +703,22 @@ Bot.prototype.init = function(config) {
 
 	/* comments */
 	// write comment
+	this.router.post('/program/:pid/comment/', function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {uid: req.session.uid, pid: req.params.pid, rating: req.body.rating, title: req.body.title, comment: req.body.comment};
+		bot.writeComment(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('write comment');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 
 	// delete comment
 
