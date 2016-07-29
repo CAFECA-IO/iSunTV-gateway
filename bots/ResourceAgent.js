@@ -111,7 +111,7 @@ Bot.prototype.parseChannel = function (resource, cb) {
 	var self = this;
 	var channel = dvalue.search({id: resource.channel}, this.channels);
 	if(channel === undefined) {
-		var options = url.parse('http://app.chinasuntv.com/index.php/api/getLiveStreamUrl');
+		var options = url.parse(this.config.resourceAPI + '/index.php/api/getLiveStreamUrl');
 		options.datatype = 'json';
 		request(options, function (e, d) {
 			if(e) { cb(e); }
@@ -184,7 +184,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 	]
 
 	// crawl the tv program api
-	var bannerUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	var bannerUrl = this.config + '/index.php/api/shows?page=%s&limit=%s'
 	bannerUrl = dvalue.sprintf(bannerUrl, options.page, options.limit);
 	bannerUrl = url.parse(bannerUrl);
 	bannerUrl.datatype = 'json';
@@ -257,7 +257,7 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var featuredUrl = 'https://app.chinasuntv.com/index.php/api/featured?page=%s&limit=%s'
+	var featuredUrl = this.config.resourceAPI + '/api/featured?page=%s&limit=%s'
 	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
 	featuredUrl = url.parse(featuredUrl);
 	featuredUrl.datatype = 'json';
@@ -331,7 +331,7 @@ Bot.prototype.listSeries = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var seriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	var seriesUrl = this.config.resourceAPI + '/index.php/api/shows?page=%s&limit=%s'
 	seriesUrl = dvalue.sprintf(seriesUrl, options.page, options.limit);
 	seriesUrl = url.parse(seriesUrl);
 	seriesUrl.datatype = 'json';
@@ -413,7 +413,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		var show = res.data;
 
 		// crawl episodes
-		var episodesUrl = 'https://app.chinasuntv.com/index.php/api/episodes?show_id=%s&page=%s&limit=%s';
+		var episodesUrl = this.config.resourceAPI + '/api/episodes?show_id=%s&page=%s&limit=%s';
 		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
 		episodesUrl = url.parse(episodesUrl);
 		episodesUrl.datatype = 'json';
@@ -503,7 +503,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	if(!options.eid) { e = new Error('episode not found'); e.code = '39402' ; return cb(e); }
 
 	// crawl the tv program api
-	var episodeUrl = 'https://app.chinasuntv.com/index.php/api/episode?id=%s'
+	var episodeUrl = this.config.resourceAPI + '/index.php/api/episode?id=%s'
 	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
 	episodeUrl = url.parse(episodeUrl);
 	episodeUrl.datatype = 'json';
@@ -568,7 +568,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
-	var specialSeriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
+	var specialSeriesUrl = this.config.resourceAPI + '/index.php/api/shows?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
@@ -630,7 +630,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
  */
 Bot.prototype.getLatestProgram = function (options, cb) {
   // crawl
-	var latestUrl = url.parse('https://app.chinasuntv.com/index.php/api/latest');
+	var latestUrl = url.parse(this.config.resourceAPI + '/index.php/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
 		// error
