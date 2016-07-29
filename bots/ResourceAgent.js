@@ -184,7 +184,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 	]
 
 	// crawl the tv program api
-	var bannerUrl = this.config + '/index.php/api/shows?page=%s&limit=%s'
+	var bannerUrl = this.config.resourceAPI + '/index.php/api/shows?page=%s&limit=%s'
 	bannerUrl = dvalue.sprintf(bannerUrl, options.page, options.limit);
 	bannerUrl = url.parse(bannerUrl);
 	bannerUrl.datatype = 'json';
@@ -400,9 +400,9 @@ Bot.prototype.listSeries = function (options, cb) {
 Bot.prototype.getSeriesProgram = function (options, cb) {
 	// error
 	if(!options.sid) { e = new Error('series not found'); e.code = '39401' ; return cb(e); }
-
+	var self = this;
 	// crawl show
-	var showUrl = 'https://app.chinasuntv.com/index.php/api/show?id=%s'
+	var showUrl = self.config.resourceAPI + '/api/show?id=%s'
 	showUrl = dvalue.sprintf(showUrl, options.sid);
 	showUrl = url.parse(showUrl);
 	showUrl.datatype = 'json';
@@ -413,7 +413,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		var show = res.data;
 
 		// crawl episodes
-		var episodesUrl = this.config.resourceAPI + '/api/episodes?show_id=%s&page=%s&limit=%s';
+		var episodesUrl = self.config.resourceAPI + '/api/episodes?show_id=%s&page=%s&limit=%s';
 		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
 		episodesUrl = url.parse(episodesUrl);
 		episodesUrl.datatype = 'json';
