@@ -760,7 +760,7 @@ Bot.prototype.init = function(config) {
 	// /program/{$pid}/comment?uid={$uid}&page={$page}&limit={$limit}
 	this.router.get('/program/:pid/comment', function (req, res, next) {
 		var bot = self.getBot('Comment');
-		var options = {uid: req.query.uid, pid: req.params.pid, page: req.query.page, limit: req.query.limit};
+		var options = {pid: req.params.pid, page: req.query.page, limit: req.query.limit};
 		bot.listProgramComments(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);

@@ -82,15 +82,20 @@ Bot.prototype.writeComment = function (options, cb) {
 				// 成功後回傳 cmid (= _id)
 				commentsCollection.insertOne(formatComment(options), function(e, result){
 					if(e) { e.code = '01002'; return cb(e); }
-					if(!result.ok){ e = new Error('Comment not found'); e.code = '39501'; return cb(e); }
+					if(!result.insertedId){ e = new Error('Comment not found'); e.code = '39501'; return cb(e); }
 					cb(null, {cmid: result.insertedId})
 				})
 			}
 			else {
 				// Update comment
 				// 成功後回傳 cmid (= _id)
-				var cond = {_id: foundComment._id}
-				var update = { $set: formatComment(options)};
+				var commentSet = descComment(foundComment);
+				commentSet.mtime = new Date().getTime();
+				commentSet.atime = new Date().getTime();
+				console.log(foundComment);
+				console.log(commentSet);
+				var cond = { _id: foundComment._id };
+				var update = { $set: commentSet };
 				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
 					if(e) { e.code = '01002'; return cb(e); }
 					if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
@@ -143,9 +148,7 @@ Bot.prototype.deleteComment = function (options, cb) {
 };
 
 /* require: options.pid */
-/* optional: options.uid, options.page, options.limit */
-// 檢查 pid 格式 (X)
-// 檢查 uid 格式
+/* optional: options.page, options.limit */
 // 搜尋 Comment
 // order by atime 由新到舊
 // 回傳資料須經由 descComment function 處理
@@ -163,9 +166,17 @@ Bot.prototype.deleteComment = function (options, cb) {
 }
  */
 Bot.prototype.listProgramComments = function (options, cb) {
-	var collection = this.db.collection('Comments');
-	var cond = dvalue.default( options, { page: 1, limit: 7 });
-	collection.find(cond, function (e, comments) {
+	var self = this;
+	options.page = Number(options.page)
+	options.limit = Number(options.limit)
+
+	// List comments which user publish
+	var commentsCollection = self.db.collection('Comments');
+	var commentsCond = { pid: options.pid };
+	var skip = (options.page) ? options.page * 7 : 0;
+	var limit = (options.limit && (options.limit <= 7 || options.limit >= 0) ) ? 7 : options.limit;
+	commentsCollection.find(commentsCond).skip(skip).limit(limit)
+		.sort([['atime', 1]]).toArray(function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }
 
 		// Init ret
@@ -180,7 +191,7 @@ Bot.prototype.listProgramComments = function (options, cb) {
 			var comment = comments[idx];
 			var ratingIdx = comment.rating - 1;
 			ret.count[ratingIdx] += 1;
-			ret.push(descComment(comment));
+			ret.comments.push(descComment(comment));
 		}
 		// fill average porperty
 		ret.average = ret.count.reduce(function(prev, curr, idx){
