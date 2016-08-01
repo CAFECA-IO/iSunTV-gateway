@@ -200,6 +200,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 			var programData = {
 				title: program.title,
 				description: program.description,
+				shortdesc: program.shortdesc || '',
 				//cover: program.image_thumb,
 				//isEnd: true, // fake data
 				//createYear: 2099, // fake data
@@ -273,6 +274,7 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 			var programData = {
 				title: program.title,
 				description: program.description,
+				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
@@ -348,6 +350,7 @@ Bot.prototype.listSeries = function (options, cb) {
 				sid: program.id,
 				title: program.title,
 				description: program.description,
+				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
@@ -590,6 +593,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			var programData = {
 				title: program.title,
 				description: program.description,
+				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
@@ -643,6 +647,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			var programData = {
 				title: program.title,
 				description: program.description,
+				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
