@@ -417,7 +417,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
 		episodesUrl = url.parse(episodesUrl);
 		episodesUrl.datatype = 'json';
-		request(episodesUrl, function(e, episodes){
+		request(episodesUrl, function(e, res){
 			// error
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
