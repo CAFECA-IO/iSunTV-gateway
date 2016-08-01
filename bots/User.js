@@ -89,10 +89,10 @@ var descUser = function (user) {
 	if(user.username.length == 0) { user.username = user.email; }
 	if(user.email.length == 0 && user.emails.length > 0) { user.email = user.emails[0]; }
 	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
+	user.password = user.password.length > 0;
 	delete user._id;
 	delete user.emails;
 	delete user.photos;
-	delete user.password;
 	delete user.validcode;
 	delete user.reset;
 	delete user.facebook;
