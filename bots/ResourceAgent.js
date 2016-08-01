@@ -436,7 +436,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				programs: [],
 				paymentPlans: [], // fake data
 				playable: true,
-				grading: "G",
+				grading: "16+",
 				movieType: ["紀錄片"],
 				director: ["卜釋仁"],
 				actors: ["路人甲", "路人乙", "路人丙"],
