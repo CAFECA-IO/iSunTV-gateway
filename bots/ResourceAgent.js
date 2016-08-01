@@ -199,7 +199,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 			var program = programs[i];
 			var programData = {
 				title: program.title,
-				description: program.description,
+				description: program.description.substr(0, 70),
 				shortdesc: program.shortdesc || '',
 				//cover: program.image_thumb,
 				//isEnd: true, // fake data
