@@ -76,14 +76,13 @@ Bot.prototype.writeComment = function (options, cb) {
 		var commentsCollection = self.db.collection('Comments');
 		var commentsCond = { uid: options.uid, pid: options.pid };
 		commentsCollection.findOne(commentsCond, {}, function (e, foundComment) {
-			console.log(foundComment)
 			if(e) { e.code = '01002'; return cb(e); }
 			if(!foundComment){
 				// Insert comment
 				// 成功後回傳 cmid (= _id)
 				commentsCollection.insertOne(formatComment(options), function(e, result){
 					if(e) { e.code = '01002'; return cb(e); }
-					if(!result.ok){ e = new Error('Comment not found'); e.code = '39501'; cb(e); }
+					if(!result.ok){ e = new Error('Comment not found'); e.code = '39501'; return cb(e); }
 					cb(null, {cmid: result.insertedId})
 				})
 			}
@@ -94,7 +93,7 @@ Bot.prototype.writeComment = function (options, cb) {
 				var update = { $set: formatComment(options)};
 				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
 					if(e) { e.code = '01002'; return cb(e); }
-					if(!d.value){ e = new Error('Comment not found'); e.code = ''; cb(e); }
+					if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
 					cb(null, {cmid: d.value._id})
 				});
 			}
@@ -106,12 +105,13 @@ Bot.prototype.writeComment = function (options, cb) {
 // Comment.verified 設為 true
 Bot.prototype.verifyComment = function (options, cb) {
 	var collection = this.db.collection('Comments');
-	var cond = { _id: new mongodb.ObjectID(options.uid) };
+	var cond = { _id: new mongodb.ObjectID(options.cmid), uid: options.uid };
 	var update = { $set: { verified: true } };
-	commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
+	collection.findAndModify(cond, {}, update, {}, function (e, d) {
+		console.log(d)
 		if(e) { e.code = '01002'; return cb(e); }
-		if(!d.vaule){ e = new Error('Comment not found'); e.code = ''; cb(e); }
-		cb(null, {cmid: result._id})
+		if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
+		cb(null, {cmid: d.value._id})
 	});
 };
 
