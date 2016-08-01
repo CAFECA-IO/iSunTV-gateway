@@ -7,7 +7,7 @@ const mongodb = require('mongodb');
 var logger;
 
 var formatComment = function (data) {
-	var comment = dvalue(data, {
+	var comment = dvalue.default(data, {
 		uid: '',
 		pid: '',
 		title: '',
@@ -56,42 +56,45 @@ Bot.prototype.start = function () {
 Bot.prototype.writeComment = function (options, cb) {
 	// Verified optins
 	if (typeof options.rating === 'string' ||
-		(int(options.rating) < 1 && int(options.rating)) > 5){
+		(Math.floor(options.rating) < 1 && Math.floor(options.rating)) > 5){
 		var e = new Error("Incorrect rating"); e.code = "19501"; return cb(e);
 	}
 	if (options.title.length > 100) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
 	if (options.comment.length > 1000) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
-	options.rating = int(options.rating);
+	options.rating = Math.floor(options.rating);
+
+	var self = this;
 
 	// Fetch user
-	var usersCollection = this.db.collection('Users');
+	var usersCollection = self.db.collection('Users');
 	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
 	usersCollection.findOne(usersCond, {}, function (e, user) {
 		if(e) { e.code = '01002'; return cb(e); }
 		if(!user){ e = new Error('User not found'); e.code = '39102'; cb(e); }
 
 		// Fetch comment
-		var commentsCollection = this.db.collection('Comments');
+		var commentsCollection = self.db.collection('Comments');
 		var commentsCond = { uid: options.uid, pid: options.pid };
-		commentsCollection.findOne(usersCond, {}, function (e, foundComment) {
+		commentsCollection.findOne(commentsCond, {}, function (e, foundComment) {
+			console.log(foundComment)
 			if(e) { e.code = '01002'; return cb(e); }
 			if(!foundComment){
 				// Insert comment
 				// 成功後回傳 cmid (= _id)
-				commentsCollection.insertOne(formatComment(comment), function(e, comment){
+				commentsCollection.insertOne(formatComment(options), function(e, result){
 					if(e) { e.code = '01002'; return cb(e); }
-					if(!comment){ e = new Error('Comment not found'); e.code = '39501'; cb(e); }
-					cb(null, {cmid: comment._id})
+					if(!result.ok){ e = new Error('Comment not found'); e.code = '39501'; cb(e); }
+					cb(null, {cmid: result.insertedId})
 				})
 			}
 			else {
 				// Update comment
 				// 成功後回傳 cmid (= _id)
 				var cond = {_id: foundComment._id}
-				var update = { $set: formatComment(comment)};
+				var update = { $set: formatComment(options)};
 				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
 					if(e) { e.code = '01002'; return cb(e); }
-					if(!comment){ e = new Error('Comment not found'); e.code = ''; cb(e); }
+					if(!d.value){ e = new Error('Comment not found'); e.code = ''; cb(e); }
 					cb(null, {cmid: d.value._id})
 				});
 			}
@@ -176,7 +179,7 @@ Bot.prototype.listProgramComments = function (options, cb) {
 			var comment = comments[idx];
 			var ratingIdx = comment.rating - 1;
 			ret.count[ratingIdx] += 1;
-			ret.push(descComment(comment);
+			ret.push(descComment(comment));
 		}
 		// fill average porperty
 		ret.average = ret.count.reduce(function(prev, curr, idx){

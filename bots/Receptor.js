@@ -18,7 +18,7 @@ const ecresult = require('ecresult');
 const dvalue = require('dvalue');
 
 const hashcashLevel = 3;
-const allowDelay = 10000;
+const allowDelay = 10000 * 1000;
 
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
 		pathPw = path.join(__dirname, '../config/pw.txt'),
@@ -721,7 +721,7 @@ Bot.prototype.init = function(config) {
 	});
 
 	// delete comment
-	this.router.del('/comment/:cmid', checkLogin, function (req, res, next) {
+	this.router.delete('/comment/:cmid', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Comment');
 		var options = {uid: req.session.uid, cmid: req.params.cmid};
 		bot.deleteComment(options, function (e, d) {
