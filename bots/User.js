@@ -325,13 +325,13 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 	}
 
 	send = function (data) {
-		if(self.addMailHistory(data.mail)) {
+		if(self.addMailHistory(data.email)) {
 			var content, template = self.getTemplate('mail_signup.html');
 			var tmp = url.parse(self.config.url);
 			var uri = dvalue.sprintf('/register/%s/%s', data.email, data.validcode);
 			tmp.pathname = path.join(tmp.pathname, uri);
 			data.comfirmURL = url.format(tmp);
-			content = dvalue.sprintf(template, data.comfirmURL, data.comfirmURL, data.validcode);
+			content = dvalue.sprintf(template, data.email, data.comfirmURL, data.comfirmURL, data.validcode);
 			bot.send(data.email, 'Welcom to iSunTV - Account Verification', content, function () {});
 			cb(null, {});
 		}
@@ -356,6 +356,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 			else {
 				if(!textype.isEmail(options.email)) { options.email = d.email; }
 				options.validcode = d.validcode;
+				options.username = d.username;
 				send(options);
 			}
 		});
@@ -775,7 +776,7 @@ Bot.prototype.forgetPassword = function (user, cb) {
 					var bot = self.getBot('Mailer');
 					var template = self.getTemplate('mail_pw_reset.html');
 					var resetUrl = dvalue.sprintf(self.config.frontend + '?uid=%s&code=%s', d.value._id, code);
-					var content = dvalue.sprintf(template, resetUrl, code);
+					var content = dvalue.sprintf(template, user.email, resetUrl, code);
 					bot.send(user.email, 'Welcome to iSunTV - Forget password', content, function () {});
 					cb(null, { uid:d.value._id });
 				}
