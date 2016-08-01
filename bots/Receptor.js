@@ -739,7 +739,7 @@ Bot.prototype.init = function(config) {
 	});
 
 	// verify comment
-	this.router.get('/comment/:cmid/verify', checkLogin, function (req, res, next) {
+	this.router.put('/comment/:cmid/verify', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Comment');
 		var options = {uid: req.session.uid, cmid: req.params.cmid};
 		bot.verifyComment(options, function (e, d) {

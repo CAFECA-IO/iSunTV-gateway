@@ -108,7 +108,6 @@ Bot.prototype.verifyComment = function (options, cb) {
 	var cond = { _id: new mongodb.ObjectID(options.cmid), uid: options.uid };
 	var update = { $set: { verified: true } };
 	collection.findAndModify(cond, {}, update, {}, function (e, d) {
-		console.log(d)
 		if(e) { e.code = '01002'; return cb(e); }
 		if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
 		cb(null, {cmid: d.value._id})
@@ -122,20 +121,22 @@ Bot.prototype.verifyComment = function (options, cb) {
 // problem
 Bot.prototype.deleteComment = function (options, cb) {
 	if (!options.uid){ e = new Error(); e.code = 9527; return cb(e);}
+	var self = this;
 
 	// Fetch user
-	var usersCollection = this.db.collection('Users');
+	var usersCollection = self.db.collection('Users');
 	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
 	usersCollection.findOne(usersCond, {}, function (e, user) {
 		if(e) { e.code = '01002'; return cb(e); }
-		if(!user){ e = new Error('User not found'); e.code = '39102'; cb(e); }
+		if(!user){ e = new Error('User not found'); e.code = '39102'; return cb(e); }
 
 		// Delete comment
-		var commentsCollection = this.db.collection('Comments');
+		var commentsCollection = self.db.collection('Comments');
 		var commentsCond = { _id: new mongodb.ObjectID(options.cmid), uid: options.uid };
-		commentsCollection.deleteOne(commentsCond, function (e, comment) {
+		commentsCollection.deleteOne(commentsCond, function (e, result) {
+			console.log(result);
 			if(e) { e.code = '01002'; return cb(e); }
-			if(!comment){ e = new Error('Comment not found'); e.code = '39102'; cb(e); }
+			if(result.deletedCount === 0){ e = new Error('Comment not found'); e.code = '39102'; return cb(e); }
 			cb(null, {});
 		});
 	});
