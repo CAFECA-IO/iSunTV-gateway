@@ -80,6 +80,16 @@ Bot.prototype.facebook_authenticate = function (req, res, next) {
 Bot.prototype.facebook_callback = function (req, res, next) {
 	var self = this;
 	passport.authenticate('facebook', function (err, user, info) {
+		var passto = function (query) {
+			if(self.config.frontend) {
+				var redirectURL, tmp = url.parse(self.config.frontend + 'cn/fbCheck');
+				tmp.query = query;
+				res.result.setResult(302);
+				res.result.setData({Location: url.format(tmp)});
+			}
+			next();
+		};
+
 		if(!user) {
 			// auth failed
 			var e = new Error('Facebook authorization failed');
@@ -87,18 +97,7 @@ Bot.prototype.facebook_callback = function (req, res, next) {
 			res.result.setErrorCode(e.code);
 			res.result.setMessage(e.message);
 
-			if(self.config.facebook.redirect) {
-				var redirectURL, tmp = url.parse(self.config.facebook.redirect);
-				tmp.query = {
-					result: 0,
-					errorcode: e.code,
-					message: e.message
-				};
-				res.result.setResult(302);
-				res.result.setData({Location: url.format(tmp)});
-			}
-
-			next();
+			passto(res.result.toJSON());
 		}
 		else {
 			self.getToken(user, function (e, d) {
@@ -119,15 +118,7 @@ Bot.prototype.facebook_callback = function (req, res, next) {
 					res.result.setSession({uid: d.uid});
 				}
 
-				if(self.config.facebook.redirect) {
-					var redirectURL, tmp = url.parse(self.config.facebook.redirect);
-					tmp.query = res.result.toJSON();
-					tmp.query.data = JSON.stringify(tmp.query.data);
-					res.result.setResult(302);
-					res.result.setData({Location: url.format(tmp)});
-				}
-
-				next();
+				passto(res.result.toJSON());
 			});
 		}
 	})(req, res, next);
