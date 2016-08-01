@@ -13,7 +13,6 @@ var formatComment = function (data) {
 		title: '',
 		comment: '',
 		rating: 0,
-		verified: false,
 		ctime: new Date().getTime(),
 		mtime: undefined,
 		atime: new Date().getTime()
@@ -100,7 +99,7 @@ Bot.prototype.writeComment = function (options, cb) {
 	});
 };
 
-/* require: options.cmid */
+/* require: options.cmid, options.uid */
 // Comment.verified 設為 true
 Bot.prototype.verifyComment = function (options, cb) {
 	var collection = this.db.collection('Comments');
