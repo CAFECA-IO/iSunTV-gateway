@@ -428,7 +428,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				sid: show.id,
 				title: show.title,
 				description: show.description,
-				cover: show.image_thumb,
+				cover: show.image_cover,
 				isEnd: true, // fake data
 				createYear: 2099, // fake data
 				update: show.updated_at,
