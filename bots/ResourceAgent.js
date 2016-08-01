@@ -111,7 +111,7 @@ Bot.prototype.parseChannel = function (resource, cb) {
 	var self = this;
 	var channel = dvalue.search({id: resource.channel}, this.channels);
 	if(channel === undefined) {
-		var options = url.parse(this.config.resourceAPI + '/index.php/api/getLiveStreamUrl');
+		var options = url.parse(this.config.resourceAPI + '/api/getLiveStreamUrl');
 		options.datatype = 'json';
 		request(options, function (e, d) {
 			if(e) { cb(e); }
@@ -184,7 +184,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 	]
 
 	// crawl the tv program api
-	var bannerUrl = this.config.resourceAPI + '/index.php/api/shows?page=%s&limit=%s'
+	var bannerUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
 	bannerUrl = dvalue.sprintf(bannerUrl, options.page, options.limit);
 	bannerUrl = url.parse(bannerUrl);
 	bannerUrl.datatype = 'json';
@@ -232,7 +232,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 };
 
 // list featured (精選節目)
-// http://app.chinasuntv.com/index.php/api/featured?page=3&limit=10
+// http://app2.isuntv.com/api/featured?page=3&limit=10
 /* optional: options.page, options.limit */
 /*
 [{
@@ -304,7 +304,7 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 };
 
 // list series
-// http://app.chinasuntv.com/index.php/api/shows?page=3&limit=10
+// http://app2.isuntv.com/api/shows?page=3&limit=10
 /* optional: options.page, options.limit */
 /*
 [{
@@ -331,7 +331,7 @@ Bot.prototype.listSeries = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var seriesUrl = this.config.resourceAPI + '/index.php/api/shows?page=%s&limit=%s'
+	var seriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
 	seriesUrl = dvalue.sprintf(seriesUrl, options.page, options.limit);
 	seriesUrl = url.parse(seriesUrl);
 	seriesUrl.datatype = 'json';
@@ -368,8 +368,8 @@ Bot.prototype.listSeries = function (options, cb) {
 };
 
 // series program data
-// http://app.chinasuntv.com/index.php/api/show?id=9
-// http://app.chinasuntv.com/index.php/api/episodes?show_id=9&page=1&limit=10
+// http://app2.isuntv.com/api/show?id=9
+// http://app2.isuntv.com/api/episodes?show_id=9&page=1&limit=10
 /* required: options.sid, optional: options: options.page, options.limit */
 /*
 {
@@ -470,7 +470,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 };
 
 // episodes program data
-// http://app.chinasuntv.com/index.php/api/episode?id=9
+// http://app2.isuntv.com/api/episode?id=9
 /* required: options.eid */
 /*
 {
@@ -503,7 +503,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	if(!options.eid) { e = new Error('episode not found'); e.code = '39402' ; return cb(e); }
 
 	// crawl the tv program api
-	var episodeUrl = this.config.resourceAPI + '/index.php/api/episode?id=%s'
+	var episodeUrl = this.config.resourceAPI + '/api/episode?id=%s'
 	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
 	episodeUrl = url.parse(episodeUrl);
 	episodeUrl.datatype = 'json';
@@ -568,7 +568,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
-	var specialSeriesUrl = this.config.resourceAPI + '/index.php/api/shows?page=%s&limit=%s'
+	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
@@ -621,7 +621,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 };
 
 // latest program
-// http://app.chinasuntv.com/index.php/api/latest
+// http://app2.isuntv.com/api/latest
 /*
 [
 	episodeProgram,
@@ -630,7 +630,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
  */
 Bot.prototype.getLatestProgram = function (options, cb) {
   // crawl
-	var latestUrl = url.parse(this.config.resourceAPI + '/index.php/api/latest');
+	var latestUrl = url.parse(this.config.resourceAPI + '/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
 		// error
