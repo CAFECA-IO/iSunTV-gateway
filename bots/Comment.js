@@ -92,8 +92,6 @@ Bot.prototype.writeComment = function (options, cb) {
 				var commentSet = descComment(foundComment);
 				commentSet.mtime = new Date().getTime();
 				commentSet.atime = new Date().getTime();
-				console.log(foundComment);
-				console.log(commentSet);
 				var cond = { _id: foundComment._id };
 				var update = { $set: commentSet };
 				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
