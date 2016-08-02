@@ -839,7 +839,7 @@ Bot.prototype.resetPassword = function (options, cb) {
 		}
 		else if (user.password == options.password){
 			e = new Error("duplicate password");
-			e.code = '29201';
+			e.code = '29101';
 			return cb(e);
 		}
 		else {
@@ -858,6 +858,7 @@ Bot.prototype.resetPassword = function (options, cb) {
 					}
 					else {
 						self.cleanResetHistory(options.uid);
+						self.cleanLoginHistory(d.value.account);
 						return cb(null, {});
 					}
 				}
