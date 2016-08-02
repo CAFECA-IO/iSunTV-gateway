@@ -7,6 +7,7 @@ const mongodb = require('mongodb');
 var logger;
 
 var formatComment = function (data) {
+	if(Array.isArray(data)) { return data.map(formatComment); }
 	var comment = dvalue.default(data, {
 		uid: '',
 		pid: '',
@@ -20,13 +21,16 @@ var formatComment = function (data) {
 	return comment;
 };
 var descComment = function (data) {
+	if(Array.isArray(data)) { return data.map(descComment); }
 	var comment = {
-		uid: data.uid,
-		pid: data.pid,
+		cmid: data._id,
+		user: data.user,
+		program: data.program,
 		title: data.title,
 		comment: data.comment,
 		ctime: data.ctime,
-		mtime: data.mtime
+		mtime: data.mtime,
+		atime: data.atime
 	};
 	return comment;
 };
@@ -162,6 +166,9 @@ Bot.prototype.deleteComment = function (options, cb) {
 		...
 	]
 }
+
+	comment.program = {title: "", cover: ""}
+	comment.user = {username: "", photo: ""}
  */
 Bot.prototype.listProgramComments = function (options, cb) {
 	var self = this;
@@ -214,6 +221,9 @@ Bot.prototype.listProgramComments = function (options, cb) {
 	{$comment},
 	...
 ]
+
+comment.program = {title: "", cover: ""}
+comment.user = {username: "", photo: ""}
 */
 Bot.prototype.listUserComments = function (options, cb) {
 	var self = this;
@@ -236,11 +246,7 @@ Bot.prototype.listUserComments = function (options, cb) {
 			.sort([['atime', -1]]).toArray(function (e, comments) {
 			if(e) { e.code = '01002'; return cb(e); }
 
-			//
-			var ret = [];
-			for(var idx = 0, len = comments.length; idx < len ;idx++){
-				ret.push(descComment(comments[idx]));
-			}
+			var ret = descComment(comments);
 			cb(null, ret);
 		});
 	});
