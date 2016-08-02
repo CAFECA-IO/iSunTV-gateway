@@ -777,9 +777,9 @@ Bot.prototype.init = function(config) {
 
 	// list user comment
 	// /mycomment?page={$page}&limit={$limit}
-	this.router.get('/myconnebt', checkLogin, function (req, res, next) {
+	this.router.get('/mycomment', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Comment');
-		var options = {uid: req.query.uid, page: req.query.page, limit: req.query.limit};
+		var options = {uid: req.session.uid, page: req.query.page, limit: req.query.limit};
 		bot.listUserComments(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
