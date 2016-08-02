@@ -504,7 +504,8 @@ Bot.prototype.init = function(config) {
 	// channel list
 	this.router.get('/channel/', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		bot.listChannel(function (e, d) {
+		var options = {};
+		bot.listChannel(optinos, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -714,6 +715,43 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('Latest Programs List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	/* Braintree */
+	// GET Client Token
+	this.router.get('/braintree/token', function (req, res, next) {
+		var bot = self.getBot('Payment');
+		var options = {};
+		bot.generateClientToken(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Get Payment Token');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	// Transaction
+	this.router.post(['/checkout', '/braintree/checkout'], function (req, res, next) {
+		var bot = self.getBot('Payment');
+		var options = {nonce: req.body.payment_method_nonce};
+		bot.checkoutTransaction(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Checkout Transaction');
 				res.result.setData(d);
 			}
 			next();

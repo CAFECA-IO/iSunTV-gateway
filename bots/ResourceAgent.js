@@ -61,7 +61,7 @@ Bot.prototype.start = function () {
 
 };
 
-Bot.prototype.listChannel = function (cb) {
+Bot.prototype.listChannel = function (options, cb) {
 	this.descChannel({cid: 1}, function (e, d) {
 		if(e) { cb(e); }
 		else {

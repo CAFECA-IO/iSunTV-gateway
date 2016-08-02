@@ -154,5 +154,5 @@ var startBot = function (config) {
 var config = loadConfig();
 startBot(config);
 process.on('uncaughtException', function (err) {
-	logger.exception.error(err);
+	config.logger.exception.error(err);
 });
