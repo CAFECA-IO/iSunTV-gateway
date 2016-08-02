@@ -175,12 +175,12 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 	});
 
 	var pics = [
-		'http://s3.foxmovies.com/foxmovies/production/films/126/images/feature/morgan-film-page-header-s1-front-main-stage.jpg',
-		'http://s3.foxmovies.com/foxmovies/production/films/107/images/tickets/background-image-front-6764916802.jpg',
-		'http://s3.foxmovies.com/foxmovies/production/films/34/images/feature/film-page-feature-image-front-main-stage.jpg',
-		'http://s3.foxmovies.com/foxmovies/production/films/109/images/feature/aa-joy-header-may3-front-main-stage.jpg',
-		'http://s3.foxmovies.com/foxmovies/production/films/94/images/feature/tlr-film-header-now-front-main-stage.jpg',
-		'http://s3.foxmovies.com/foxmovies/production/films/33/images/feature/film-page-feature-image-front-main-stage.jpg'
+		'http://img08.deviantart.net/e30d/i/2013/210/b/1/batman_superman_movie_promo_banner_by_paulrom-d6fr4kl.png',
+		'http://www.forgetthebox.net/wp-content/uploads/2013/06/Man-of-Steel-movie-banner-image.jpg',
+		'https://ae01.alicdn.com/kf/HTB13.twLXXXXXbOXpXXq6xXFXXXI/Walking-Dead-Cast-font-b-Vinyl-b-font-Banner-Hi-Res-font-b-Movie-b-font.jpg',
+		'http://legionofleia.com/wp-content/uploads/2015/10/assassins-creed-movie-banner.jpg',
+		'https://getfuturistic.files.wordpress.com/2013/12/get-futuristic-jupiter-ascending-2014-mila-kunis-and-channing-tatum-official-movie-trailer-poster-2.jpg',
+		'http://www.kiwiidigital.com/public/pan_2015_movie-3840x2160.jpg'
 	]
 
 	// crawl the tv program api
@@ -198,6 +198,8 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 		for (var i = 0, len = programs.length; i < len; i++){
 			var program = programs[i];
 			var programData = {
+				pid: 's' + program.id,
+				type: 'series',
 				title: program.title,
 				description: program.description.substr(0, 70),
 				shortdesc: program.shortdesc || '',
