@@ -59,6 +59,7 @@ Bot.prototype.start = function () {
 // 成功後回傳 cmid (= _id)
 Bot.prototype.writeComment = function (options, cb) {
 	// Verified optins
+	var self = this;
 	if (typeof options.rating === 'string' ||
 		(Math.floor(options.rating) < 1 && Math.floor(options.rating)) > 5){
 		var e = new Error("Incorrect rating"); e.code = "19501"; return cb(e);
@@ -84,11 +85,15 @@ Bot.prototype.writeComment = function (options, cb) {
 			if(!foundComment){
 				// Insert comment
 				// 成功後回傳 cmid (= _id)
-				commentsCollection.insertOne(formatComment(options), function(e, result){
-					if(e) { e.code = '01002'; return cb(e); }
-					if(!result.insertedId){ e = new Error('Comment not found'); e.code = '39501'; return cb(e); }
-					cb(null, {cmid: result.insertedId})
-				})
+				var bot = self.getBot('ResourceAgent');
+				bot.getProgram({pid: options.pid}, function (e, d) {
+					options.program = d;
+					commentsCollection.insertOne(formatComment(options), function(e, result){
+						if(e) { e.code = '01002'; return cb(e); }
+						if(!result.insertedId){ e = new Error('Comment not found'); e.code = '39501'; return cb(e); }
+						cb(null, {cmid: result.insertedId})
+					})
+				});
 			}
 			else {
 				// Update comment

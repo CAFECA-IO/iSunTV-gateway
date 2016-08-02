@@ -5,6 +5,7 @@ const https = require('https');
 const url = require('url');
 const path = require('path');
 const dvalue = require('dvalue');
+const textype = require('textype');
 
 var logger;
 
@@ -42,6 +43,26 @@ var request = function (options, cb) {
 	crawler.on('error', function (e) { cb(e); })
 	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
+};
+
+var fetchImage = function (data) {
+	var result = {cover: "", images: []};
+	if(textype.isURL(data.image_thumb)) { result.cover = data.image_thumb; result.images.push(data.image_thumb); }
+	if(textype.isURL(data.image_cover)) { result.cover = data.image_cover; result.images.push(data.image_cover); }
+	if(textype.isURL(data.image_cover1)) { result.cover = data.image_cover1; result.images.push(data.image_cover1); }
+	if(textype.isURL(data.image_cover2)) { result.cover = data.image_cover2; result.images.push(data.image_cover2); }
+	if(textype.isURL(data.image_cover3)) { result.cover = data.image_cover3; result.images.push(data.image_cover3); }
+	if(textype.isURL(data.image_cover4)) { result.cover = data.image_cover4; result.images.push(data.image_cover4); }
+	if(textype.isURL(data.image_cover5)) { result.cover = data.image_cover5; result.images.push(data.image_cover5); }
+	if(textype.isURL(data.image_cover6)) { result.cover = data.image_cover6; result.images.push(data.image_cover6); }
+	if(textype.isURL(data.image_cover_full)) { result.cover = data.image_cover_full; result.images.push(data.image_cover_full); }
+	if(textype.isURL(data.image_cover1_full)) { result.cover = data.image_cover1_full; result.images.push(data.image_cover1_full); }
+	if(textype.isURL(data.image_cover2_full)) { result.cover = data.image_cover2_full; result.images.push(data.image_cover2_full); }
+	if(textype.isURL(data.image_cover3_full)) { result.cover = data.image_cover3_full; result.images.push(data.image_cover3_full); }
+	if(textype.isURL(data.image_cover4_full)) { result.cover = data.image_cover4_full; result.images.push(data.image_cover4_full); }
+	if(textype.isURL(data.image_cover5_full)) { result.cover = data.image_cover5_full; result.images.push(data.image_cover5_full); }
+	if(textype.isURL(data.image_cover6_full)) { result.cover = data.image_cover6_full; result.images.push(data.image_cover6_full); }
+	return result;
 };
 
 var Bot = function (config) {
@@ -117,7 +138,7 @@ Bot.prototype.parseChannel = function (resource, cb) {
 			if(e) { cb(e); }
 			else if(!d || !d.data || !d.data.live_stream) {
 				e = new Error('channel not found');
-				e.code = '39201';
+				e.code = '39301';
 				cb(e);
 			}
 			else {
@@ -295,6 +316,49 @@ Bot.prototype.listSeries = function (options, cb) {
 		// return data when correct
 		cb(null, result);
 	})
+};
+
+Bot.prototype.getProgram = function (options, cb) {
+	options = dvalue.default(options, {pid: ''});
+	var program = {
+		type: options.pid.substr(0, 1).toLowerCase(),
+		id: options.pid.substr(1)
+	};
+	var api = url.parse(this.config.resourceAPI);
+
+	switch(program.type) {
+		case 's':
+			api.pathname = '/api/show';
+			api.query = {id: program.id};
+			api = url.parse(url.format(api));
+			api.datatype = 'json';
+			request(api, function (e, d) {
+				if(d && d.data) {
+					var program = {title: d.data.title, cover: fetchImage(d.data).cover};
+					cb(null, program);
+				}
+				else { cb(e); }
+			});
+			break;
+		case 'e':
+			api.pathname = '/api/episode';
+			api.query = {id: program.id};
+			api = url.parse(url.format(api));
+			api.datatype = 'json';
+			request(api, function (e, d) {
+				if(d && d.data) {
+					var program = {title: d.data.title};
+					program.cover = fetchImage(d.data).cover;
+					cb(null, program);
+				}
+				else { cb(e); }
+			});
+			break;
+		default:
+			var e = new Error('program not found');
+			e.code = '39201';
+			return cb(e);
+	}
 };
 
 // series program data
