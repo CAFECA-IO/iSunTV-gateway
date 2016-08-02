@@ -184,7 +184,6 @@ Bot.prototype.listProgramComments = function (options, cb) {
 		.sort([['atime', 1]]).toArray(function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }
 
-		// ------
 		var uids = comments.map(function(comment){ return new mongodb.ObjectID(comment.uid); });
 		var usersCollection = self.db.collection('Users');
 		var usersCond = { _id: { $in: uids } };
@@ -264,7 +263,10 @@ Bot.prototype.listUserComments = function (options, cb) {
 			.sort([['atime', -1]]).toArray(function (e, comments) {
 			if(e) { e.code = '01002'; return cb(e); }
 
-			var ret = descComment(comments);
+			var ret = descComment(comments).map(function(comment){
+				comment.user = {username: user.username, photo: user.photo };
+				return comment
+			});
 			cb(null, ret);
 		});
 	});
