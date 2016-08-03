@@ -293,6 +293,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	],
 	paymentPlans: [],
 	playable: boolean,
+	comments: [],
+	mycomment: ""
 }]
  */
 Bot.prototype.listSeries = function (options, cb) {
