@@ -521,7 +521,7 @@ Bot.prototype.init = function(config) {
 	// channel information
 	this.router.get('/channel/:channel', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {cid: req.params.channel, time: req.query.time};
+		var options = {cid: req.params.channel, time: req.query.time, days: req.query.days};
 		bot.descChannel(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);

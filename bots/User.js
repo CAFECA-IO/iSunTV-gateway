@@ -775,7 +775,7 @@ Bot.prototype.forgetPassword = function (user, cb) {
 				if(self.addMailHistory(d.value.email)){
 					var bot = self.getBot('Mailer');
 					var template = self.getTemplate('mail_pw_reset.html');
-					var resetUrl = dvalue.sprintf(self.config.frontend + '?uid=%s&code=%s', d.value._id, code);
+					var resetUrl = dvalue.sprintf(self.config.frontend + '/updatePassword?resetcode=%s&uid=%s', code, d.value._id);
 					var content = dvalue.sprintf(template, user.email, resetUrl, code);
 					bot.send(user.email, 'Welcome to iSunTV - Forget password', content, function () {});
 					cb(null, { uid:d.value._id });

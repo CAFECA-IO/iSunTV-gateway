@@ -82,7 +82,7 @@ Bot.prototype.facebook_callback = function (req, res, next) {
 	passport.authenticate('facebook', function (err, user, info) {
 		var passto = function (query) {
 			if(self.config.frontend) {
-				var redirectURL, tmp = url.parse(self.config.frontend + 'cn/fbCheck');
+				var redirectURL, tmp = url.parse(self.config.frontend + '/cn/fbCheck');
 				tmp.query = query;
 				res.result.setResult(302);
 				res.result.setData({Location: url.format(tmp)});
