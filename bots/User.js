@@ -370,7 +370,7 @@ Bot.prototype.emailVerification = function (user, cb) {
 	var collection = this.db.collection('Users');
 	collection.findAndModify(condition, {}, updateQuery, {}, function (e, d) {
 		if(e) { e.code = '01003'; cb(e); }
-		else if(!d.value) { e = new Error('incorrect code'); e.code = '19101'; cb(e); }
+		else if(!d.value) { e = new Error('incorrect code'); e.code = '39101'; cb(e); }
 		else {
 			self.cleanVerifyHistory(user.account);
 			self.cleanInvalidAccount(condition, function () {});
@@ -412,6 +412,26 @@ Bot.prototype.getProfile = function (user, cb) {
 			));
 		}
 	});
+};
+
+Bot.prototype.accountRegistable = function (options, cb) {
+	if(!textype.isEmail(options.account)) { var e = new Error('invalid email'); e.code = '12001'; return cb(e); }
+	var self = this;
+	var condition = {
+		account: options.account,
+		enable: true
+	};
+	q.fcall(function () {
+		return self.checkUserExist(condition);
+	}).then(function (d) {
+		if(d) {
+			var e = new Error('occupied email');
+			e.code = '22001';
+			cb(e);
+		}
+		else { cb(null, {}); }
+	},
+	function (e) { cb(e); });
 };
 
 Bot.prototype.checkUserExist = function (condition) {
