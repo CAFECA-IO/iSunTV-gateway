@@ -569,7 +569,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		// fill comments
 		// List user comments
 		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: 's' + options.sid };
+		var commentsCond = { pid: 'e' + options.eid };
 		commentsCollection.find(commentsCond)
 			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
 			if(e) { e.code = '01002'; return cb(e); }
@@ -579,7 +579,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			commentsCond.uid = options.uid;
 			commentsCollection.findOne(commentsCond {} function(e, comment){
 				if(e) { e.code = '01002'; return cb(e); }
-				result.mycomment = comment
+				result.mycomment = comment;
 				cb(null, result);
 			})
 		});
@@ -649,8 +649,30 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			result.programs.push(programData);
 		}
 
-		// return data when correct
-		cb(null, result);
+
+		// fill comments
+		// List user comments
+		var pids = result.programs.map(function(v){ return v.pid})
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.findOne(commentsCond {} function(e, comment){
+				if(e) { e.code = '01002'; return cb(e); }
+
+				result.programs = result.programs.map(function(program){
+					program.comments = dvalue.search(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(comments, {pid: program.pid, uid: options.uid})
+					return program
+				})
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
@@ -702,8 +724,29 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			result.push(programData)
 		}
 
-		// return data when correct
-		cb(null, result);
+		// fill comments
+		// List user comments
+		var pids = result.map(function(v){ return v.pid})
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.findOne(commentsCond {} function(e, comment){
+				if(e) { e.code = '01002'; return cb(e); }
+
+				result = result.map(function(program){
+					program.comments = dvalue.search(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(comments, {pid: program.pid, uid: options.uid})
+					return program
+				})
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
