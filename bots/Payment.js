@@ -16,9 +16,8 @@ Bot.prototype.init = function (config) {
 	logger = config.logger;
 
 	var btcfg = config.BrainTree;
-	btcfg.environment = braintree.Environment.Production;
+	btcfg.environment = braintree.Environment.Sandbox;
 	this.gateway = braintree.connect(btcfg);
-	console.log(btcfg);
 };
 
 Bot.prototype.start = function () {
