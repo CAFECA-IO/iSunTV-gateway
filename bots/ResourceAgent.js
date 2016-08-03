@@ -439,6 +439,10 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				soundtrack: ["chinese", "english"],
 				scenarist: ["路平"],
 				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+				/*
+				comments:
+				mycomment:
+				*/
 			}
 			// mapping data with programs
 			for (var i = 0, len = episodes.length; i < len; i++){

@@ -146,7 +146,6 @@ Bot.prototype.deleteComment = function (options, cb) {
 		var commentsCollection = self.db.collection('Comments');
 		var commentsCond = { _id: new mongodb.ObjectID(options.cmid), uid: options.uid };
 		commentsCollection.deleteOne(commentsCond, function (e, result) {
-			console.log(result);
 			if(e) { e.code = '01002'; return cb(e); }
 			if(result.deletedCount === 0){ e = new Error('Comment not found'); e.code = '39102'; return cb(e); }
 			cb(null, {});
