@@ -316,6 +316,22 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// registrable account
+	this.router.get('/registrable/:account', checkHashCash, function (req, res, next) {
+		var options = {account: req.params.account};
+		var bot = self.getBot('User');
+		bot.accountRegistable(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('registrable account:', req.params.account);
+			}
+			next();
+		});
+	});
 	// resend verify email
 	this.router.get('/resend', checkLogin, function (req, res, next) {
 		var options = { uid: req.session.uid };
