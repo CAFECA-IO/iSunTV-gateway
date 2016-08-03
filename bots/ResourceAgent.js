@@ -468,11 +468,12 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			commentsCollection.find(commentsCond)
 				.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
 				if(e) { e.code = '01002'; return cb(e); }
-				result.comments = comments
+				result.comments = comments;
 
 				// fill mycomment
+				console.log(options);
 				commentsCond.uid = options.uid;
-				commentsCollection.findOne(commentsCond {} function(e, comment){
+				commentsCollection.findOne(commentsCond, {}, function(e, comment){
 					if(e) { e.code = '01002'; return cb(e); }
 					result.mycomment = comment
 					cb(null, result);
@@ -577,15 +578,13 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 
 			// fill mycomment
 			commentsCond.uid = options.uid;
-			commentsCollection.findOne(commentsCond {} function(e, comment){
+			commentsCollection.findOne(commentsCond, {}, function(e, comment){
 				if(e) { e.code = '01002'; return cb(e); }
 				result.mycomment = comment;
 				cb(null, result);
 			})
 		});
 
-		// return data when correct
-		cb(null, result);
 	})
 };
 
@@ -602,6 +601,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
+	var self = this;
 	var specialSeriesUrl = 'https://app.chinasuntv.com/index.php/api/shows?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
@@ -661,12 +661,12 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 
 			// fill mycomment
 			commentsCond.uid = options.uid;
-			commentsCollection.findOne(commentsCond {} function(e, comment){
+			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
 				if(e) { e.code = '01002'; return cb(e); }
 
 				result.programs = result.programs.map(function(program){
-					program.comments = dvalue.search(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(comments, {pid: program.pid, uid: options.uid})
+					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
 					return program
 				})
 
@@ -685,7 +685,8 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 ]
  */
 Bot.prototype.getLatestProgram = function (options, cb) {
-  // crawl
+	var self = this;
+  	// crawl
 	var latestUrl = url.parse('https://app.chinasuntv.com/index.php/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
@@ -735,12 +736,12 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 			// fill mycomment
 			commentsCond.uid = options.uid;
-			commentsCollection.findOne(commentsCond {} function(e, comment){
+			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
 				if(e) { e.code = '01002'; return cb(e); }
 
 				result = result.map(function(program){
-					program.comments = dvalue.search(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(comments, {pid: program.pid, uid: options.uid})
+					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
 					return program
 				})
 

@@ -617,7 +617,7 @@ Bot.prototype.init = function(config) {
 	// Series Programs List
 	this.router.get(['/series/programs/:sid', '/series/programs/:sid/:page', '/series/programs/:sid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit, uid: req.session.uid };
+		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit };
 		bot.getSeriesProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
