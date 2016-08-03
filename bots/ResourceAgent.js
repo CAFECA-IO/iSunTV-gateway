@@ -78,7 +78,7 @@ Bot.prototype.listChannel = function (cb) {
 };
 Bot.prototype.descChannel = function (options, cb) {
 	var picks = 336;
-	if(options.time > 0) { picks = 48; }
+	if(options.time > 0) { picks = options.days > 0? 48 * options.days: 48; }
 	var data = {
 		cid: options.cid,
 		playable: true,
