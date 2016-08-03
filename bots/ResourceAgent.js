@@ -201,6 +201,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {};
 }]
  */
 Bot.prototype.listFeaturedProgram = function (options, cb) {
+	var self = this;
 	// default value
 	options = dvalue.default(options, {
 		page: 1,
@@ -248,9 +249,29 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 			}
 			result.push(programData);
 		}
+		// fill comments
+		// List user comments
+		var pids = result.map(function(v){ return v.pid})
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
 
-		// return data when correct
-		cb(null, result);
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
+				if(e) { e.code = '01002'; return cb(e); }
+
+				result = result.map(function(program){
+					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
+					return program
+				})
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
@@ -275,6 +296,7 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 }]
  */
 Bot.prototype.listSeries = function (options, cb) {
+	var self = this;
 	// default value
 	options = dvalue.default(options, {
 		page: 1,
@@ -290,31 +312,50 @@ Bot.prototype.listSeries = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		// mapping data
-		var result = [];
 		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			result.push({
-				sid: program.id,
-				title: program.title,
-				description: program.description,
-				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				update: program.updated_at,
-				type: 'series',
-				duration: 2*60, // 2h, fake data
-				programs: [
-					{eid: "123", title: '嘿！阿弟牯'}
-				], // fake data
-				paymentPlans: [], // fake data
-				playable: true,
-			})
-		}
+		var pids = programs.map(function(value){ return 's' + value.id});
 
-		// return data when correct
-		cb(null, result);
+		// fill comments
+		// List user comments
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.find(commentsCond).toArray(function(e, userComments){
+				if(e) { e.code = '01002'; return cb(e); }
+
+				// mapping data
+				var result = [];
+
+				for (var i = 0, len = programs.length; i < len; i++){
+					var program = programs[i];
+					result.push({
+						sid: program.id,
+						title: program.title,
+						description: program.description,
+						cover: program.image_thumb,
+						isEnd: true, // fake data
+						createYear: 2099, // fake data
+						update: program.updated_at,
+						type: 'series',
+						duration: 2*60, // 2h, fake data
+						programs: [
+							{eid: "123", title: '嘿！阿弟牯'}
+						], // fake data
+						paymentPlans: [], // fake data
+						playable: true,
+						comments: dvalue.multiSearch(comments, {pid: 's' + program.id}),
+						mycomment: dvalue.search(userComments, {pid: 's' + program.id, uid: options.uid}),
+					})
+				}
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
@@ -471,7 +512,6 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				result.comments = comments;
 
 				// fill mycomment
-				console.log(options);
 				commentsCond.uid = options.uid;
 				commentsCollection.findOne(commentsCond, {}, function(e, comment){
 					if(e) { e.code = '01002'; return cb(e); }
