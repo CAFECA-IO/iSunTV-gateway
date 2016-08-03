@@ -18,7 +18,7 @@ const ecresult = require('ecresult');
 const dvalue = require('dvalue');
 
 const hashcashLevel = 3;
-const allowDelay = 10000;
+const allowDelay = 10000 * 1000;
 
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
 		pathPw = path.join(__dirname, '../config/pw.txt'),
@@ -652,7 +652,7 @@ Bot.prototype.init = function(config) {
 	// Series Programs List
 	this.router.get(['/series/programs/:sid', '/series/programs/:sid/:page', '/series/programs/:sid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit};
+		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit };
 		bot.getSeriesProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -730,6 +730,99 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('Latest Programs List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	/* comments */
+	// write comment
+	this.router.post('/program/:pid/comment/', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {uid: req.session.uid, pid: req.params.pid, rating: req.body.rating, title: req.body.title, comment: req.body.comment};
+		bot.writeComment(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('write comment');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	// delete comment
+	this.router.delete('/comment/:cmid', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {uid: req.session.uid, cmid: req.params.cmid};
+		bot.deleteComment(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('delete comment');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	// verify comment
+	this.router.put('/comment/:cmid/verify', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {uid: req.session.uid, cmid: req.params.cmid};
+		bot.verifyComment(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('verify comment');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	// list program comment
+	// /program/{$pid}/comment?uid={$uid}&page={$page}&limit={$limit}
+	this.router.get('/program/:pid/comment', function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {pid: req.params.pid, page: req.query.page, limit: req.query.limit};
+		bot.listProgramComments(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('list comment');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
+	// list user comment
+	// /mycomment?page={$page}&limit={$limit}
+	this.router.get('/mycomment', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {uid: req.session.uid, page: req.query.page, limit: req.query.limit};
+		bot.listUserComments(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('list comment');
 				res.result.setData(d);
 			}
 			next();

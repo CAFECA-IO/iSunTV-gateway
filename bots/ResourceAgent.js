@@ -5,6 +5,7 @@ const https = require('https');
 const url = require('url');
 const path = require('path');
 const dvalue = require('dvalue');
+const textype = require('textype');
 
 var logger;
 
@@ -42,6 +43,26 @@ var request = function (options, cb) {
 	crawler.on('error', function (e) { cb(e); })
 	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
+};
+
+var fetchImage = function (data) {
+	var result = {cover: "", images: []};
+	if(textype.isURL(data.image_thumb)) { result.cover = data.image_thumb; result.images.push(data.image_thumb); }
+	if(textype.isURL(data.image_cover)) { result.cover = data.image_cover; result.images.push(data.image_cover); }
+	if(textype.isURL(data.image_cover1)) { result.cover = data.image_cover1; result.images.push(data.image_cover1); }
+	if(textype.isURL(data.image_cover2)) { result.cover = data.image_cover2; result.images.push(data.image_cover2); }
+	if(textype.isURL(data.image_cover3)) { result.cover = data.image_cover3; result.images.push(data.image_cover3); }
+	if(textype.isURL(data.image_cover4)) { result.cover = data.image_cover4; result.images.push(data.image_cover4); }
+	if(textype.isURL(data.image_cover5)) { result.cover = data.image_cover5; result.images.push(data.image_cover5); }
+	if(textype.isURL(data.image_cover6)) { result.cover = data.image_cover6; result.images.push(data.image_cover6); }
+	if(textype.isURL(data.image_cover_full)) { result.cover = data.image_cover_full; result.images.push(data.image_cover_full); }
+	if(textype.isURL(data.image_cover1_full)) { result.cover = data.image_cover1_full; result.images.push(data.image_cover1_full); }
+	if(textype.isURL(data.image_cover2_full)) { result.cover = data.image_cover2_full; result.images.push(data.image_cover2_full); }
+	if(textype.isURL(data.image_cover3_full)) { result.cover = data.image_cover3_full; result.images.push(data.image_cover3_full); }
+	if(textype.isURL(data.image_cover4_full)) { result.cover = data.image_cover4_full; result.images.push(data.image_cover4_full); }
+	if(textype.isURL(data.image_cover5_full)) { result.cover = data.image_cover5_full; result.images.push(data.image_cover5_full); }
+	if(textype.isURL(data.image_cover6_full)) { result.cover = data.image_cover6_full; result.images.push(data.image_cover6_full); }
+	return result;
 };
 
 var Bot = function (config) {
@@ -117,7 +138,7 @@ Bot.prototype.parseChannel = function (resource, cb) {
 			if(e) { cb(e); }
 			else if(!d || !d.data || !d.data.live_stream) {
 				e = new Error('channel not found');
-				e.code = '39201';
+				e.code = '39301';
 				cb(e);
 			}
 			else {
@@ -253,6 +274,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 }]
  */
 Bot.prototype.listFeaturedProgram = function (options, cb) {
+	var self = this;
 	// default value
 	options = dvalue.default(options, {
 		page: 1,
@@ -301,9 +323,29 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 			}
 			result.push(programData);
 		}
+		// fill comments
+		// List user comments
+		var pids = result.map(function(v){ return v.pid})
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
 
-		// return data when correct
-		cb(null, result);
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
+				if(e) { e.code = '01002'; return cb(e); }
+
+				result = result.map(function(program){
+					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
+					return program
+				})
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
@@ -325,9 +367,12 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	],
 	paymentPlans: [],
 	playable: boolean,
+	comments: [],
+	mycomment: ""
 }]
  */
 Bot.prototype.listSeries = function (options, cb) {
+	var self = this;
 	// default value
 	options = dvalue.default(options, {
 		page: 1,
@@ -343,33 +388,94 @@ Bot.prototype.listSeries = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		// mapping data
-		var result = [];
 		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			result.push({
-				sid: program.id,
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				update: program.updated_at,
-				type: 'series',
-				duration: 2*60, // 2h, fake data
-				programs: [
-					{eid: "123", title: '嘿！阿弟牯'}
-				], // fake data
-				paymentPlans: [], // fake data
-				playable: true,
-			})
-		}
+		var pids = programs.map(function(value){ return 's' + value.id});
 
-		// return data when correct
-		cb(null, result);
+		// fill comments
+		// List user comments
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.find(commentsCond).toArray(function(e, userComments){
+				if(e) { e.code = '01002'; return cb(e); }
+
+				// mapping data
+				var result = [];
+
+				for (var i = 0, len = programs.length; i < len; i++){
+					var program = programs[i];
+					result.push({
+						sid: program.id,
+						title: program.title,
+						description: program.description,
+						cover: program.image_thumb,
+						isEnd: true, // fake data
+						createYear: 2099, // fake data
+						update: program.updated_at,
+						type: 'series',
+						duration: 2*60, // 2h, fake data
+						programs: [
+							{eid: "123", title: '嘿！阿弟牯'}
+						], // fake data
+						paymentPlans: [], // fake data
+						playable: true,
+						comments: dvalue.multiSearch(comments, {pid: 's' + program.id}),
+						mycomment: dvalue.search(userComments, {pid: 's' + program.id, uid: options.uid}),
+					})
+				}
+
+				cb(null, result);
+			})
+		});
 	})
+};
+
+Bot.prototype.getProgram = function (options, cb) {
+	options = dvalue.default(options, {pid: ''});
+	var program = {
+		type: options.pid.substr(0, 1).toLowerCase(),
+		id: options.pid.substr(1)
+	};
+	var api = url.parse(this.config.resourceAPI);
+
+	switch(program.type) {
+		case 's':
+			api.pathname = '/api/show';
+			api.query = {id: program.id};
+			api = url.parse(url.format(api));
+			api.datatype = 'json';
+			request(api, function (e, d) {
+				if(d && d.data) {
+					var program = {title: d.data.title, cover: fetchImage(d.data).cover};
+					cb(null, program);
+				}
+				else { cb(e); }
+			});
+			break;
+		case 'e':
+			api.pathname = '/api/episode';
+			api.query = {id: program.id};
+			api = url.parse(url.format(api));
+			api.datatype = 'json';
+			request(api, function (e, d) {
+				if(d && d.data) {
+					var program = {title: d.data.title};
+					program.cover = fetchImage(d.data).cover;
+					cb(null, program);
+				}
+				else { cb(e); }
+			});
+			break;
+		default:
+			var e = new Error('program not found');
+			e.code = '39201';
+			return cb(e);
+	}
 };
 
 // series program data
@@ -400,12 +506,16 @@ Bot.prototype.listSeries = function (options, cb) {
 	soundtrack: ["chinese", "english"],
 	scenarist: ["路平"],
 	trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+	//
+	comments: [...]
+	mycomment: ...
 }
  */
 Bot.prototype.getSeriesProgram = function (options, cb) {
 	// error
 	if(!options.sid) { e = new Error('series not found'); e.code = '39401' ; return cb(e); }
 	var self = this;
+
 	// crawl show
 	var showUrl = self.config.resourceAPI + '/api/show?id=%s'
 	showUrl = dvalue.sprintf(showUrl, options.sid);
@@ -450,6 +560,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				soundtrack: ["chinese", "english"],
 				scenarist: ["路平"],
 				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+
 			}
 			// mapping data with programs
 			for (var i = 0, len = episodes.length; i < len; i++){
@@ -467,8 +578,24 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				})
 			}
 
-			// return data when correct
-			cb(null, result);
+			// fill comments
+			// List user comments
+			var commentsCollection = self.db.collection('Comments');
+			var commentsCond = { pid: 's' + options.sid };
+			commentsCollection.find(commentsCond)
+				.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+				if(e) { e.code = '01002'; return cb(e); }
+				result.comments = comments;
+
+				// fill mycomment
+				commentsCond.uid = options.uid;
+				commentsCollection.findOne(commentsCond, {}, function(e, comment){
+					if(e) { e.code = '01002'; return cb(e); }
+					result.mycomment = comment
+					cb(null, result);
+				})
+			});
+
 		})
 
 	})
@@ -506,6 +633,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 Bot.prototype.getEpisodeProgram = function (options, cb) {
 	// error
 	if(!options.eid) { e = new Error('episode not found'); e.code = '39402' ; return cb(e); }
+	var self = this;
 
 	// crawl the tv program api
 	var episodeUrl = this.config.resourceAPI + '/api/episode?id=%s'
@@ -555,8 +683,24 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
 		};
 
-		// return data when correct
-		cb(null, result);
+		// fill comments
+		// List user comments
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: 'e' + options.eid };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+			result.comments = comments
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.findOne(commentsCond, {}, function(e, comment){
+				if(e) { e.code = '01002'; return cb(e); }
+				result.mycomment = comment;
+				cb(null, result);
+			})
+		});
+
 	})
 };
 
@@ -573,6 +717,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 }
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
+	var self = this;
 	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
@@ -621,8 +766,30 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			result.programs.push(programData);
 		}
 
-		// return data when correct
-		cb(null, result);
+
+		// fill comments
+		// List user comments
+		var pids = result.programs.map(function(v){ return v.pid})
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
+				if(e) { e.code = '01002'; return cb(e); }
+
+				result.programs = result.programs.map(function(program){
+					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
+					return program
+				})
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
@@ -635,7 +802,8 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 ]
  */
 Bot.prototype.getLatestProgram = function (options, cb) {
-  // crawl
+	// crawl
+	var self = this;
 	var latestUrl = url.parse(this.config.resourceAPI + '/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
@@ -675,8 +843,29 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			result.push(programData)
 		}
 
-		// return data when correct
-		cb(null, result);
+		// fill comments
+		// List user comments
+		var pids = result.map(function(v){ return v.pid})
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: { $in: pids } };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
+				if(e) { e.code = '01002'; return cb(e); }
+
+				result = result.map(function(program){
+					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
+					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
+					return program
+				})
+
+				cb(null, result);
+			})
+		});
 	})
 };
 
