@@ -389,11 +389,15 @@ Bot.prototype.getProgram = function (options, cb) {
 	soundtrack: ["chinese", "english"],
 	scenarist: ["路平"],
 	trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+	//
+	comments: [...]
+	mycomment: ...
 }
  */
 Bot.prototype.getSeriesProgram = function (options, cb) {
 	// error
 	if(!options.sid) { e = new Error('series not found'); e.code = '39401' ; return cb(e); }
+	var self = this;
 
 	// crawl show
 	var showUrl = 'https://app.chinasuntv.com/index.php/api/show?id=%s'
@@ -439,10 +443,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				soundtrack: ["chinese", "english"],
 				scenarist: ["路平"],
 				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
-				/*
-				comments:
-				mycomment:
-				*/
+
 			}
 			// mapping data with programs
 			for (var i = 0, len = episodes.length; i < len; i++){
@@ -460,8 +461,24 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				})
 			}
 
-			// return data when correct
-			cb(null, result);
+			// fill comments
+			// List user comments
+			var commentsCollection = self.db.collection('Comments');
+			var commentsCond = { pid: 's' + options.sid };
+			commentsCollection.find(commentsCond)
+				.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+				if(e) { e.code = '01002'; return cb(e); }
+				result.comments = comments
+
+				// fill mycomment
+				commentsCond.uid = options.uid;
+				commentsCollection.findOne(commentsCond {} function(e, comment){
+					if(e) { e.code = '01002'; return cb(e); }
+					result.mycomment = comment
+					cb(null, result);
+				})
+			});
+
 		})
 
 	})
@@ -499,6 +516,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 Bot.prototype.getEpisodeProgram = function (options, cb) {
 	// error
 	if(!options.eid) { e = new Error('episode not found'); e.code = '39402' ; return cb(e); }
+	var self = this;
 
 	// crawl the tv program api
 	var episodeUrl = 'https://app.chinasuntv.com/index.php/api/episode?id=%s'
@@ -547,6 +565,24 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			scenarist: ["路平"],
 			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
 		};
+
+		// fill comments
+		// List user comments
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: 's' + options.sid };
+		commentsCollection.find(commentsCond)
+			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
+			if(e) { e.code = '01002'; return cb(e); }
+			result.comments = comments
+
+			// fill mycomment
+			commentsCond.uid = options.uid;
+			commentsCollection.findOne(commentsCond {} function(e, comment){
+				if(e) { e.code = '01002'; return cb(e); }
+				result.mycomment = comment
+				cb(null, result);
+			})
+		});
 
 		// return data when correct
 		cb(null, result);
