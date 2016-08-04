@@ -769,7 +769,15 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
-	cb(null, ['culture', 'travel', 'character', 'history', 'education', 'interview']);
+	var fakeData = [
+		{"ptid": "xxx", "text": "culture"},
+    	{"ptid": "xxx", "text": "travel"},
+    	{"ptid": "xxx", "text": "character"},
+    	{"ptid": "xxx", "text": "history"},
+    	{"ptid": "xxx", "text": "education"},
+    	{"ptid": "xxx", "text": "interview"}
+	]
+	cb(null, fakeData);
 };
 
 // searchProgram
@@ -808,7 +816,10 @@ Bot.prototype.searchProgram = function (options, cb) {
 				createYear: 2099, // fake data
 				paymentPlans: [], // fake data
 				playable: true,
-				programType: programTypes[Math.floor(Math.random() * programTypes.length)]
+				programType: {
+					ptid: 'xxx',
+					text: programTypes[Math.floor(Math.random() * programTypes.length)]
+				}
 			}
 			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
