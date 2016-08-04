@@ -618,7 +618,7 @@ Bot.prototype.init = function(config) {
 	// Featured programs
 	this.router.get(['/featured', '/featured/:page', '/featured/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {page: req.params.page, limit: req.params.limit};
+		var options = {page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.listFeaturedProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -635,7 +635,7 @@ Bot.prototype.init = function(config) {
 	// Series List
 	this.router.get(['/series', '/series/:page', '/series/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {page: req.params.page, limit: req.params.limit};
+		var options = {page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.listSeries(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -652,7 +652,7 @@ Bot.prototype.init = function(config) {
 	// Series Programs List
 	this.router.get(['/series/programs/:sid', '/series/programs/:sid/:page', '/series/programs/:sid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit };
+		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.getSeriesProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -669,7 +669,7 @@ Bot.prototype.init = function(config) {
 	// Special Series List
 	this.router.get(['/special/series', '/special/series/:page', '/special/series/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit};
+		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.getSpecialSeries(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -705,15 +705,15 @@ Bot.prototype.init = function(config) {
 
 		switch(program.type) {
 			case 's':
-				var options = {sid: program.id};
+				var options = {sid: program.id, uid: req.session.uid};
 				bot.getSeriesProgram(options, callbackFunction);
 				break;
 			case 'e':
-				var options = {eid: program.id};
+				var options = {eid: program.id, uid: req.session.uid};
 				bot.getEpisodeProgram(options, callbackFunction);
 			 	break;
 			default:
-				var options = {eid: program.id};
+				var options = {eid: program.id, uid: req.session.uid};
 				bot.getEpisodeProgram(options, callbackFunction);
 		}
 	});
@@ -721,7 +721,7 @@ Bot.prototype.init = function(config) {
 	// GET Latest Programs
 	this.router.get(['/latest/program'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {};
+		var options = {uid: req.session.uid};
 		bot.getLatestProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
