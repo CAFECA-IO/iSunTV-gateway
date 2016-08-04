@@ -646,25 +646,15 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		var episode = res.data;
 
 		// fetch valid img resources as a array
-		var imgResources = [
-			"image_cover1", "image_cover2", "image_cover3",
-		  "image_cover4", "image_cover5", "image_cover6",
-		  "image_cover1_full", "image_cover2_full", "image_cover3_full",
-		  "image_cover4_full", "image_cover5_full", "image_cover6_full",
-		];
-		var validImgResources = imgResources.reduce(function(prev, curr){
-			var imageResource = episode[curr];
-			if (imageResource){ prev.push(imageResource) };
-			return prev
-		}, []);
+		var fetchedImage = fetchImage(episode);
 
 		// mapping data
 		var result = {
 			eid: episode.id,
 			title: episode.title,
 			description: episode.description,
-			cover: episode.image_thumb,
-			images: validImgResources,
+			cover: fetchedImage.cover,
+			images: fetchedImage.images,
 			isEnd: true, // fake data
 			createYear: 2099, // fake data
 			update: episode.updated_at,
@@ -766,30 +756,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			result.programs.push(programData);
 		}
 
-
-		// fill comments
-		// List user comments
-		var pids = result.programs.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
-
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
-
-				result.programs = result.programs.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
-
-				cb(null, result);
-			})
-		});
+		cb(null, result);
 	})
 };
 
@@ -843,29 +810,8 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			result.push(programData)
 		}
 
-		// fill comments
-		// List user comments
-		var pids = result.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
+		cb(null, result);
 
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
-
-				result = result.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
-
-				cb(null, result);
-			})
-		});
 	})
 };
 
