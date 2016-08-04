@@ -768,6 +768,12 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	})
 };
 
+// listPrgramType
+Bot.prototype.listPrgramType = function (options, cb) {
+	cb(null, ['culture', 'travel', 'character', 'history', 'education', 'interview']);
+};
+
+
 Bot.prototype.request = request;
 
 module.exports = Bot;
