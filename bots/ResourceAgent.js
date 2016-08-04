@@ -323,29 +323,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 			}
 			result.push(programData);
 		}
-		// fill comments
-		// List user comments
-		var pids = result.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
 
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
-
-				result = result.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
-
-				cb(null, result);
-			})
-		});
+		cb(null, result);
 	})
 };
 
