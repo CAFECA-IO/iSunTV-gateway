@@ -442,6 +442,7 @@ Bot.prototype.getProgram = function (options, cb) {
 // http://app2.isuntv.com/api/show?id=9
 // http://app2.isuntv.com/api/episodes?show_id=9&page=1&limit=10
 /* required: options.sid, optional: options: options.page, options.limit */
+/* optional: options.uid */
 /*
 {
 	sid: '',
@@ -540,19 +541,18 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 
 			// fill comments
 			var bot = self.getBot('Comment');
-			bot.listProgramComments({pid: 's' + show.id}, function (e, d) {
-				result.comments = d.comments;
+			bot.summaryProgramComments({pid: 's' + show.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+				result = dvalue.default(d, result);
 				cb(null, result);
 			});
-
 		})
-
 	})
 };
 
 // episodes program data
 // http://app2.isuntv.com/api/episode?id=9
 /* required: options.eid */
+/* optional: options.uid */
 /*
 {
 	eid: '',
@@ -624,8 +624,8 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 
 		// fill comments
 		var bot = self.getBot('Comment');
-		bot.listProgramComments({pid: 'e' + episode.id}, function (e, d) {
-			result.comments = d.comments;
+		bot.summaryProgramComments({pid: 'e' + episode.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+			result = dvalue.default(d, result);
 			cb(null, result);
 		});
 	})
@@ -696,13 +696,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			}
 			result.programs.push(programData);
 		}
-
-		// fill comments
-		var bot = self.getBot('Comment');
-		bot.listProgramComments({pid: options.pid}, function (e, d) {
-			result.comments = d.comments;
-			cb(null, result);
-		});
+		cb(null, result);
 	})
 };
 
@@ -839,13 +833,7 @@ Bot.prototype.searchProgram = function (options, cb) {
 			}
 			result.programs.push(programData);
 		}
-
-		// fill comments
-		var bot = self.getBot('Comment');
-		bot.listProgramComments({pid: options.pid}, function (e, d) {
-			result.comments = d.comments;
-			cb(null, result);
-		});
+		cb(null, result);
 	})
 };
 

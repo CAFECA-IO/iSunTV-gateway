@@ -683,6 +683,40 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// List Program Type
+	this.router.get('/programtype/', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {};
+		bot.listPrgramType(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('list program type');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// List Program By Type
+	this.router.get('/programtype/', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {};
+		bot.listPrgramType(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('list program type');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 	// GET Program
 	this.router.get('/program/:pid', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');

@@ -35,6 +35,10 @@ var descComment = function (data) {
 	};
 	return comment;
 };
+var validRating = function (rating) {
+	rating = parseInt(rating);
+	return (rating >= 1 && rating <= 5)? rating: 1;
+};
 
 var Bot = function (config) {
 	if (!config) config = {};
@@ -155,7 +159,35 @@ Bot.prototype.deleteComment = function (options, cb) {
 };
 
 /* require: options.pid */
-/* optional: options.page, options.limit */
+/* optional: options.uid, options.page, options.limit */
+Bot.prototype.summaryProgramComments = function (options, cb) {
+	var self = this;
+	var collection = this.db.collection('Comments');
+	var condition = {pid: options.pid};
+	var startPoint = (options.page - 1) * options.limit;
+	var endPoint = startPoint + options.limit;
+	collection.find(condition).sort({atime: -1}).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		var rs = {}, picks = [], mycomment, total = 0, count = new Array(5).fill(0);
+		d.map(function (v, i) {
+			v.rating = validRating(v.rating);
+			if(i >= startPoint && i < endPoint) { picks.push(v); }
+			if(!!v.uid && v.uid == options.uid) { mycomment = v; }
+			total += v.rating;
+			count[(v.rating - 1)]++;
+		});
+		rs.rating = {
+			average: parseFloat(parseFloat(total/d.length).toFixed(1)),
+			count: count
+		};
+		if(!!options.uid) { rs.mycomment = mycomment; }
+		if(!!startPoint && !!endPoint) { rs.picks = picks; }
+		cb(null, rs);
+	});
+};
+
+/* require: options.pid */
+/* optional: options.page, options.limit, options.uid, options.summary */
 // 搜尋 Comment
 // order by atime 由新到舊
 // 回傳資料須經由 descComment function 處理
@@ -186,7 +218,7 @@ Bot.prototype.listProgramComments = function (options, cb) {
 	var skip = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 7 : 0;
 	var limit = (limitOpt && (limitOpt <= 7 || limitOpt > 0) ) ? limitOpt : 7;
 	commentsCollection.find(commentsCond).skip(skip).limit(limit)
-		.sort([['atime', 1]]).toArray(function (e, comments) {
+		.sort([['atime', -1]]).toArray(function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }
 
 		var uids = comments.map(function(comment){ return new mongodb.ObjectID(comment.uid); });
@@ -231,7 +263,7 @@ Bot.prototype.listProgramComments = function (options, cb) {
 };
 
 /* require: options.uid */
-/* optional: options.pid, options.page, options.limit */
+/* optional: options.pid, options.page, options.limit, options.summary */
 // 檢查 pid 格式
 // 檢查 uid 格式
 // 搜尋 Comment
