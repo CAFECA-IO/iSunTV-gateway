@@ -777,7 +777,71 @@ Bot.prototype.listPrgramType = function (options, cb) {
 	cb(null, ['culture', 'travel', 'character', 'history', 'education', 'interview']);
 };
 
+// searchProgram
+Bot.prototype.searchProgram = function (options, cb) {
+	var self = this;
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
+	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
+	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
+	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
+	specialSeriesUrl = url.parse(specialSeriesUrl);
+	specialSeriesUrl.datatype = 'json';
+	request(specialSeriesUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		var programs = res.data;
+		// mapping data
+		var result = {
+			title: '中國文化專題',
+			description: '',
+			cover: '',
+			programs: [],
+		};
+
+		var programTypes = ['culture', 'travel', 'character', 'history', 'education', 'interview'];
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			var programData = {
+				title: program.title,
+				description: program.description,
+				shortdesc: program.shortdesc || '',
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				paymentPlans: [], // fake data
+				playable: true,
+				programType: programTypes[Math.floor(Math.random() * programTypes.length)];
+			}
+			if (program.type === 'show'){
+				programData.pid = 's' + program.id;
+				programData.updated_at = program.updated_at;
+				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
+				programData.type = 'series'
+			}
+			else if (program.type === 'episode'){
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			else {
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			result.programs.push(programData);
+		}
+
+		// fill comments
+		var bot = self.getBot('Comment');
+		bot.listProgramComments({pid: options.pid}, function (e, d) {
+			result.comments = d.comments;
+			cb(null, result);
+		});
+	})
+};
 
 Bot.prototype.request = request;
 
