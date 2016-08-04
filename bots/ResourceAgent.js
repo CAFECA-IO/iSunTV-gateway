@@ -704,39 +704,12 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			result.programs.push(programData);
 		}
 
-		cb(null, result);
-
-
 		// fill comments
-		// List user comments
 		var bot = self.getBot('Comment');
 		bot.listProgramComments({pid: options.pid}, function (e, d) {
 			result.comments = d.comments;
 			cb(null, result);
 		});
-		/*
-		var pids = result.programs.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
-
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
-
-				result.programs = result.programs.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
-
-				cb(null, result);
-			})
-		});
-		*/
 	})
 };
 
