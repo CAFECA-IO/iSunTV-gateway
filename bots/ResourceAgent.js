@@ -656,8 +656,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
 	var self = this;
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
+	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
 	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
-	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
+	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
 	request(specialSeriesUrl, function(e, res){
@@ -772,6 +776,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 Bot.prototype.listPrgramType = function (options, cb) {
 	cb(null, ['culture', 'travel', 'character', 'history', 'education', 'interview']);
 };
+
 
 
 Bot.prototype.request = request;
