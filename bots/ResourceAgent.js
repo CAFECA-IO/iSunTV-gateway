@@ -728,6 +728,10 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 Bot.prototype.getLatestProgram = function (options, cb) {
 	// crawl
 	var self = this;
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
+	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
 	var latestUrl = url.parse(this.config.resourceAPI + '/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
@@ -736,7 +740,9 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 		var result = [];
 		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
+
+		var startIndex = limit * (page-1) -1;
+		for (var i = startIndex, len = programs.length; i < len; i++){
 			var program = programs[i];
 			var programData = {
 				title: program.title,
@@ -813,7 +819,7 @@ Bot.prototype.searchProgram = function (options, cb) {
 				createYear: 2099, // fake data
 				paymentPlans: [], // fake data
 				playable: true,
-				programType: programTypes[Math.floor(Math.random() * programTypes.length)];
+				programType: programTypes[Math.floor(Math.random() * programTypes.length)]
 			}
 			if (program.type === 'show'){
 				programData.pid = 's' + program.id;
