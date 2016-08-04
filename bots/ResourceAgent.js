@@ -646,7 +646,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		var episode = res.data;
 
 		// fetch valid img resources as a array
-		var fetchedImage = fetchImage(episode);
+		var fetchedImage = fetchImage(episode)
 
 		// mapping data
 		var result = {
@@ -674,23 +674,11 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		};
 
 		// fill comments
-		// List user comments
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: 'e' + options.eid };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
-			result.comments = comments
-
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.findOne(commentsCond, {}, function(e, comment){
-				if(e) { e.code = '01002'; return cb(e); }
-				result.mycomment = comment;
-				cb(null, result);
-			})
+		var bot = self.getBot('Comment');
+		bot.listProgramComments({pid: options.pid}, function (e, d) {
+			result.comments = d.comments;
+			cb(null, result);
 		});
-
 	})
 };
 
