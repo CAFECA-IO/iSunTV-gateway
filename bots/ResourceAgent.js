@@ -539,21 +539,10 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			}
 
 			// fill comments
-			// List user comments
-			var commentsCollection = self.db.collection('Comments');
-			var commentsCond = { pid: 's' + options.sid };
-			commentsCollection.find(commentsCond)
-				.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-				if(e) { e.code = '01002'; return cb(e); }
-				result.comments = comments;
-
-				// fill mycomment
-				commentsCond.uid = options.uid;
-				commentsCollection.findOne(commentsCond, {}, function(e, comment){
-					if(e) { e.code = '01002'; return cb(e); }
-					result.mycomment = comment
-					cb(null, result);
-				})
+			var bot = self.getBot('Comment');
+			bot.listProgramComments({pid: 's' + show.id}, function (e, d) {
+				result.comments = d.comments;
+				cb(null, result);
 			});
 
 		})
@@ -635,7 +624,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 
 		// fill comments
 		var bot = self.getBot('Comment');
-		bot.listProgramComments({pid: options.pid}, function (e, d) {
+		bot.listProgramComments({pid: 'e' + episode.id}, function (e, d) {
 			result.comments = d.comments;
 			cb(null, result);
 		});
