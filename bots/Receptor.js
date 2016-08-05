@@ -701,10 +701,10 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List Program By Type
-	this.router.get('/programtype/', function (req, res, next) {
+	this.router.get('/programtype/:type/', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {};
-		bot.listPrgramType(options, function (e, d) {
+		var options = {type: req.params.type};
+		bot.searchProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -753,9 +753,9 @@ Bot.prototype.init = function(config) {
 	});
 
 	// GET Latest Programs
-	this.router.get(['/latest/program'], function (req, res, next) {
+	this.router.get('/latest/program', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {uid: req.session.uid};
+		var options = {uid: req.session.uid, page: req.query.page, limit: req.query.limit};
 		bot.getLatestProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -934,7 +934,6 @@ Bot.prototype.filter = function (req, res, next) {
 	});
 };
 Bot.prototype.tokenParser = function (req, res, next) {
-
 	var auth = req.headers.authorization;
 	var token = !!auth? auth.split(" ")[1]: '';
 	bot.checkToken(token, function (e, d) {

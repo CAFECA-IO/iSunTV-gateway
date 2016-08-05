@@ -183,7 +183,8 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 		});
 		rs.rating = {
 			average: parseFloat(parseFloat(total/d.length).toFixed(1)),
-			count: count
+			count: count,
+			total: d.length
 		};
 		if(!!options.uid) { rs.mycomment = mycomment; }
 		if(startPoint >= 0 && endPoint >= 0) {

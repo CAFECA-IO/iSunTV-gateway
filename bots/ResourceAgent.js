@@ -44,7 +44,6 @@ var request = function (options, cb) {
 	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
 };
-
 var fetchImage = function (data) {
 	var result = {cover: "", images: []};
 	if(textype.isURL(data.image_thumb)) { result.cover = data.image_thumb; result.images.push(data.image_thumb); }
@@ -63,6 +62,37 @@ var fetchImage = function (data) {
 	if(textype.isURL(data.image_cover5_full)) { result.cover = data.image_cover5_full; result.images.push(data.image_cover5_full); }
 	if(textype.isURL(data.image_cover6_full)) { result.cover = data.image_cover6_full; result.images.push(data.image_cover6_full); }
 	return result;
+};
+var descProgram = function (data, detail) {
+	var img = fetchImage(data);
+	var program = {
+		pid: '',
+		type: '',
+		title: data.title,
+		description: data.description,
+		shortdesc: data.shortdesc || '',
+		cover: img.cover,
+		images: img.images,
+		updated: data.updated_at,
+		isEnd: true, //-- fake data
+		createYear: 2099 //-- fake data
+	}
+	// series/ episode/ episode of series
+	switch(data.type) {
+		case 'show':
+			program.pid = 's' + data.id;
+			program.type = data.type;
+			program.sid = data.id;
+			break;
+		case 'episode':
+		default:
+			program.pid = 'e' + data.id;
+			program.type = 'episode';
+			program.eid = data.id;
+			program.duration = parseInt(Math.random() * 180); //-- fake data
+			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
+			break;
+	}
 };
 
 var Bot = function (config) {
@@ -608,7 +638,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			createYear: 2099, // fake data
 			update: episode.updated_at,
 			type: 'episode',
-			duration: 2*60, // 2h, fake data
+			duration: 2 * 60, // 2h, fake data
 			paymentPlans: [], // fake data
 			playable: true,
 			grading: "G",
@@ -673,9 +703,9 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 				description: program.description,
 				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				paymentPlans: [], // fake data
+				isEnd: true, //-- fake data
+				createYear: 2099, //-- fake data
+				paymentPlans: [], //-- fake data
 				playable: true,
 			}
 			if (program.type === 'show'){
@@ -711,10 +741,10 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 Bot.prototype.getLatestProgram = function (options, cb) {
 	// crawl
 	var self = this;
-	var pageOpt = Number(options.page);
-	var limitOpt = Number(options.limit);
-	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
-	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
+	var page = Number(options.page);
+	var limit = Number(options.limit);
+	page = page >= 1 ? page: 1;
+	limit = limit > 0 ? limit: 12;
 	var latestUrl = url.parse(this.config.resourceAPI + '/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
@@ -723,18 +753,19 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 		var result = [];
 		var programs = res.data;
-
-		var startIndex = limit * (page-1) -1;
-		for (var i = startIndex, len = programs.length; i < len; i++){
+		var startIndex = limit * (page - 1);
+		var endIndex = startIndex + limit;
+		console.log(startIndex, endIndex)
+		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
 			var program = programs[i];
 			var programData = {
 				title: program.title,
 				description: program.description,
 				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				paymentPlans: [], // fake data
+				isEnd: true, //-- fake data
+				createYear: 2099, //-- fake data
+				paymentPlans: [], //-- fake data
 				playable: true,
 			}
 			if (program.type === 'show'){
@@ -764,27 +795,35 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
 	var fakeData = [
-		{"ptid": "xxx", "text": "culture"},
-    	{"ptid": "xxx", "text": "travel"},
-    	{"ptid": "xxx", "text": "character"},
-    	{"ptid": "xxx", "text": "history"},
-    	{"ptid": "xxx", "text": "education"},
-    	{"ptid": "xxx", "text": "interview"}
-	]
+		{"ptid": 1, "text": "culture"},
+		{"ptid": 2, "text": "travel"},
+		{"ptid": 3, "text": "character"},
+		{"ptid": 4, "text": "history"},
+		{"ptid": 5, "text": "education"},
+		{"ptid": 6, "text": "interview"}
+	];
 	cb(null, fakeData);
 };
 
 // searchProgram
 Bot.prototype.searchProgram = function (options, cb) {
 	var self = this;
-	var pageOpt = Number(options.page);
-	var limitOpt = Number(options.limit);
-	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
-	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
+	var page = Number(options.page);
+	var limit = Number(options.limit);
+	page = page >= 1 ? page: 1;
+	limit = limit > 0 ? limit: 8;
+	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s';
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
+	var types = [
+		{"ptid": 1, "text": "culture"},
+		{"ptid": 2, "text": "travel"},
+		{"ptid": 3, "text": "character"},
+		{"ptid": 4, "text": "history"},
+		{"ptid": 5, "text": "education"},
+		{"ptid": 6, "text": "interview"}
+	];
 	request(specialSeriesUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
@@ -799,29 +838,26 @@ Bot.prototype.searchProgram = function (options, cb) {
 		};
 
 		var programTypes = ['culture', 'travel', 'character', 'history', 'education', 'interview'];
-		for (var i = 0, len = programs.length; i < len; i++){
+		for (var i = 0, len = programs.length; i < len; i++) {
 			var program = programs[i];
 			var programData = {
 				title: program.title,
 				description: program.description,
 				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				paymentPlans: [], // fake data
+				isEnd: true, //-- fake data
+				createYear: 2099, //-- fake data
+				paymentPlans: [], //-- fake data
 				playable: true,
-				programType: {
-					ptid: 'xxx',
-					text: programTypes[Math.floor(Math.random() * programTypes.length)]
-				}
+				programType: dvalue.search(types, {ptid: options.type}) //--
 			}
-			if (program.type === 'show'){
+			if (program.type === 'show') {
 				programData.pid = 's' + program.id;
 				programData.updated_at = program.updated_at;
 				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
 				programData.type = 'series'
 			}
-			else if (program.type === 'episode'){
+			else if (program.type === 'episode') {
 				programData.pid = 'e' + program.id;
 				programData.duration = 2 * 60;
 				programData.type = 'episode'
