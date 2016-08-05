@@ -74,7 +74,6 @@ Bot.prototype.writeComment = function (options, cb) {
 	options.rating = Math.floor(options.rating);
 
 	var self = this;
-
 	// Fetch user
 	var usersCollection = self.db.collection('Users');
 	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
@@ -168,10 +167,13 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 	var endPoint = startPoint + options.limit;
 	collection.find(condition).sort({atime: -1}).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		var rs = {}, picks = [], mycomment, total = 0, count = new Array(5).fill(0);
+		var rs = {}, picks = [], uids = [], mycomment, total = 0, count = new Array(5).fill(0);
 		d.map(function (v, i) {
 			v.rating = validRating(v.rating);
-			if(i >= startPoint && i < endPoint) { picks.push(v); }
+			if(i >= startPoint && i < endPoint) {
+				picks.push(v);
+				uids.push(v.uid);
+			}
 			if(!!v.uid && v.uid == options.uid) { mycomment = v; }
 			total += v.rating;
 			count[(v.rating - 1)]++;
@@ -181,8 +183,24 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 			count: count
 		};
 		if(!!options.uid) { rs.mycomment = mycomment; }
-		if(!!startPoint && !!endPoint) { rs.picks = picks; }
-		cb(null, rs);
+		if(startPoint >= 0 && endPoint >= 0) {
+			rs.comments = picks;
+			var bot = self.getBot('User');
+			var uopt = {uids: uids}
+			bot.fetchUsers(uopt, function (e1, d1) {
+				if(e1) { return cb(e1); }
+				else {
+					picks.map(function (v, i) {
+						var tmpu = dvalue.search(d1, {uid: v.uid});
+						picks[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+					});
+					cb(null, rs);
+				}
+			});
+		}
+		else {
+			cb(null, rs);
+		}
 	});
 };
 

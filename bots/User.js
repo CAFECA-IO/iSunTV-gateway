@@ -917,6 +917,23 @@ Bot.prototype.changePassword = function (user, cb) {
 	);
 };
 
+/* fetch User data */
+/* require: options.uids */
+Bot.prototype.fetchUsers = function (options, cb) {
+	var collection = this.db.collection('Users');
+	var uids = options.uids.map(mongodb.ObjectID);
+	var condition = {_id: {$in: uids}};
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		d = d || [];
+		var users = d.map(function (v) {
+			var rs = descUser(v);
+			return {uid: v.uid, username: v.username, photo: v.photo};
+		});
+		cb(null, users);
+	});
+};
+
 Bot.prototype.encryptPassword = function (password) {
 	var salt = ":iSunCloud";
 	var md5sum = crypto.createHash('md5');
