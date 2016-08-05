@@ -239,44 +239,18 @@ Bot.prototype.listProgramComments = function (options, cb) {
 		.sort([['atime', -1]]).toArray(function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }
 
-		var uids = comments.map(function(comment){ return new mongodb.ObjectID(comment.uid); });
-		var usersCollection = self.db.collection('Users');
-		var usersCond = { _id: { $in: uids } };
-		usersCollection.find(usersCond).toArray(function (e, users){
-			if(e) { e.code = '01002'; return cb(e); }
-			// get users
-			users = users.map(function (user) { user._id = user._id.toString(); return user; });
-
-			// Init ret
-			var ret = {
-				pid: options.pid,
-				average: 0,
-				count: new Array(5).fill(0),
-				comments: []
-			};
-			//
-			for(var idx = 0, len = comments.length; idx < len ;idx++){
-				var comment = comments[idx];
-				var ratingIdx = comment.rating - 1;
-				ret.count[ratingIdx] += 1;
-
-				// insert user info
-				var newComment = descComment(comment);
-				var user = dvalue.search(users, {_id: comment.uid});
-				newComment.user = {username: user.username, photo: user.photo };
-				ret.comments.push(newComment);
+		var bot = self.getBot('User');
+		uopt = { uids: comments.map(function (v) { return v.uid; }) };
+		bot.fetchUsers(uopt, function (e, d) {
+			if(e) { return cb(e); }
+			else {
+				comments.map(function (v, i) {
+					var tmpu = dvalue.search(d, {uid: v.uid});
+					comments[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+				});
+				cb(null, comments);
 			}
-			// fill average porperty
-			ret.average = ret.count.reduce(function(prev, curr, idx){
-				return prev + curr * (idx + 1)
-			});
-
-      		cb(null, ret);
-
-		})
-
-		// list data
-		//cb(null, ret);
+		});
 	});
 };
 
