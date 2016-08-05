@@ -520,7 +520,8 @@ Bot.prototype.init = function(config) {
 	// channel list
 	this.router.get('/channel/', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		bot.listChannel(function (e, d) {
+		var options = {};
+		bot.listChannel(optinos, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
