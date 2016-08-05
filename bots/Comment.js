@@ -102,7 +102,10 @@ Bot.prototype.writeComment = function (options, cb) {
 			else {
 				// Update comment
 				// 成功後回傳 cmid (= _id)
-				var commentSet = descComment(foundComment);
+				var commentSet = formatComment(foundComment);
+				commentSet.rating = options.rating;
+				commentSet.title = options.title;
+				commentSet.comment = options.comment;
 				commentSet.mtime = new Date().getTime();
 				commentSet.atime = new Date().getTime();
 				var cond = { _id: foundComment._id };
