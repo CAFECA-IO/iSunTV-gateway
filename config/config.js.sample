@@ -1,5 +1,7 @@
 module.exports = {
 	url: '',
+	frontend: '',
+	resourceAPI: '',
 	db: {
 		type: '',
 		path: '',
@@ -8,17 +10,20 @@ module.exports = {
 	},
 	facebook: {
 		id: '',
-		secret: '',
-		redirect: ''
+		secret: ''
 	},
 	mail: {
-		host:"",
-		secure: null,
-		port: null,
+		host: '',
+		secure: ,
+		port: ,
 		auth: {
 			user: '',
 			pass: ''
-	    }
+		}
 	},
-	resourceAPI: "",
+	BrainTree: {
+		merchantId: '',
+		publicKey: '',
+		privateKey: ''
+	}
 };
