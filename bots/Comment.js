@@ -35,6 +35,10 @@ var descComment = function (data) {
 	};
 	return comment;
 };
+var validRating = function (rating) {
+	rating = parseInt(rating);
+	return (rating >= 1 && rating <= 5)? rating: 1;
+};
 
 var Bot = function (config) {
 	if (!config) config = {};
@@ -70,7 +74,6 @@ Bot.prototype.writeComment = function (options, cb) {
 	options.rating = Math.floor(options.rating);
 
 	var self = this;
-
 	// Fetch user
 	var usersCollection = self.db.collection('Users');
 	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
@@ -99,7 +102,10 @@ Bot.prototype.writeComment = function (options, cb) {
 			else {
 				// Update comment
 				// 成功後回傳 cmid (= _id)
-				var commentSet = descComment(foundComment);
+				var commentSet = formatComment(foundComment);
+				commentSet.rating = options.rating;
+				commentSet.title = options.title;
+				commentSet.comment = options.comment;
 				commentSet.mtime = new Date().getTime();
 				commentSet.atime = new Date().getTime();
 				var cond = { _id: foundComment._id };
@@ -155,7 +161,55 @@ Bot.prototype.deleteComment = function (options, cb) {
 };
 
 /* require: options.pid */
-/* optional: options.page, options.limit */
+/* optional: options.uid, options.page, options.limit */
+Bot.prototype.summaryProgramComments = function (options, cb) {
+	var self = this;
+	var collection = this.db.collection('Comments');
+	var condition = {pid: options.pid};
+	var startPoint = (options.page - 1) * options.limit;
+	var endPoint = startPoint + options.limit;
+	collection.find(condition).sort({atime: -1}).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		var rs = {}, picks = [], uids = [], mycomment, total = 0, count = new Array(5).fill(0);
+		d.map(function (v, i) {
+			v.rating = validRating(v.rating);
+			if(i >= startPoint && i < endPoint) {
+				picks.push(v);
+				uids.push(v.uid);
+			}
+			if(!!v.uid && v.uid == options.uid) { mycomment = v; }
+			total += v.rating;
+			count[(v.rating - 1)]++;
+		});
+		rs.rating = {
+			average: parseFloat(parseFloat(total/d.length).toFixed(1)),
+			count: count,
+			total: d.length
+		};
+		if(!!options.uid) { rs.mycomment = mycomment; }
+		if(startPoint >= 0 && endPoint >= 0) {
+			rs.comments = picks;
+			var bot = self.getBot('User');
+			var uopt = {uids: uids}
+			bot.fetchUsers(uopt, function (e1, d1) {
+				if(e1) { return cb(e1); }
+				else {
+					picks.map(function (v, i) {
+						var tmpu = dvalue.search(d1, {uid: v.uid});
+						picks[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+					});
+					cb(null, rs);
+				}
+			});
+		}
+		else {
+			cb(null, rs);
+		}
+	});
+};
+
+/* require: options.pid */
+/* optional: options.page, options.limit, options.uid, options.summary */
 // 搜尋 Comment
 // order by atime 由新到舊
 // 回傳資料須經由 descComment function 處理
@@ -186,52 +240,26 @@ Bot.prototype.listProgramComments = function (options, cb) {
 	var skip = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 7 : 0;
 	var limit = (limitOpt && (limitOpt <= 7 || limitOpt > 0) ) ? limitOpt : 7;
 	commentsCollection.find(commentsCond).skip(skip).limit(limit)
-		.sort([['atime', 1]]).toArray(function (e, comments) {
+		.sort([['atime', -1]]).toArray(function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }
 
-		var uids = comments.map(function(comment){ return new mongodb.ObjectID(comment.uid); });
-		var usersCollection = self.db.collection('Users');
-		var usersCond = { _id: { $in: uids } };
-		usersCollection.find(usersCond).toArray(function (e, users){
-			if(e) { e.code = '01002'; return cb(e); }
-			// get users
-			users = users.map(function (user) { user._id = user._id.toString(); return user; });
-
-			// Init ret
-			var ret = {
-				pid: options.pid,
-				average: 0,
-				count: new Array(5).fill(0),
-				comments: []
-			};
-			//
-			for(var idx = 0, len = comments.length; idx < len ;idx++){
-				var comment = comments[idx];
-				var ratingIdx = comment.rating - 1;
-				ret.count[ratingIdx] += 1;
-
-				// insert user info
-				var newComment = descComment(comment);
-				var user = dvalue.search(users, {_id: comment.uid});
-				newComment.user = {username: user.username, photo: user.photo };
-				ret.comments.push(newComment);
+		var bot = self.getBot('User');
+		uopt = { uids: comments.map(function (v) { return v.uid; }) };
+		bot.fetchUsers(uopt, function (e, d) {
+			if(e) { return cb(e); }
+			else {
+				comments.map(function (v, i) {
+					var tmpu = dvalue.search(d, {uid: v.uid});
+					comments[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+				});
+				cb(null, comments);
 			}
-			// fill average porperty
-			ret.average = ret.count.reduce(function(prev, curr, idx){
-				return prev + curr * (idx + 1)
-			});
-
-      		cb(null, ret);
-
-		})
-
-		// list data
-		//cb(null, ret);
+		});
 	});
 };
 
 /* require: options.uid */
-/* optional: options.pid, options.page, options.limit */
+/* optional: options.pid, options.page, options.limit, options.summary */
 // 檢查 pid 格式
 // 檢查 uid 格式
 // 搜尋 Comment

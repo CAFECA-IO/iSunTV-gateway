@@ -44,7 +44,6 @@ var request = function (options, cb) {
 	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
 };
-
 var fetchImage = function (data) {
 	var result = {cover: "", images: []};
 	if(textype.isURL(data.image_thumb)) { result.cover = data.image_thumb; result.images.push(data.image_thumb); }
@@ -63,6 +62,37 @@ var fetchImage = function (data) {
 	if(textype.isURL(data.image_cover5_full)) { result.cover = data.image_cover5_full; result.images.push(data.image_cover5_full); }
 	if(textype.isURL(data.image_cover6_full)) { result.cover = data.image_cover6_full; result.images.push(data.image_cover6_full); }
 	return result;
+};
+var descProgram = function (data, detail) {
+	var img = fetchImage(data);
+	var program = {
+		pid: '',
+		type: '',
+		title: data.title,
+		description: data.description,
+		shortdesc: data.shortdesc || '',
+		cover: img.cover,
+		images: img.images,
+		updated: data.updated_at,
+		isEnd: true, //-- fake data
+		createYear: 2099 //-- fake data
+	}
+	// series/ episode/ episode of series
+	switch(data.type) {
+		case 'show':
+			program.pid = 's' + data.id;
+			program.type = data.type;
+			program.sid = data.id;
+			break;
+		case 'episode':
+		default:
+			program.pid = 'e' + data.id;
+			program.type = 'episode';
+			program.eid = data.id;
+			program.duration = parseInt(Math.random() * 180); //-- fake data
+			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
+			break;
+	}
 };
 
 var Bot = function (config) {
@@ -323,29 +353,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 			}
 			result.push(programData);
 		}
-		// fill comments
-		// List user comments
-		var pids = result.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
 
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
-
-				result = result.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
-
-				cb(null, result);
-			})
-		});
+		cb(null, result);
 	})
 };
 
@@ -388,50 +397,31 @@ Bot.prototype.listSeries = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		// mapping data
+		var result = [];
 		var programs = res.data;
-		var pids = programs.map(function(value){ return 's' + value.id});
-
-		// fill comments
-		// List user comments
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
-
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function(e, userComments){
-				if(e) { e.code = '01002'; return cb(e); }
-
-				// mapping data
-				var result = [];
-
-				for (var i = 0, len = programs.length; i < len; i++){
-					var program = programs[i];
-					result.push({
-						sid: program.id,
-						title: program.title,
-						description: program.description,
-						cover: program.image_thumb,
-						isEnd: true, // fake data
-						createYear: 2099, // fake data
-						update: program.updated_at,
-						type: 'series',
-						duration: 2*60, // 2h, fake data
-						programs: [
-							{eid: "123", title: '嘿！阿弟牯'}
-						], // fake data
-						paymentPlans: [], // fake data
-						playable: true,
-						comments: dvalue.multiSearch(comments, {pid: 's' + program.id}),
-						mycomment: dvalue.search(userComments, {pid: 's' + program.id, uid: options.uid}),
-					})
-				}
-
-				cb(null, result);
+		for (var i = 0, len = programs.length; i < len; i++){
+			var program = programs[i];
+			result.push({
+				sid: program.id,
+				title: program.title,
+				description: program.description,
+				cover: program.image_thumb,
+				isEnd: true, // fake data
+				createYear: 2099, // fake data
+				update: program.updated_at,
+				type: 'series',
+				duration: 2*60, // 2h, fake data
+				programs: [
+					{eid: "123", title: '嘿！阿弟牯'}
+				], // fake data
+				paymentPlans: [], // fake data
+				playable: true,
 			})
-		});
+		}
+
+		// return data when correct
+		cb(null, result);
 	})
 };
 
@@ -482,6 +472,7 @@ Bot.prototype.getProgram = function (options, cb) {
 // http://app2.isuntv.com/api/show?id=9
 // http://app2.isuntv.com/api/episodes?show_id=9&page=1&limit=10
 /* required: options.sid, optional: options: options.page, options.limit */
+/* optional: options.uid */
 /*
 {
 	sid: '',
@@ -579,31 +570,19 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			}
 
 			// fill comments
-			// List user comments
-			var commentsCollection = self.db.collection('Comments');
-			var commentsCond = { pid: 's' + options.sid };
-			commentsCollection.find(commentsCond)
-				.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-				if(e) { e.code = '01002'; return cb(e); }
-				result.comments = comments;
-
-				// fill mycomment
-				commentsCond.uid = options.uid;
-				commentsCollection.findOne(commentsCond, {}, function(e, comment){
-					if(e) { e.code = '01002'; return cb(e); }
-					result.mycomment = comment
-					cb(null, result);
-				})
+			var bot = self.getBot('Comment');
+			bot.summaryProgramComments({pid: 's' + show.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+				result = dvalue.default(d, result);
+				cb(null, result);
 			});
-
 		})
-
 	})
 };
 
 // episodes program data
 // http://app2.isuntv.com/api/episode?id=9
 /* required: options.eid */
+/* optional: options.uid */
 /*
 {
 	eid: '',
@@ -646,30 +625,20 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		var episode = res.data;
 
 		// fetch valid img resources as a array
-		var imgResources = [
-			"image_cover1", "image_cover2", "image_cover3",
-		  "image_cover4", "image_cover5", "image_cover6",
-		  "image_cover1_full", "image_cover2_full", "image_cover3_full",
-		  "image_cover4_full", "image_cover5_full", "image_cover6_full",
-		];
-		var validImgResources = imgResources.reduce(function(prev, curr){
-			var imageResource = episode[curr];
-			if (imageResource){ prev.push(imageResource) };
-			return prev
-		}, []);
+		var fetchedImage = fetchImage(episode)
 
 		// mapping data
 		var result = {
 			eid: episode.id,
 			title: episode.title,
 			description: episode.description,
-			cover: episode.image_thumb,
-			images: validImgResources,
+			cover: fetchedImage.cover,
+			images: fetchedImage.images,
 			isEnd: true, // fake data
 			createYear: 2099, // fake data
 			update: episode.updated_at,
 			type: 'episode',
-			duration: 2*60, // 2h, fake data
+			duration: 2 * 60, // 2h, fake data
 			paymentPlans: [], // fake data
 			playable: true,
 			grading: "G",
@@ -684,23 +653,11 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		};
 
 		// fill comments
-		// List user comments
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: 'e' + options.eid };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
-			result.comments = comments
-
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.findOne(commentsCond, {}, function(e, comment){
-				if(e) { e.code = '01002'; return cb(e); }
-				result.mycomment = comment;
-				cb(null, result);
-			})
+		var bot = self.getBot('Comment');
+		bot.summaryProgramComments({pid: 'e' + episode.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+			result = dvalue.default(d, result);
+			cb(null, result);
 		});
-
 	})
 };
 
@@ -718,8 +675,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
 	var self = this;
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
+	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
 	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
-	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, 1, 8);
+	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
 	request(specialSeriesUrl, function(e, res){
@@ -742,9 +703,9 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 				description: program.description,
 				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				paymentPlans: [], // fake data
+				isEnd: true, //-- fake data
+				createYear: 2099, //-- fake data
+				paymentPlans: [], //-- fake data
 				playable: true,
 			}
 			if (program.type === 'show'){
@@ -765,31 +726,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			}
 			result.programs.push(programData);
 		}
-
-
-		// fill comments
-		// List user comments
-		var pids = result.programs.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
-
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
-
-				result.programs = result.programs.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
-
-				cb(null, result);
-			})
-		});
+		cb(null, result);
 	})
 };
 
@@ -804,6 +741,10 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 Bot.prototype.getLatestProgram = function (options, cb) {
 	// crawl
 	var self = this;
+	var page = Number(options.page);
+	var limit = Number(options.limit);
+	page = page >= 1 ? page: 1;
+	limit = limit > 0 ? limit: 12;
 	var latestUrl = url.parse(this.config.resourceAPI + '/api/latest');
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
@@ -812,16 +753,19 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 		var result = [];
 		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
+		var startIndex = limit * (page - 1);
+		var endIndex = startIndex + limit;
+		console.log(startIndex, endIndex)
+		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
 			var program = programs[i];
 			var programData = {
 				title: program.title,
 				description: program.description,
 				shortdesc: program.shortdesc || '',
 				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				paymentPlans: [], // fake data
+				isEnd: true, //-- fake data
+				createYear: 2099, //-- fake data
+				paymentPlans: [], //-- fake data
 				playable: true,
 			}
 			if (program.type === 'show'){
@@ -843,29 +787,89 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			result.push(programData)
 		}
 
-		// fill comments
-		// List user comments
-		var pids = result.map(function(v){ return v.pid})
-		var commentsCollection = self.db.collection('Comments');
-		var commentsCond = { pid: { $in: pids } };
-		commentsCollection.find(commentsCond)
-			.limit(7).sort([['atime', -1]]).toArray(function (e, comments) {
-			if(e) { e.code = '01002'; return cb(e); }
+		cb(null, result);
 
-			// fill mycomment
-			commentsCond.uid = options.uid;
-			commentsCollection.find(commentsCond).toArray(function (e, userComments) {
-				if(e) { e.code = '01002'; return cb(e); }
+	})
+};
 
-				result = result.map(function(program){
-					program.comments = dvalue.multiSearch(comments, {pid: program.pid})
-					program.mycomment = dvalue.search(userComments, {pid: program.pid, uid: options.uid})
-					return program
-				})
+// listPrgramType
+Bot.prototype.listPrgramType = function (options, cb) {
+	var fakeData = [
+		{"ptid": 1, "text": "culture"},
+		{"ptid": 2, "text": "travel"},
+		{"ptid": 3, "text": "character"},
+		{"ptid": 4, "text": "history"},
+		{"ptid": 5, "text": "education"},
+		{"ptid": 6, "text": "interview"}
+	];
+	cb(null, fakeData);
+};
 
-				cb(null, result);
-			})
-		});
+// searchProgram
+Bot.prototype.searchProgram = function (options, cb) {
+	var self = this;
+	var page = Number(options.page);
+	var limit = Number(options.limit);
+	page = page >= 1 ? page: 1;
+	limit = limit > 0 ? limit: 8;
+	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s';
+	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
+	specialSeriesUrl = url.parse(specialSeriesUrl);
+	specialSeriesUrl.datatype = 'json';
+	var types = [
+		{"ptid": 1, "text": "culture"},
+		{"ptid": 2, "text": "travel"},
+		{"ptid": 3, "text": "character"},
+		{"ptid": 4, "text": "history"},
+		{"ptid": 5, "text": "education"},
+		{"ptid": 6, "text": "interview"}
+	];
+	request(specialSeriesUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var programs = res.data;
+		// mapping data
+		var result = {
+			title: '中國文化專題',
+			description: '',
+			cover: '',
+			programs: [],
+		};
+
+		var programTypes = ['culture', 'travel', 'character', 'history', 'education', 'interview'];
+		for (var i = 0, len = programs.length; i < len; i++) {
+			var program = programs[i];
+			var programData = {
+				title: program.title,
+				description: program.description,
+				shortdesc: program.shortdesc || '',
+				cover: program.image_thumb,
+				isEnd: true, //-- fake data
+				createYear: 2099, //-- fake data
+				paymentPlans: [], //-- fake data
+				playable: true,
+				programType: dvalue.search(types, {ptid: options.type}) //--
+			}
+			if (program.type === 'show') {
+				programData.pid = 's' + program.id;
+				programData.updated_at = program.updated_at;
+				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
+				programData.type = 'series'
+			}
+			else if (program.type === 'episode') {
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			else {
+				programData.pid = 'e' + program.id;
+				programData.duration = 2 * 60;
+				programData.type = 'episode'
+			}
+			result.programs.push(programData);
+		}
+		cb(null, result);
 	})
 };
 
