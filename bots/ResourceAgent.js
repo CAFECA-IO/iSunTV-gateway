@@ -792,17 +792,17 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	})
 };
 
+var fakeTypes = [
+	{"ptid": 1, "code": "culture", "text": "文化"},
+	{"ptid": 2, "code": "travel", "text": "旅遊"},
+	{"ptid": 3, "code": "character", "text": "人物"},
+	{"ptid": 4, "code": "history", "text": "歷史"},
+	{"ptid": 5, "code": "education", "text": "教育"},
+	{"ptid": 6, "code": "interview", "text": "訪談"}
+];
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
-	var fakeData = [
-		{"ptid": 1, "text": "culture"},
-		{"ptid": 2, "text": "travel"},
-		{"ptid": 3, "text": "character"},
-		{"ptid": 4, "text": "history"},
-		{"ptid": 5, "text": "education"},
-		{"ptid": 6, "text": "interview"}
-	];
-	cb(null, fakeData);
+	cb(null, fakeTypes);
 };
 
 // searchProgram
@@ -816,14 +816,6 @@ Bot.prototype.searchProgram = function (options, cb) {
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
-	var types = [
-		{"ptid": 1, "text": "culture"},
-		{"ptid": 2, "text": "travel"},
-		{"ptid": 3, "text": "character"},
-		{"ptid": 4, "text": "history"},
-		{"ptid": 5, "text": "education"},
-		{"ptid": 6, "text": "interview"}
-	];
 	request(specialSeriesUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
@@ -849,7 +841,7 @@ Bot.prototype.searchProgram = function (options, cb) {
 				createYear: 2099, //-- fake data
 				paymentPlans: [], //-- fake data
 				playable: true,
-				programType: dvalue.search(types, {ptid: options.type}) //--
+				programType: dvalue.search(fakeTypes, {ptid: options.type}) //--
 			}
 			if (program.type === 'show') {
 				programData.pid = 's' + program.id;

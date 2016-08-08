@@ -1,6 +1,6 @@
 {
   "name": "isuntv-gateway",
-  "version": "0.2.26",
+  "version": "0.2.27",
   "description": "iSunTV Backend Gateway",
   "main": "bin/start.js",
   "scripts": {

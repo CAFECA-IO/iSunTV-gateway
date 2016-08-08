@@ -754,9 +754,9 @@ Bot.prototype.init = function(config) {
 	});
 
 	// GET Latest Programs
-	this.router.get('/latest/program', function (req, res, next) {
+	this.router.get(['/latest/program/', '/latest/program/:page', '/latest/program/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {uid: req.session.uid, page: req.query.page, limit: req.query.limit};
+		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.getLatestProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
