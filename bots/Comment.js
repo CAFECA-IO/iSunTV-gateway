@@ -69,8 +69,8 @@ Bot.prototype.writeComment = function (options, cb) {
 		(Math.floor(options.rating) < 1 && Math.floor(options.rating)) > 5){
 		var e = new Error("Incorrect rating"); e.code = "19501"; return cb(e);
 	}
-	if (options.title.length > 100) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
-	if (options.comment.length > 1000) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
+	if (options.title.length > 30) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
+	if (options.comment.length > 500) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
 	options.rating = Math.floor(options.rating);
 
 	var self = this;
