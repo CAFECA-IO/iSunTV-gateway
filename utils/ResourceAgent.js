@@ -34,6 +34,7 @@ const descProgram = function (data, detail) {
 			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
 			break;
 	}
+	return program
 };
 
 

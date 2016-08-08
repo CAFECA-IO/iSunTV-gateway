@@ -6,12 +6,11 @@ const path = require('path');
 const dvalue = require('dvalue');
 
 const ParentBot = require('./_Bot.js');
-const ResourceAgentUtils = require('../utils/ResourceAgent.js');
-const Crawler = require('../utils/Crawler.js');
+const descProgram = require('../utils/ResourceAgent.js').descProgram;
+const fetchImage = require('../utils/ResourceAgent.js').fetchImage;
+const request = require('../utils/Crawler.js').request;
 
-const request = Crawler.request;
-const descProgram = ResourceAgentUtils.descProgram;
-const fetchImage = ResourceAgentUtils.fetchImage;
+
 var logger;
 
 
@@ -184,37 +183,11 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			var programData = {
-				pid: 's' + program.id,
-				type: 'series',
-				title: program.title,
-				description: program.description.substr(0, 70),
-				shortdesc: program.shortdesc || '',
-				//cover: program.image_thumb,
-				//isEnd: true, // fake data
-				//createYear: 2099, // fake data
-				//paymentPlans: [], // fake data
-				//playable: true,
+			var program = dvalue.default(descProgram(programs[i]), {
 				banner: pics[(i % pics.length)],
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				//programData.updated_at = program.updated_at;
-				//programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
-				//programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				//programData.duration = 2 * 60;
-				//programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				//programData.duration = 2 * 60;
-				//programData.type = 'episode'
-			}
-			result.push(programData);
+			});
+			result.push(program);
+
 		}
 
 		// return data when correct
@@ -261,34 +234,11 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
+			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
-				playable: true,
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.push(programData);
+				playable: true, // fake data
+			});
+			result.push(program);
 		}
 
 		cb(null, result);
@@ -338,23 +288,11 @@ Bot.prototype.listSeries = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			result.push({
-				sid: program.id,
-				title: program.title,
-				description: program.description,
-				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				update: program.updated_at,
-				type: 'series',
-				duration: 2*60, // 2h, fake data
-				programs: [
-					{eid: "123", title: '嘿！阿弟牯'}
-				], // fake data
+			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
-				playable: true,
-			})
+				playable: true, // fake data
+			});
+			result.push(program);
 		}
 
 		// return data when correct
@@ -467,18 +405,10 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			var episodes = res.data;
 
 			// mapping data except programs
-			var result = {
-				sid: show.id,
-				title: show.title,
-				description: show.description,
-				cover: show.image_cover,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				update: show.updated_at,
-				type: 'series',
+			var result = dvalue.default(descProgram(show), {
 				programs: [],
 				paymentPlans: [], // fake data
-				playable: true,
+				playable: true, // fake data
 				grading: "16+",
 				movieType: ["紀錄片"],
 				director: ["卜釋仁"],
@@ -488,22 +418,16 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				soundtrack: ["chinese", "english"],
 				scenarist: ["路平"],
 				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+			});
 
-			}
 			// mapping data with programs
 			for (var i = 0, len = episodes.length; i < len; i++){
-				var episode = episodes[i];
-				result.programs.push({
-					eid: episode.id,
-					title: episode.title,
-					description: episode.description,
-					cover: episode.image_thumb,
-					createYear: 2099, // fake data
-					publish: '2099-12-31',
-					duration: 2*60, // 2h, fake data
+				var episode = dvalue.default(descProgram(episodes[i]), {
 					paymentPlans: [], // fake data
-					playable: true,
-				})
+					playable: true, // fake data
+					publish: '2099-12-31',
+				});
+				result.programs.push(episode)
 			}
 
 			// fill comments
@@ -561,24 +485,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		var episode = res.data;
 
-		// fetch valid img resources as a array
-		var fetchedImage = fetchImage(episode)
-
-		// mapping data
-		var result = {
-			eid: episode.id,
-			title: episode.title,
-			description: episode.description,
-			cover: fetchedImage.cover,
-			images: fetchedImage.images,
-			isEnd: true, // fake data
-			createYear: 2099, // fake data
-			update: episode.updated_at,
-			type: 'episode',
-			duration: 2 * 60, // 2h, fake data
+		// mapping data except programs
+		var result = dvalue.default(descProgram(episode), {
+			programs: [],
 			paymentPlans: [], // fake data
-			playable: true,
-			grading: "G",
+			playable: true, // fake data
+			grading: "16+",
 			movieType: ["紀錄片"],
 			director: ["卜釋仁"],
 			actors: ["路人甲", "路人乙", "路人丙"],
@@ -587,7 +499,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			soundtrack: ["chinese", "english"],
 			scenarist: ["路平"],
 			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
-		};
+		});
 
 		// fill comments
 		var bot = self.getBot('Comment');
@@ -634,34 +546,11 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		};
 
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, //-- fake data
-				createYear: 2099, //-- fake data
-				paymentPlans: [], //-- fake data
-				playable: true,
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.programs.push(programData);
+			var program = dvalue.default(descProgram(programs[i]), {
+				paymentPlans: [], // fake data
+				playable: true, // fake data
+			});
+			result.programs.push(program);
 		}
 		cb(null, result);
 	})
@@ -694,34 +583,11 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		var endIndex = startIndex + limit;
 		console.log(startIndex, endIndex)
 		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, //-- fake data
-				createYear: 2099, //-- fake data
-				paymentPlans: [], //-- fake data
-				playable: true,
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.push(programData)
+			var program = dvalue.default(descProgram(programs[i]), {
+				paymentPlans: [], // fake data
+				playable: true, // fake data
+			});
+			result.push(program);
 		}
 
 		cb(null, result);
@@ -729,16 +595,16 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	})
 };
 
+var fakeTypes = [
+	{"ptid": 1, "code": "culture", "text": "文化"},
+	{"ptid": 2, "code": "travel", "text": "旅遊"},
+	{"ptid": 3, "code": "character", "text": "人物"},
+	{"ptid": 4, "code": "history", "text": "歷史"},
+	{"ptid": 5, "code": "education", "text": "教育"},
+	{"ptid": 6, "code": "interview", "text": "訪談"}
+];
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
-	var fakeTypes = [
-		{"ptid": 1, "code": "culture", "text": "文化"},
-		{"ptid": 2, "code": "travel", "text": "旅遊"},
-		{"ptid": 3, "code": "character", "text": "人物"},
-		{"ptid": 4, "code": "history", "text": "歷史"},
-		{"ptid": 5, "code": "education", "text": "教育"},
-		{"ptid": 6, "code": "interview", "text": "訪談"}
-	];
 	cb(null, fakeTypes);
 };
 
@@ -757,46 +623,16 @@ Bot.prototype.searchProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		var result = [];
 		var programs = res.data;
-		// mapping data
-		var result = {
-			title: '中國文化專題',
-			description: '',
-			cover: '',
-			programs: [],
-		};
-
 		var programTypes = ['culture', 'travel', 'character', 'history', 'education', 'interview'];
 		for (var i = 0, len = programs.length; i < len; i++) {
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, //-- fake data
-				createYear: 2099, //-- fake data
+			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], //-- fake data
-				playable: true,
-				programType: dvalue.search(fakeTypes, {ptid: options.type}) //--
-			}
-			if (program.type === 'show') {
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode') {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.programs.push(programData);
+				playable: true, //-- fake data
+				programType: dvalue.search(fakeTypes, {ptid: options.type}), //--
+			});
+			result.push(program);
 		}
 		cb(null, result);
 	})
