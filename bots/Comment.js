@@ -231,14 +231,13 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
  */
 Bot.prototype.listProgramComments = function (options, cb) {
 	var self = this;
-
 	// List comments which user publish
 	var commentsCollection = self.db.collection('Comments');
 	var commentsCond = { pid: options.pid };
 	var pageOpt = Number(options.page);
 	var limitOpt = Number(options.limit);
-	var skip = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 7 : 0;
 	var limit = (limitOpt && (limitOpt <= 7 || limitOpt > 0) ) ? limitOpt : 7;
+	var skip = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * limit : 0;
 	commentsCollection.find(commentsCond).skip(skip).limit(limit)
 		.sort([['atime', -1]]).toArray(function (e, comments) {
 		if(e) { e.code = '01002'; return cb(e); }

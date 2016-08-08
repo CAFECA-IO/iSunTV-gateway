@@ -827,10 +827,10 @@ Bot.prototype.init = function(config) {
 	});
 
 	// list program comment
-	// /program/{$pid}/comment?uid={$uid}&page={$page}&limit={$limit}
-	this.router.get('/program/:pid/comment', function (req, res, next) {
+	// /program/{$pid}/comment/{$page}/{$limit}
+	this.router.get(['/program/:pid/comment', '/program/:pid/comment/:page', '/program/:pid/comment/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('Comment');
-		var options = {pid: req.params.pid, page: req.query.page, limit: req.query.limit};
+		var options = {pid: req.params.pid, page: req.params.page, limit: req.params.limit};
 		bot.listProgramComments(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
