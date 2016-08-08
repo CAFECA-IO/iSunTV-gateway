@@ -3,7 +3,7 @@ const util = require('util');
 const path = require('path');
 const dvalue = require('dvalue');
 
-const requestTimeout = 5000;
+const requestTimeout = 60000;
 const gc = 3600000;
 
 var logger;
