@@ -1,18 +1,15 @@
 // ResourceAgent APIs (Business logic)
 const util = require('util');
-const http = require('http');
-const https = require('https');
 const url = require('url');
 const path = require('path');
 
 const dvalue = require('dvalue');
-const textype = require('textype');
 
 const ParentBot = require('./_Bot.js');
 const ResourceAgentUtils = require('../utils/ResourceAgent.js');
 const Crawler = require('../utils/Crawler.js');
 
-
+const request = Crawler.request;
 const descProgram = ResourceAgentUtils.descProgram;
 const fetchImage = ResourceAgentUtils.fetchImage;
 var logger;

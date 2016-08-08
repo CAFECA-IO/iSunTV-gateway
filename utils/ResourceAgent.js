@@ -1,6 +1,7 @@
 /**
  * utils for ResourceAgent
  */
+const textype = require('textype');
 
 
 const descProgram = function (data, detail) {

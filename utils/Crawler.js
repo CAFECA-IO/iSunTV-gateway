@@ -1,6 +1,6 @@
-/**
- * Crawler
- */
+// Crawler
+const http = require('http');
+const https = require('https');
 const url = require('url');
 
 const dvalue = require('dvalue');
@@ -40,4 +40,11 @@ var request = function (options, cb) {
 	crawler.on('error', function (e) { cb(e); })
 	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
+};
+
+/**
+ * export mdoules
+ */
+module.exports = {
+	request: request,
 };
