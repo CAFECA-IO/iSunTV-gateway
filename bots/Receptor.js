@@ -520,7 +520,8 @@ Bot.prototype.init = function(config) {
 	// channel list
 	this.router.get('/channel/', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		bot.listChannel(function (e, d) {
+		var options = {};
+		bot.listChannel(optinos, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -701,9 +702,9 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List Program By Type
-	this.router.get('/programtype/:type/', function (req, res, next) {
+	this.router.get(['/programtype/:type', '/programtype/:type/:page', '/programtype/:type/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {type: req.params.type};
+		var options = {type: req.params.type, page: req.params.page, limit: req.params.limit};
 		bot.searchProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
