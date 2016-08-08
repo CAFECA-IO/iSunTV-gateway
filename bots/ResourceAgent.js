@@ -1,106 +1,36 @@
-const ParentBot = require('./_Bot.js');
+// ResourceAgent APIs (Business logic)
 const util = require('util');
 const http = require('http');
 const https = require('https');
 const url = require('url');
 const path = require('path');
+
 const dvalue = require('dvalue');
 const textype = require('textype');
 
+const ParentBot = require('./_Bot.js');
+const ResourceAgentUtils = require('../utils/ResourceAgent.js');
+const Crawler = require('../utils/Crawler.js');
+
+
+const descProgram = ResourceAgentUtils.descProgram;
+const fetchImage = ResourceAgentUtils.fetchImage;
 var logger;
 
-var request = function (options, cb) {
-	var operator;
-	if(typeof(options) == 'string') { options = url.parse(options); }
-	options = dvalue.default(options, {
-		method: 'GET'
-	});
-	switch(options.protocol) {
-		case 'https:':
-			operator = https;
-			options.rejectUnauthorized = false;
-			break;
-		default:
-			operator = http;
-	}
-	var crawler = operator.request(options, function (res) {
-		var rs = {
-			headers: res.headers,
-			data: new Buffer([])
-		};
-		res.on('data', function (chunk) {
-			rs.data = Buffer.concat([rs.data, chunk]);
-		});
-		res.on('end', function () {
-			switch(options.datatype) {
-				case 'json':
-					try { rs.data = JSON.parse(rs.data); } catch(e) { return cb(e); }
-					break;
-			}
-			cb(null, rs)
-		})
-	});
-	crawler.on('error', function (e) { cb(e); })
-	if(options.post) {crawler.write(JSON.stringify(options.post));}
-	crawler.end();
-};
-var fetchImage = function (data) {
-	var result = {cover: "", images: []};
-	if(textype.isURL(data.image_thumb)) { result.cover = data.image_thumb; result.images.push(data.image_thumb); }
-	if(textype.isURL(data.image_cover)) { result.cover = data.image_cover; result.images.push(data.image_cover); }
-	if(textype.isURL(data.image_cover1)) { result.cover = data.image_cover1; result.images.push(data.image_cover1); }
-	if(textype.isURL(data.image_cover2)) { result.cover = data.image_cover2; result.images.push(data.image_cover2); }
-	if(textype.isURL(data.image_cover3)) { result.cover = data.image_cover3; result.images.push(data.image_cover3); }
-	if(textype.isURL(data.image_cover4)) { result.cover = data.image_cover4; result.images.push(data.image_cover4); }
-	if(textype.isURL(data.image_cover5)) { result.cover = data.image_cover5; result.images.push(data.image_cover5); }
-	if(textype.isURL(data.image_cover6)) { result.cover = data.image_cover6; result.images.push(data.image_cover6); }
-	if(textype.isURL(data.image_cover_full)) { result.cover = data.image_cover_full; result.images.push(data.image_cover_full); }
-	if(textype.isURL(data.image_cover1_full)) { result.cover = data.image_cover1_full; result.images.push(data.image_cover1_full); }
-	if(textype.isURL(data.image_cover2_full)) { result.cover = data.image_cover2_full; result.images.push(data.image_cover2_full); }
-	if(textype.isURL(data.image_cover3_full)) { result.cover = data.image_cover3_full; result.images.push(data.image_cover3_full); }
-	if(textype.isURL(data.image_cover4_full)) { result.cover = data.image_cover4_full; result.images.push(data.image_cover4_full); }
-	if(textype.isURL(data.image_cover5_full)) { result.cover = data.image_cover5_full; result.images.push(data.image_cover5_full); }
-	if(textype.isURL(data.image_cover6_full)) { result.cover = data.image_cover6_full; result.images.push(data.image_cover6_full); }
-	return result;
-};
-var descProgram = function (data, detail) {
-	var img = fetchImage(data);
-	var program = {
-		pid: '',
-		type: '',
-		title: data.title,
-		description: data.description,
-		shortdesc: data.shortdesc || '',
-		cover: img.cover,
-		images: img.images,
-		updated: data.updated_at,
-		isEnd: true, //-- fake data
-		createYear: 2099 //-- fake data
-	}
-	// series/ episode/ episode of series
-	switch(data.type) {
-		case 'show':
-			program.pid = 's' + data.id;
-			program.type = data.type;
-			program.sid = data.id;
-			break;
-		case 'episode':
-		default:
-			program.pid = 'e' + data.id;
-			program.type = 'episode';
-			program.eid = data.id;
-			program.duration = parseInt(Math.random() * 180); //-- fake data
-			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
-			break;
-	}
-};
 
+/************************************************
+*                                               *
+*               Declare Bot                     *
+*                                               *
+************************************************/
 var Bot = function (config) {
 	if (!config) config = {};
 	this.init(config);
 };
 
+
 util.inherits(Bot, ParentBot);
+
 
 Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
@@ -108,10 +38,17 @@ Bot.prototype.init = function (config) {
 	this.channels = [];
 };
 
+
 Bot.prototype.start = function () {
 
 };
 
+
+/************************************************
+*                                               *
+*        ResourceAgent APIs                     *
+*                                               *
+************************************************/
 Bot.prototype.listChannel = function (options, cb) {
 	this.descChannel({cid: 1}, function (e, d) {
 		if(e) { cb(e); }
@@ -127,6 +64,7 @@ Bot.prototype.listChannel = function (options, cb) {
 		}
 	});
 };
+
 Bot.prototype.descChannel = function (options, cb) {
 	var picks = 336;
 	if(options.time > 0) { picks = options.days > 0? 48 * options.days: 48; }
@@ -158,6 +96,7 @@ Bot.prototype.descChannel = function (options, cb) {
 	data.next_program = data.programs[1];
 	cb(null, data);
 };
+
 Bot.prototype.parseChannel = function (resource, cb) {
 	var self = this;
 	var channel = dvalue.search({id: resource.channel}, this.channels);
@@ -184,6 +123,7 @@ Bot.prototype.parseChannel = function (resource, cb) {
 		cb(null, channel.url);
 	}
 };
+
 // resource.path, resource.channel
 Bot.prototype.channelResource = function (resource, cb) {
 	var channel = dvalue.search({id: resource.channel}, this.channels);
@@ -792,16 +732,16 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	})
 };
 
-var fakeTypes = [
-	{"ptid": 1, "code": "culture", "text": "文化"},
-	{"ptid": 2, "code": "travel", "text": "旅遊"},
-	{"ptid": 3, "code": "character", "text": "人物"},
-	{"ptid": 4, "code": "history", "text": "歷史"},
-	{"ptid": 5, "code": "education", "text": "教育"},
-	{"ptid": 6, "code": "interview", "text": "訪談"}
-];
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
+	var fakeTypes = [
+		{"ptid": 1, "code": "culture", "text": "文化"},
+		{"ptid": 2, "code": "travel", "text": "旅遊"},
+		{"ptid": 3, "code": "character", "text": "人物"},
+		{"ptid": 4, "code": "history", "text": "歷史"},
+		{"ptid": 5, "code": "education", "text": "教育"},
+		{"ptid": 6, "code": "interview", "text": "訪談"}
+	];
 	cb(null, fakeTypes);
 };
 
