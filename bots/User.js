@@ -67,6 +67,7 @@ var formatUser = function (user) {
 		allowmail: false,
 		status: 1
 	});
+	if(user.username.length == 0) { user.username = user.account; }
 	return user;
 };
 var descUser = function (user) {
