@@ -898,8 +898,8 @@ Bot.prototype.changePassword = function (user, cb) {
 		return cb(e);
 	}
 	if (user.password_old === user.password_new) {
-		var e = new Error('incorrect new password');
-		e.code = '19105';
+		var e = new Error('duplicate password');
+		e.code = '29101';
 		return cb(e);
 	}
 	var cond = {_id: new mongodb.ObjectID(user.uid), password: user.password_old};
