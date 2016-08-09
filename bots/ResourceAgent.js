@@ -392,6 +392,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 		var show = res.data;
+		show.type = 'show';
 
 		// crawl episodes
 		var episodesUrl = self.config.resourceAPI + '/api/episodes?show_id=%s&page=%s&limit=%s';
@@ -403,32 +404,21 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 			var episodes = res.data;
+			// mapping data with programs
 
-			// mapping data except programs
-			var result = dvalue.default(descProgram(show), {
-				programs: [],
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-				grading: "16+",
-				movieType: ["紀錄片"],
-				director: ["卜釋仁"],
-				actors: ["路人甲", "路人乙", "路人丙"],
-				source: ["陽光衛視"],
-				subtitle: ["zh-cn", "zh-tw", "en-us"],
-				soundtrack: ["chinese", "english"],
-				scenarist: ["路平"],
-				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+			show.programs = episodes.map(function (v) {
+				v = dvalue.default(descProgram(v), {
+					paymentPlans: [], // fake data
+					playable: true // fake data
+				});
+				return v;
 			});
 
-			// mapping data with programs
-			for (var i = 0, len = episodes.length; i < len; i++){
-				var episode = dvalue.default(descProgram(episodes[i]), {
-					paymentPlans: [], // fake data
-					playable: true, // fake data
-					publish: '2099-12-31',
-				});
-				result.programs.push(episode)
-			}
+			// mapping data except programs
+			var result = dvalue.default(descProgram(show, true), {
+				paymentPlans: [], // fake data
+				playable: true // fake data
+			});
 
 			// fill comments
 			var bot = self.getBot('Comment');
@@ -484,21 +474,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		var episode = res.data;
+		episode.type = 'episode';
 
 		// mapping data except programs
-		var result = dvalue.default(descProgram(episode), {
-			programs: [],
+		var result = dvalue.default(descProgram(episode, true), {
 			paymentPlans: [], // fake data
-			playable: true, // fake data
-			grading: "16+",
-			movieType: ["紀錄片"],
-			director: ["卜釋仁"],
-			actors: ["路人甲", "路人乙", "路人丙"],
-			source: ["陽光衛視"],
-			subtitle: ["zh-cn", "zh-tw", "en-us"],
-			soundtrack: ["chinese", "english"],
-			scenarist: ["路平"],
-			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
+			playable: true // fake data
 		});
 
 		// fill comments
