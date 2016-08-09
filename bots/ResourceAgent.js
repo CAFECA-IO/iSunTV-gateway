@@ -583,7 +583,7 @@ var fakeTypes = [
 	{"ptid": 4, "code": "history", "text": "歷史"},
 	{"ptid": 5, "code": "education", "text": "教育"},
 	{"ptid": 6, "code": "interview", "text": "訪談"}
-];
+]; //-- fake data
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
 	cb(null, fakeTypes);

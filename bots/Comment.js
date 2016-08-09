@@ -188,16 +188,18 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 		};
 		if(!!options.uid) { rs.mycomment = mycomment; }
 		if(startPoint >= 0 && endPoint >= 0) {
-			rs.comments = picks;
 			var bot = self.getBot('User');
 			var uopt = {uids: uids}
 			bot.fetchUsers(uopt, function (e1, d1) {
 				if(e1) { return cb(e1); }
 				else {
-					picks.map(function (v, i) {
+					picks = picks.map(function (v, i) {
 						var tmpu = dvalue.search(d1, {uid: v.uid});
-						picks[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+						v.user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+						v = descComment(v);
+						return v;
 					});
+					rs.comments = picks;
 					cb(null, rs);
 				}
 			});
@@ -248,10 +250,11 @@ Bot.prototype.listProgramComments = function (options, cb) {
 		bot.fetchUsers(uopt, function (e, d) {
 			if(e) { return cb(e); }
 			else {
-				comments.map(function (v, i) {
+				comments = comments.map(function (v, i) {
 					var tmpu = dvalue.search(d, {uid: v.uid});
-					comments[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
-					comments[i] = descComment(v);
+					v.user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+					v = descComment(v);
+					return v;
 				});
 				cb(null, comments);
 			}
