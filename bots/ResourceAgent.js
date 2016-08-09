@@ -1,106 +1,32 @@
-const ParentBot = require('./_Bot.js');
+// ResourceAgent APIs (Business logic)
 const util = require('util');
-const http = require('http');
-const https = require('https');
 const url = require('url');
 const path = require('path');
+
 const dvalue = require('dvalue');
-const textype = require('textype');
+
+const ParentBot = require('./_Bot.js');
+const descProgram = require('../utils/ResourceAgent.js').descProgram;
+const fetchImage = require('../utils/ResourceAgent.js').fetchImage;
+const request = require('../utils/Crawler.js').request;
+
 
 var logger;
 
-var request = function (options, cb) {
-	var operator;
-	if(typeof(options) == 'string') { options = url.parse(options); }
-	options = dvalue.default(options, {
-		method: 'GET'
-	});
-	switch(options.protocol) {
-		case 'https:':
-			operator = https;
-			options.rejectUnauthorized = false;
-			break;
-		default:
-			operator = http;
-	}
-	var crawler = operator.request(options, function (res) {
-		var rs = {
-			headers: res.headers,
-			data: new Buffer([])
-		};
-		res.on('data', function (chunk) {
-			rs.data = Buffer.concat([rs.data, chunk]);
-		});
-		res.on('end', function () {
-			switch(options.datatype) {
-				case 'json':
-					try { rs.data = JSON.parse(rs.data); } catch(e) { return cb(e); }
-					break;
-			}
-			cb(null, rs)
-		})
-	});
-	crawler.on('error', function (e) { cb(e); })
-	if(options.post) {crawler.write(JSON.stringify(options.post));}
-	crawler.end();
-};
-var fetchImage = function (data) {
-	var result = {cover: "", images: []};
-	if(textype.isURL(data.image_thumb)) { result.cover = data.image_thumb; result.images.push(data.image_thumb); }
-	if(textype.isURL(data.image_cover)) { result.cover = data.image_cover; result.images.push(data.image_cover); }
-	if(textype.isURL(data.image_cover1)) { result.cover = data.image_cover1; result.images.push(data.image_cover1); }
-	if(textype.isURL(data.image_cover2)) { result.cover = data.image_cover2; result.images.push(data.image_cover2); }
-	if(textype.isURL(data.image_cover3)) { result.cover = data.image_cover3; result.images.push(data.image_cover3); }
-	if(textype.isURL(data.image_cover4)) { result.cover = data.image_cover4; result.images.push(data.image_cover4); }
-	if(textype.isURL(data.image_cover5)) { result.cover = data.image_cover5; result.images.push(data.image_cover5); }
-	if(textype.isURL(data.image_cover6)) { result.cover = data.image_cover6; result.images.push(data.image_cover6); }
-	if(textype.isURL(data.image_cover_full)) { result.cover = data.image_cover_full; result.images.push(data.image_cover_full); }
-	if(textype.isURL(data.image_cover1_full)) { result.cover = data.image_cover1_full; result.images.push(data.image_cover1_full); }
-	if(textype.isURL(data.image_cover2_full)) { result.cover = data.image_cover2_full; result.images.push(data.image_cover2_full); }
-	if(textype.isURL(data.image_cover3_full)) { result.cover = data.image_cover3_full; result.images.push(data.image_cover3_full); }
-	if(textype.isURL(data.image_cover4_full)) { result.cover = data.image_cover4_full; result.images.push(data.image_cover4_full); }
-	if(textype.isURL(data.image_cover5_full)) { result.cover = data.image_cover5_full; result.images.push(data.image_cover5_full); }
-	if(textype.isURL(data.image_cover6_full)) { result.cover = data.image_cover6_full; result.images.push(data.image_cover6_full); }
-	return result;
-};
-var descProgram = function (data, detail) {
-	var img = fetchImage(data);
-	var program = {
-		pid: '',
-		type: '',
-		title: data.title,
-		description: data.description,
-		shortdesc: data.shortdesc || '',
-		cover: img.cover,
-		images: img.images,
-		updated: data.updated_at,
-		isEnd: true, //-- fake data
-		createYear: 2099 //-- fake data
-	}
-	// series/ episode/ episode of series
-	switch(data.type) {
-		case 'show':
-			program.pid = 's' + data.id;
-			program.type = data.type;
-			program.sid = data.id;
-			break;
-		case 'episode':
-		default:
-			program.pid = 'e' + data.id;
-			program.type = 'episode';
-			program.eid = data.id;
-			program.duration = parseInt(Math.random() * 180); //-- fake data
-			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
-			break;
-	}
-};
 
+/************************************************
+*                                               *
+*               Declare Bot                     *
+*                                               *
+************************************************/
 var Bot = function (config) {
 	if (!config) config = {};
 	this.init(config);
 };
 
+
 util.inherits(Bot, ParentBot);
+
 
 Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
@@ -108,10 +34,17 @@ Bot.prototype.init = function (config) {
 	this.channels = [];
 };
 
+
 Bot.prototype.start = function () {
 
 };
 
+
+/************************************************
+*                                               *
+*        ResourceAgent APIs                     *
+*                                               *
+************************************************/
 Bot.prototype.listChannel = function (options, cb) {
 	this.descChannel({cid: 1}, function (e, d) {
 		if(e) { cb(e); }
@@ -127,6 +60,7 @@ Bot.prototype.listChannel = function (options, cb) {
 		}
 	});
 };
+
 Bot.prototype.descChannel = function (options, cb) {
 	var picks = 336;
 	if(options.time > 0) { picks = options.days > 0? 48 * options.days: 48; }
@@ -158,6 +92,7 @@ Bot.prototype.descChannel = function (options, cb) {
 	data.next_program = data.programs[1];
 	cb(null, data);
 };
+
 Bot.prototype.parseChannel = function (resource, cb) {
 	var self = this;
 	var channel = dvalue.search({id: resource.channel}, this.channels);
@@ -184,6 +119,7 @@ Bot.prototype.parseChannel = function (resource, cb) {
 		cb(null, channel.url);
 	}
 };
+
 // resource.path, resource.channel
 Bot.prototype.channelResource = function (resource, cb) {
 	var channel = dvalue.search({id: resource.channel}, this.channels);
@@ -247,37 +183,11 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			var programData = {
-				pid: 's' + program.id,
-				type: 'series',
-				title: program.title,
-				description: program.description.substr(0, 70),
-				shortdesc: program.shortdesc || '',
-				//cover: program.image_thumb,
-				//isEnd: true, // fake data
-				//createYear: 2099, // fake data
-				//paymentPlans: [], // fake data
-				//playable: true,
+			var program = dvalue.default(descProgram(programs[i]), {
 				banner: pics[(i % pics.length)],
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				//programData.updated_at = program.updated_at;
-				//programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
-				//programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				//programData.duration = 2 * 60;
-				//programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				//programData.duration = 2 * 60;
-				//programData.type = 'episode'
-			}
-			result.push(programData);
+			});
+			result.push(program);
+
 		}
 
 		// return data when correct
@@ -324,34 +234,11 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
+			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
-				playable: true,
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.push(programData);
+				playable: true, // fake data
+			});
+			result.push(program);
 		}
 
 		cb(null, result);
@@ -401,23 +288,11 @@ Bot.prototype.listSeries = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			result.push({
-				sid: program.id,
-				title: program.title,
-				description: program.description,
-				cover: program.image_thumb,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				update: program.updated_at,
-				type: 'series',
-				duration: 2*60, // 2h, fake data
-				programs: [
-					{eid: "123", title: '嘿！阿弟牯'}
-				], // fake data
+			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
-				playable: true,
-			})
+				playable: true, // fake data
+			});
+			result.push(program);
 		}
 
 		// return data when correct
@@ -517,6 +392,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 		var show = res.data;
+		show.type = 'show';
 
 		// crawl episodes
 		var episodesUrl = self.config.resourceAPI + '/api/episodes?show_id=%s&page=%s&limit=%s';
@@ -528,46 +404,21 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 			var episodes = res.data;
+			// mapping data with programs
+
+			show.programs = episodes.map(function (v) {
+				v = dvalue.default(descProgram(v), {
+					paymentPlans: [], // fake data
+					playable: true // fake data
+				});
+				return v;
+			});
 
 			// mapping data except programs
-			var result = {
-				sid: show.id,
-				title: show.title,
-				description: show.description,
-				cover: show.image_cover,
-				isEnd: true, // fake data
-				createYear: 2099, // fake data
-				update: show.updated_at,
-				type: 'series',
-				programs: [],
+			var result = dvalue.default(descProgram(show, true), {
 				paymentPlans: [], // fake data
-				playable: true,
-				grading: "16+",
-				movieType: ["紀錄片"],
-				director: ["卜釋仁"],
-				actors: ["路人甲", "路人乙", "路人丙"],
-				source: ["陽光衛視"],
-				subtitle: ["zh-cn", "zh-tw", "en-us"],
-				soundtrack: ["chinese", "english"],
-				scenarist: ["路平"],
-				trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
-
-			}
-			// mapping data with programs
-			for (var i = 0, len = episodes.length; i < len; i++){
-				var episode = episodes[i];
-				result.programs.push({
-					eid: episode.id,
-					title: episode.title,
-					description: episode.description,
-					cover: episode.image_thumb,
-					createYear: 2099, // fake data
-					publish: '2099-12-31',
-					duration: 2*60, // 2h, fake data
-					paymentPlans: [], // fake data
-					playable: true,
-				})
-			}
+				playable: true // fake data
+			});
 
 			// fill comments
 			var bot = self.getBot('Comment');
@@ -623,34 +474,13 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		var episode = res.data;
+		episode.type = 'episode';
 
-		// fetch valid img resources as a array
-		var fetchedImage = fetchImage(episode)
-
-		// mapping data
-		var result = {
-			eid: episode.id,
-			title: episode.title,
-			description: episode.description,
-			cover: fetchedImage.cover,
-			images: fetchedImage.images,
-			isEnd: true, // fake data
-			createYear: 2099, // fake data
-			update: episode.updated_at,
-			type: 'episode',
-			duration: 2 * 60, // 2h, fake data
+		// mapping data except programs
+		var result = dvalue.default(descProgram(episode, true), {
 			paymentPlans: [], // fake data
-			playable: true,
-			grading: "G",
-			movieType: ["紀錄片"],
-			director: ["卜釋仁"],
-			actors: ["路人甲", "路人乙", "路人丙"],
-			source: ["陽光衛視"],
-			subtitle: ["zh-cn", "zh-tw", "en-us"],
-			soundtrack: ["chinese", "english"],
-			scenarist: ["路平"],
-			trailers: ["http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"],
-		};
+			playable: true // fake data
+		});
 
 		// fill comments
 		var bot = self.getBot('Comment');
@@ -697,34 +527,11 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		};
 
 		for (var i = 0, len = programs.length; i < len; i++){
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, //-- fake data
-				createYear: 2099, //-- fake data
-				paymentPlans: [], //-- fake data
-				playable: true,
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.programs.push(programData);
+			var program = dvalue.default(descProgram(programs[i]), {
+				paymentPlans: [], // fake data
+				playable: true, // fake data
+			});
+			result.programs.push(program);
 		}
 		cb(null, result);
 	})
@@ -757,34 +564,11 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		var endIndex = startIndex + limit;
 		console.log(startIndex, endIndex)
 		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, //-- fake data
-				createYear: 2099, //-- fake data
-				paymentPlans: [], //-- fake data
-				playable: true,
-			}
-			if (program.type === 'show'){
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: int, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode'){
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.push(programData)
+			var program = dvalue.default(descProgram(programs[i]), {
+				paymentPlans: [], // fake data
+				playable: true, // fake data
+			});
+			result.push(program);
 		}
 
 		cb(null, result);
@@ -799,7 +583,7 @@ var fakeTypes = [
 	{"ptid": 4, "code": "history", "text": "歷史"},
 	{"ptid": 5, "code": "education", "text": "教育"},
 	{"ptid": 6, "code": "interview", "text": "訪談"}
-];
+]; //-- fake data
 // listPrgramType
 Bot.prototype.listPrgramType = function (options, cb) {
 	cb(null, fakeTypes);
@@ -820,46 +604,16 @@ Bot.prototype.searchProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		var result = [];
 		var programs = res.data;
-		// mapping data
-		var result = {
-			title: '中國文化專題',
-			description: '',
-			cover: '',
-			programs: [],
-		};
-
 		var programTypes = ['culture', 'travel', 'character', 'history', 'education', 'interview'];
 		for (var i = 0, len = programs.length; i < len; i++) {
-			var program = programs[i];
-			var programData = {
-				title: program.title,
-				description: program.description,
-				shortdesc: program.shortdesc || '',
-				cover: program.image_thumb,
-				isEnd: true, //-- fake data
-				createYear: 2099, //-- fake data
+			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], //-- fake data
-				playable: true,
-				programType: dvalue.search(fakeTypes, {ptid: options.type}) //--
-			}
-			if (program.type === 'show') {
-				programData.pid = 's' + program.id;
-				programData.updated_at = program.updated_at;
-				programData.programs = [{eid: 1009, title: '嘿！阿弟牯'}];
-				programData.type = 'series'
-			}
-			else if (program.type === 'episode') {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			else {
-				programData.pid = 'e' + program.id;
-				programData.duration = 2 * 60;
-				programData.type = 'episode'
-			}
-			result.programs.push(programData);
+				playable: true, //-- fake data
+				programType: dvalue.search(fakeTypes, {ptid: options.type}), //--
+			});
+			result.push(program);
 		}
 		cb(null, result);
 	})
