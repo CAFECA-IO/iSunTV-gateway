@@ -1,6 +1,6 @@
 {
   "name": "isuntv-gateway",
-  "version": "0.2.27",
+  "version": "0.2.28",
   "description": "iSunTV Backend Gateway",
   "main": "bin/start.js",
   "scripts": {
@@ -21,6 +21,7 @@
   "homepage": "https://bitbucket.org/tidenet/isuntv-gateway#readme",
   "dependencies": {
     "body-parser": "^1.15.2",
+    "braintree": "^1.41.0",
     "dvalue": "^1.0.14",
     "echashcash": "^1.0.1",
     "ecresult": "^1.0.13",

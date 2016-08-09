@@ -69,8 +69,8 @@ Bot.prototype.writeComment = function (options, cb) {
 		(Math.floor(options.rating) < 1 && Math.floor(options.rating)) > 5){
 		var e = new Error("Incorrect rating"); e.code = "19501"; return cb(e);
 	}
-	if (options.title.length > 100) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
-	if (options.comment.length > 1000) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
+	if (options.title.length > 30) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
+	if (options.comment.length > 500) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
 	options.rating = Math.floor(options.rating);
 
 	var self = this;
@@ -188,16 +188,18 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 		};
 		if(!!options.uid) { rs.mycomment = mycomment; }
 		if(startPoint >= 0 && endPoint >= 0) {
-			rs.comments = picks;
 			var bot = self.getBot('User');
 			var uopt = {uids: uids}
 			bot.fetchUsers(uopt, function (e1, d1) {
 				if(e1) { return cb(e1); }
 				else {
-					picks.map(function (v, i) {
+					picks = picks.map(function (v, i) {
 						var tmpu = dvalue.search(d1, {uid: v.uid});
-						picks[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+						v.user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+						v = descComment(v);
+						return v;
 					});
+					rs.comments = picks;
 					cb(null, rs);
 				}
 			});
@@ -247,9 +249,11 @@ Bot.prototype.listProgramComments = function (options, cb) {
 		bot.fetchUsers(uopt, function (e, d) {
 			if(e) { return cb(e); }
 			else {
-				comments.map(function (v, i) {
+				comments = comments.map(function (v, i) {
 					var tmpu = dvalue.search(d, {uid: v.uid});
-					comments[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+					v.user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+					v = descComment(v);
+					return v;
 				});
 				cb(null, comments);
 			}
