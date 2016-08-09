@@ -12,8 +12,9 @@ var Bot = function (config) {
 util.inherits(Bot, ParentBot);
 
 Bot.prototype.init = function (config) {
-  Bot.super_.prototype.init.call(this, config);
+	Bot.super_.prototype.init.call(this, config);
 	logger = config.logger;
+	if(!config || !config.BrainTree) { return false; }
 
 	var btcfg = config.BrainTree;
 	btcfg.environment = braintree.Environment.Sandbox;
