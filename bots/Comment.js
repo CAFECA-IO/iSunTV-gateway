@@ -251,6 +251,7 @@ Bot.prototype.listProgramComments = function (options, cb) {
 				comments.map(function (v, i) {
 					var tmpu = dvalue.search(d, {uid: v.uid});
 					comments[i].user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+					comments[i] = descComment(v);
 				});
 				cb(null, comments);
 			}
