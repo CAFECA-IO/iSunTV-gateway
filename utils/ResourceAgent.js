@@ -15,6 +15,7 @@ var fakeTypes = [
 
 const descProgram = function (data, detail) {
 	var img = fetchImage(data);
+	var stream = fetchStream(data);
 	var program = {
 		pid: '',
 		type: '',
@@ -49,6 +50,7 @@ const descProgram = function (data, detail) {
 			break;
 	}
 	if(!!detail) {
+		program.stream = stream.stream;
 		program.directors = Array.isArray(data.directors)? data.directors: data.directors? data.directors.split(','): [];
 		program.actors = Array.isArray(data.actors)? data.actors: data.actors? data.actors.split(','): [];
 		program.source = Array.isArray(data.source)? data.source: data.source? data.source.split(','): [];
@@ -59,9 +61,20 @@ const descProgram = function (data, detail) {
 			cover: "https://app2.isuntv.com/uploads/episodes/.tmb/thumb_1094_image_thumb_adaptiveResize_70_70.jpg",
 			stream: "http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"
 		}]; //-- fakedata
+		program.scenarist = [
+			"路平"
+		]; //-- fakedata
 	}
 
 	return program
+};
+
+
+const fetchStream = function (data) {
+	var result = {stream: ""};
+	if(textype.isURL(data.ipad_stream_url)) { result.stream = data.ipad_stream_url; }
+	else if(textype.isURL(data.stream_url)) { result.stream = data.stream_url; }
+	return result;
 };
 
 
