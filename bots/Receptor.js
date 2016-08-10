@@ -718,6 +718,23 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// Search Program
+	this.router.get('/search/:keyword', checkHashCash, function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {keyword: req.params.keyword};
+		bot.searchPrograms(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('search program');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 	// GET Program
 	this.router.get('/program/:pid', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');

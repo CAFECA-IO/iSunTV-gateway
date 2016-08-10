@@ -662,14 +662,17 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 Bot.prototype.searchPrograms = function (options, cb) {
 	var self = this;
 
-	var searchedUrl = this.config.resourceAPI + '/api/search?keyword=%s';
-	searchedUrl = dvalue.sprintf(searchedUrl, options.keyword);
-	searchedUrl = url.parse(searchedUrl);
+	var tmpurl = url.parse(this.config.resourceAPI);
+	var searchedUrl = url.parse(url.format({
+			protocol: tmpurl.protocol,
+			hostname: tmpurl.hostname,
+			pathname: '/api/search',
+			query: { keyword: '我的家人' }
+		}));
 	searchedUrl.datatype = 'json';
 	request(searchedUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
 		var searchPrograms = res.data.map(function(program){
 			return dvalue.default(descProgram(program), {
 				paymentPlans: [], //-- fake data
@@ -677,8 +680,8 @@ Bot.prototype.searchPrograms = function (options, cb) {
 			})
 		});
 
-		cb(null, programsByType);
-	})
+		cb(null, searchPrograms);
+	});
 };
 
 Bot.prototype.request = request;
