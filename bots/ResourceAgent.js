@@ -626,7 +626,7 @@ Bot.prototype.listPrgramType = function (options, cb) {
 	})
 };
 
-// searchProgram
+// listPrgramByType
 Bot.prototype.listPrgramByType = function (options, cb) {
 	var self = this;
 	var page = Number(options.page);
@@ -648,6 +648,29 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 			return dvalue.default(program, {programType: programType})
 		}).map(function(program){
 			// clean data
+			return dvalue.default(descProgram(program), {
+				paymentPlans: [], //-- fake data
+				playable: true, //-- fake data
+			})
+		});
+
+		cb(null, programsByType);
+	})
+};
+
+// searchPrograms
+Bot.prototype.searchPrograms = function (options, cb) {
+	var self = this;
+
+	var searchedUrl = this.config.resourceAPI + '/api/search?keyword=%s';
+	searchedUrl = dvalue.sprintf(searchedUrl, options.keyword);
+	searchedUrl = url.parse(searchedUrl);
+	searchedUrl.datatype = 'json';
+	request(searchedUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var searchPrograms = res.data.map(function(program){
 			return dvalue.default(descProgram(program), {
 				paymentPlans: [], //-- fake data
 				playable: true, //-- fake data

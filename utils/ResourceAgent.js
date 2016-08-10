@@ -4,6 +4,15 @@
 const textype = require('textype');
 const dvalue = require('dvalue');
 
+var fakeTypes = [
+	{"ptid": 1, "code": "culture", "text": "文化"},
+	{"ptid": 2, "code": "travel", "text": "旅遊"},
+	{"ptid": 3, "code": "character", "text": "人物"},
+	{"ptid": 4, "code": "history", "text": "歷史"},
+	{"ptid": 5, "code": "education", "text": "教育"},
+	{"ptid": 6, "code": "interview", "text": "訪談"}
+]; //-- fake data
+
 const descProgram = function (data, detail) {
 	var img = fetchImage(data);
 	var program = {
@@ -18,7 +27,7 @@ const descProgram = function (data, detail) {
 		createYear: 2099, //-- fake data
 		publish: '2099-12-31', //-- fake data
 		grading: "16+", //-- fake data
-		programType: data.programType,//-- fake data (random)
+		programType: data.programType || dvalue.randomPick(fakeTypes, 1)[0],//-- fake data (random)
 	}
 	// series/ episode/ episode of series
 	switch(data.type) {
