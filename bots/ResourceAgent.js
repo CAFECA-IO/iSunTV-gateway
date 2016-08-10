@@ -36,7 +36,25 @@ Bot.prototype.init = function (config) {
 
 
 Bot.prototype.start = function () {
+	var self = this;
 
+	var prgramTypeUrl = this.config.resourceAPI + '/api/showsbycategory?parent_id=0';
+	prgramTypeUrl = url.parse(prgramTypeUrl);
+	prgramTypeUrl.datatype = 'json';
+	request(prgramTypeUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var prgramTypes = res.data.map(function(programType){
+			return {
+				ptid: programType.id,
+				text: programType.title,
+			}
+		});
+
+		// cache prgramTypes
+		self.programTypes = prgramTypes;
+	});
 };
 
 
@@ -585,8 +603,35 @@ var fakeTypes = [
 	{"ptid": 6, "code": "interview", "text": "訪談"}
 ]; //-- fake data
 // listPrgramType
+// http://app2.isuntv.com/api/latest
+/*
+[
+    {
+      "ptid": "40",
+      "text": "訪談"
+    },
+]
+ */
 Bot.prototype.listPrgramType = function (options, cb) {
-	cb(null, fakeTypes);
+	var self = this;
+
+	var prgramTypeUrl = this.config.resourceAPI + '/api/showsbycategory?parent_id=0';
+	prgramTypeUrl = url.parse(prgramTypeUrl);
+	prgramTypeUrl.datatype = 'json';
+	request(prgramTypeUrl, function(e, res){
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+
+		var prgramTypes = res.data.map(function(programType){
+			return {
+				ptid: programType.id,
+				text: programType.title,
+			}
+		});
+		self.programTypes = prgramTypes;
+
+		cb(null, prgramTypes);
+	})
 };
 
 // searchProgram
@@ -596,26 +641,28 @@ Bot.prototype.searchProgram = function (options, cb) {
 	var limit = Number(options.limit);
 	page = page >= 1 ? page: 1;
 	limit = limit > 0 ? limit: 8;
-	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s';
-	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
-	specialSeriesUrl = url.parse(specialSeriesUrl);
-	specialSeriesUrl.datatype = 'json';
-	request(specialSeriesUrl, function(e, res){
+
+	var theProgramTypeUrl = this.config.resourceAPI + '/api/showsbycategory?parent_id=%s';
+	theProgramTypeUrl = dvalue.sprintf(theProgramTypeUrl, options.ptid);
+	theProgramTypeUrl = url.parse(theProgramTypeUrl);
+	theProgramTypeUrl.datatype = 'json';
+	request(theProgramTypeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var result = [];
-		var programs = res.data;
-		var programTypes = ['culture', 'travel', 'character', 'history', 'education', 'interview'];
-		for (var i = 0, len = programs.length; i < len; i++) {
-			var program = dvalue.default(descProgram(programs[i]), {
+		var programType = dvalue.search(self.programTypes, { ptid: options.ptid });
+		var programsByType = res.data.map(function(program){
+			// merge the program type
+			return dvalue.default(program, {programType: programType})
+		}).map(function(program){
+			// clean data
+			return dvalue.default(descProgram(program), {
 				paymentPlans: [], //-- fake data
 				playable: true, //-- fake data
-				programType: dvalue.search(fakeTypes, {ptid: options.type}), //--
-			});
-			result.push(program);
-		}
-		cb(null, result);
+			})
+		});
+
+		cb(null, programsByType);
 	})
 };
 

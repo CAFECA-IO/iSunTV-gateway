@@ -27,7 +27,7 @@ const descProgram = function (data, detail) {
 		createYear: 2099, //-- fake data
 		publish: '2099-12-31', //-- fake data
 		grading: "16+", //-- fake data
-		programType: dvalue.randomPick(fakeTypes, 1)[0] //-- fake data (random)
+		programType: data.programType,//-- fake data (random)
 	}
 	// series/ episode/ episode of series
 	switch(data.type) {
