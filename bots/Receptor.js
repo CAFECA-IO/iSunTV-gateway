@@ -702,10 +702,10 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List Program By Type
-	this.router.get(['/programtype/:type', '/programtype/:type/:page', '/programtype/:type/:page/:limit'], function (req, res, next) {
+	this.router.get(['/programtype/:ptid', '/programtype/:ptid/:page', '/programtype/:ptid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {type: req.params.type, page: req.params.page, limit: req.params.limit};
-		bot.searchProgram(options, function (e, d) {
+		var options = {ptid: req.params.ptid, page: req.params.page, limit: req.params.limit};
+		bot.listPrgramByType(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -713,6 +713,23 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('list program type');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Search Program
+	this.router.get('/search/:keyword', checkHashCash, function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {keyword: req.params.keyword};
+		bot.searchPrograms(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('search program');
 				res.result.setData(d);
 			}
 			next();
