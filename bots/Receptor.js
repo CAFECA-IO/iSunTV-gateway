@@ -863,6 +863,59 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+
+	/* Favorite */
+	// Add favorite
+	this.router.post('/program/:pid/favorite', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Favorite');
+		var options = {uid: req.session.uid, pid: req.params.pid};
+		bot.addFavorite(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Add to favorite:', req.params.pid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Remove favorite
+	this.router.delete('/program/:pid/favorite', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Favorite');
+		var options = {uid: req.session.uid, pid: req.params.pid};
+		bot.removeFavorite(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Add to favorite:', req.params.pid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// List my favorite
+	this.router.get('/favorite', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Favorite');
+		var options = {uid: req.session.uid};
+		bot.listFavorite(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('List my favorite');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {
