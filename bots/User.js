@@ -182,6 +182,12 @@ Bot.prototype.addResetHistory = function (uid) {
 	if(rs) { this.resetHistory[uid].push(now); }
 	return rs;
 };
+Bot.prototype.cancelResetHistory = function (uid) {
+	if(Array.isArray(this.resetHistory[uid])) {
+		this.resetHistory[uid].pop();
+	}
+	return true;
+};
 Bot.prototype.cleanResetHistory = function (uid) {
 	return this.resetHistory[uid] = [];
 };
@@ -860,6 +866,7 @@ Bot.prototype.resetPassword = function (options, cb) {
 			return cb(e);
 		}
 		else if (user.password == options.password){
+			self.cancelResetHistory(options.uid);
 			e = new Error("duplicate password");
 			e.code = '29101';
 			return cb(e);
