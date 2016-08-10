@@ -148,10 +148,10 @@ Bot.prototype.channelResource = function (resource, cb) {
 /* optional: options.page, options.limit */
 /*
 [{
-    pid: {$pid},
-    title: 節目標題,
-    description: 說明文字,
-    banner: 網路上隨便找好看的 banner 圖片連結
+	pid: {$pid},
+	title: 節目標題,
+	description: 說明文字,
+	banner: 網路上隨便找好看的 banner 圖片連結
 }]
  */
 Bot.prototype.listBannerProgram = function (options, cb) {

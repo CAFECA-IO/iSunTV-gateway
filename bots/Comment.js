@@ -27,6 +27,7 @@ var descComment = function (data) {
 		cmid: data._id,
 		user: data.user,
 		program: data.program,
+		rating: data.rating,
 		title: data.title,
 		comment: data.comment,
 		ctime: data.ctime,
