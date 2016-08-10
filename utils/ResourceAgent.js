@@ -59,6 +59,9 @@ const descProgram = function (data, detail) {
 			cover: "https://app2.isuntv.com/uploads/episodes/.tmb/thumb_1094_image_thumb_adaptiveResize_70_70.jpg",
 			stream: "http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"
 		}]; //-- fakedata
+		program.scenarist = [
+			"路平"
+		]; //-- fakedata
 	}
 
 	return program
