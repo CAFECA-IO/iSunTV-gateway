@@ -178,7 +178,7 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 				picks.push(v);
 				uids.push(v.uid);
 			}
-			if(!!v.uid && v.uid == options.uid) { mycomment = v; }
+			if(!!v.uid && v.uid == options.uid) { mycomment = descComment(v); }
 			total += v.rating;
 			count[(v.rating - 1)]++;
 		});
