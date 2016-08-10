@@ -527,7 +527,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 	var limitOpt = Number(options.limit);
 	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
 	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
+	var specialSeriesUrl = this.config.resourceAPI + '/api/featured?page=%s&limit=%s'
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
@@ -627,7 +627,7 @@ Bot.prototype.listPrgramType = function (options, cb) {
 };
 
 // searchProgram
-Bot.prototype.searchProgram = function (options, cb) {
+Bot.prototype.listPrgramByType = function (options, cb) {
 	var self = this;
 	var page = Number(options.page);
 	var limit = Number(options.limit);

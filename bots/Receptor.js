@@ -705,7 +705,7 @@ Bot.prototype.init = function(config) {
 	this.router.get(['/programtype/:ptid', '/programtype/:ptid/:page', '/programtype/:ptid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {ptid: req.params.ptid, page: req.params.page, limit: req.params.limit};
-		bot.searchProgram(options, function (e, d) {
+		bot.listPrgramByType(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
