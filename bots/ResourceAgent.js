@@ -414,6 +414,9 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				return v;
 			});
 
+			// async backup: should use pid as _id
+			self.db.collection('Programs').insertOne(show);
+
 			// mapping data except programs
 			var result = dvalue.default(descProgram(show, true), {
 				paymentPlans: [], // fake data
@@ -475,6 +478,9 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		var episode = res.data;
 		episode.type = 'episode';
+
+		// async backup: should use pid as _id
+		self.db.collection('Programs').insertOne(result);
 
 		// mapping data except programs
 		var result = dvalue.default(descProgram(episode, true), {
