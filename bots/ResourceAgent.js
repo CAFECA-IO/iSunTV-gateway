@@ -38,23 +38,7 @@ Bot.prototype.init = function (config) {
 Bot.prototype.start = function () {
 	var self = this;
 
-	var prgramTypeUrl = this.config.resourceAPI + '/api/showsbycategory?parent_id=0';
-	prgramTypeUrl = url.parse(prgramTypeUrl);
-	prgramTypeUrl.datatype = 'json';
-	request(prgramTypeUrl, function(e, res){
-		// error
-		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
-		var prgramTypes = res.data.map(function(programType){
-			return {
-				ptid: programType.id,
-				text: programType.title,
-			}
-		});
-
-		// cache prgramTypes
-		self.programTypes = prgramTypes;
-	});
+	this.listPrgramType({}, function () {});
 };
 
 
@@ -306,6 +290,7 @@ Bot.prototype.listSeries = function (options, cb) {
 		var result = [];
 		var programs = res.data;
 		for (var i = 0, len = programs.length; i < len; i++){
+			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
 			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
 				playable: true, // fake data
@@ -433,6 +418,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			});
 
 			// mapping data except programs
+			show.programType = self.programTypes[(parseInt(show.id) || 0) % self.programTypes.length]; //-- fake programType
 			var result = dvalue.default(descProgram(show, true), {
 				paymentPlans: [], // fake data
 				playable: true // fake data
@@ -495,6 +481,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		episode.type = 'episode';
 
 		// mapping data except programs
+		episode.programType = self.programTypes[(parseInt(episode.id) || 0) % self.programTypes.length]; //-- fake programType
 		var result = dvalue.default(descProgram(episode, true), {
 			paymentPlans: [], // fake data
 			playable: true // fake data
@@ -545,6 +532,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		};
 
 		for (var i = 0, len = programs.length; i < len; i++){
+			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
 			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
 				playable: true, // fake data
@@ -582,6 +570,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		var endIndex = startIndex + limit;
 		console.log(startIndex, endIndex)
 		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
+			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
 			var program = dvalue.default(descProgram(programs[i]), {
 				paymentPlans: [], // fake data
 				playable: true, // fake data
@@ -644,10 +633,8 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 
 		var programType = dvalue.search(self.programTypes, { ptid: options.ptid });
 		var programsByType = res.data.map(function(program){
-			// merge the program type
-			return dvalue.default(program, {programType: programType})
-		}).map(function(program){
 			// clean data
+			program.programType = programType;
 			return dvalue.default(descProgram(program), {
 				paymentPlans: [], //-- fake data
 				playable: true, //-- fake data
@@ -662,18 +649,29 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 Bot.prototype.searchPrograms = function (options, cb) {
 	var self = this;
 
-	var tmpurl = url.parse(this.config.resourceAPI);
-	var searchedUrl = url.parse(url.format({
-			protocol: tmpurl.protocol,
-			hostname: tmpurl.hostname,
-			pathname: '/api/search',
-			query: { keyword: '我的家人' }
-		}));
+	var tmpUrl = url.parse(this.config.resourceAPI);
+	var tmpUrlParams = {
+		protocol: tmpUrl.protocol,
+		hostname: tmpUrl.hostname,
+		pathname: '/api/search',
+		query: { keyword: options.keyword }
+	};
+	if(options.limit > 0) {
+		tmpUrlParams.query.page = options.page > 0? options.page: 1;
+		tmpUrlParams.query.limit = options.limit;
+	}
+	else if(options.page > 0) {
+		tmpUrlParams.query.page = options.page;
+		tmpUrlParams.query.limit = 10;
+	}
+
+	var searchedUrl = url.parse(url.format(tmpUrlParams));
 	searchedUrl.datatype = 'json';
 	request(searchedUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		var searchPrograms = res.data.map(function(program){
+			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length]; //-- fake programType
 			return dvalue.default(descProgram(program), {
 				paymentPlans: [], //-- fake data
 				playable: true, //-- fake data
