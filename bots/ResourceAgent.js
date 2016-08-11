@@ -414,14 +414,14 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				return v;
 			});
 
-			// async backup: should use pid as _id
-			self.db.collection('Programs').insertOne(show);
-
 			// mapping data except programs
 			var result = dvalue.default(descProgram(show, true), {
 				paymentPlans: [], // fake data
 				playable: true // fake data
 			});
+
+			// async backup: should use pid as _id
+			self.db.collection('Programs').insertOne(result, {pid: 's' + show.id});
 
 			// fill comments
 			var bot = self.getBot('Comment');
@@ -479,14 +479,14 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		var episode = res.data;
 		episode.type = 'episode';
 
-		// async backup: should use pid as _id
-		self.db.collection('Programs').insertOne(result);
-
 		// mapping data except programs
 		var result = dvalue.default(descProgram(episode, true), {
 			paymentPlans: [], // fake data
 			playable: true // fake data
 		});
+
+		// async backup: should use pid as _id
+		self.db.collection('Programs').insertOne(result, {pid: 'e' + episode.id});
 
 		// fill comments
 		var bot = self.getBot('Comment');
