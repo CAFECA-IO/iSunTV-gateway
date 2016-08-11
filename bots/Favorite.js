@@ -92,4 +92,19 @@ Bot.prototype.removeFavorite = function (options, cb) {
 	});
 };
 
+// listFavorite
+// require: options.uid */
+Bot.prototype.listFavorite = function (options, cb) {
+	var self = this;
+
+	//list Favorite
+	var collection = self.db.collection('Favorites');
+	var query = { uid: options.uid };
+	var sort = [['ctime', -1]]
+	collection.find(query).sort(sort).toArray(function (e, favorites) {
+		if(e) { e.code = '01002'; return cb(e); }
+		cb(null, favorites)
+	})
+};
+
 module.exports = Bot;
