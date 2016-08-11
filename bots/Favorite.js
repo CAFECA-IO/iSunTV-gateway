@@ -58,9 +58,10 @@ Bot.prototype.addFavorite = function (options, cb) {
 		else if(!user) { e = new Error('User not found'); e.code = '39102'; return cb(e); }
 		else {
 			// Update Favorites
-			var criteria = { uid: options.uid };
-			var update = { $set: formatFavorite(options) }
-			self.db.collection('Favorites').update(criteria, update, { upsert: true }, function(err, result){
+			var criteria = { uid: options.uid, pid: options.pid };
+			var update = { $set: formatFavorite(options) };
+			var updatedOptions = { upsert: true };
+			self.db.collection('Favorites').updateOne(criteria, update, updatedOptions, function(err, result){
 				if(e) { e.code = '01002'; return cb(e); }
 				cb(null, {});
 			});
@@ -83,7 +84,7 @@ Bot.prototype.removeFavorite = function (options, cb) {
 			// Delete Favorite
 			var collection = self.db.collection('Favorites');
 			var cond = options;
-			FavoritesCollection.deleteOne(cond, function (e, result) {
+			collection.deleteOne(cond, function (e, result) {
 				if(e) { e.code = '01002'; return cb(e); }
 				if(result.deletedCount === 0){ e = new Error('Favorite not found'); e.code = '39601'; return cb(e); }
 				cb(null, {});
@@ -100,11 +101,41 @@ Bot.prototype.listFavorite = function (options, cb) {
 	//list Favorite
 	var collection = self.db.collection('Favorites');
 	var query = { uid: options.uid };
-	var sort = [['ctime', -1]]
+	var sort = [['ctime', -1]];
 	collection.find(query).sort(sort).toArray(function (e, favorites) {
 		if(e) { e.code = '01002'; return cb(e); }
-		cb(null, favorites)
-	})
+
+		// find programs
+		var pids = favorites.map(function(favorite){ return favorite.pid });
+		var collection = self.db.collection('Programs');
+		var query = { pid: { $in : pids }};
+		collection.find(query).toArray(function(e, programs){
+			// merge data
+			cb(null, favorites.map(function(favorite){
+				var program = dvalue.search(programs, { pid : favorite.pid });
+				return dvalue.default(favorite, program);
+			}));
+		});
+
+	});
 };
 
 module.exports = Bot;
+
+
+// temp
+function mergeByPrograms(freshObjs, cb){
+	//
+	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
+
+	//
+	var collection = self.db.collection('Programs');
+	var query = { pid: { $in : pids }};
+	collection.find(query).toArray(function(e, programs){
+		var mergedObjs = freshObjs.map(function(freshObj){
+			var program = dvalue.search(programs, { pid : favorite.pid });
+			return dvalue.default(freshObj, program);
+		})
+		cb(null, mergedObjs);
+	});
+}
