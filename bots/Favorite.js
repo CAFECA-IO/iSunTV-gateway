@@ -12,7 +12,7 @@ var logger;
 
 var formatFavorite = function (favorite) {
 	favorite = dvalue.default(favorite, {
-		uid: ""
+		uid: "",
 		pid: "",
 		ctime: new Date().getTime(),
 	});
@@ -63,7 +63,7 @@ Bot.prototype.addFavorite = function (options, cb) {
 			self.db.collection('Favorites').update(criteria, update, { upsert: true }, function(err, result){
 				if(e) { e.code = '01002'; return cb(e); }
 				cb(null, {});
-			};
+			});
 		}
 	});
 };
