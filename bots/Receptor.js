@@ -719,9 +719,9 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// Search Program
-	this.router.get('/search/:keyword', checkHashCash, function (req, res, next) {
+	this.router.get(['/search/:keyword', '/search/:keyword/:page', '/search/:keyword/:page/:limit'], checkHashCash, function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {keyword: req.params.keyword};
+		var options = {keyword: req.params.keyword, page: req.params.page, limit: req.params.limit};
 		bot.searchPrograms(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
