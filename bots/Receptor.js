@@ -893,7 +893,7 @@ Bot.prototype.init = function(config) {
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('Add to favorite:', req.params.pid);
+				res.result.setMessage('Remove to favorite:', req.params.pid);
 				res.result.setData(d);
 			}
 			next();
