@@ -45,9 +45,9 @@ Bot.prototype.start = function () {
 *        Favorite APIs                          *
 *                                               *
 ************************************************/
-// AddFavorite
+// addFavorite
 // require: options.uid, options.pid */
-Bot.prototype.AddFavorite = function (options, cb) {
+Bot.prototype.addFavorite = function (options, cb) {
 	var self = this;
 
 	// Check user
@@ -64,6 +64,30 @@ Bot.prototype.AddFavorite = function (options, cb) {
 				if(e) { e.code = '01002'; return cb(e); }
 				cb(null, {});
 			};
+		}
+	});
+};
+
+// removeFavorite
+// require: options.uid, options.pid */
+Bot.prototype.removeFavorite = function (options, cb) {
+	var self = this;
+
+	// Check user
+	var collection = self.db.collection('Users');
+	var cond = { _id: new mongodb.ObjectID(options.uid), enable: true };
+	collection.findOne(cond, {}, function (e, user) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(!user) { e = new Error('User not found'); e.code = '39102'; return cb(e); }
+		else {
+			// Delete Favorite
+			var collection = self.db.collection('Favorites');
+			var cond = options;
+			FavoritesCollection.deleteOne(cond, function (e, result) {
+				if(e) { e.code = '01002'; return cb(e); }
+				if(result.deletedCount === 0){ e = new Error('Favorite not found'); e.code = '39601'; return cb(e); }
+				cb(null, {});
+			});
 		}
 	});
 };
