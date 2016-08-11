@@ -1,3 +1,15 @@
+// Favorite APIs (Business logic)
+const util = require('util');
+
+const mongodb = require('mongodb');
+const dvalue = require('dvalue');
+
+const ParentBot = require('./_Bot.js');
+
+
+var logger;
+
+
 var formatFavorite = function (favorite) {
 	favorite = dvalue.default(favorite, {
 		uid: ""
@@ -7,6 +19,32 @@ var formatFavorite = function (favorite) {
 	return favorite;
 };
 
+/************************************************
+*                                               *
+*               Declare Bot                     *
+*                                               *
+************************************************/
+var Bot = function (config) {
+	if (!config) config = {};
+	this.init(config);
+};
+
+util.inherits(Bot, ParentBot);
+
+Bot.prototype.init = function (config) {
+	Bot.super_.prototype.init.call(this, config);
+	logger = config.logger;
+};
+
+Bot.prototype.start = function () {
+
+};
+
+/************************************************
+*                                               *
+*        Favorite APIs                          *
+*                                               *
+************************************************/
 // AddFavorite
 // require: options.uid, options.pid */
 Bot.prototype.AddFavorite = function (options, cb) {
@@ -29,3 +67,5 @@ Bot.prototype.AddFavorite = function (options, cb) {
 		}
 	});
 };
+
+module.exports = Bot;
