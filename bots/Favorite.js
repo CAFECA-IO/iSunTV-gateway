@@ -98,44 +98,16 @@ Bot.prototype.removeFavorite = function (options, cb) {
 Bot.prototype.listFavorite = function (options, cb) {
 	var self = this;
 
-	//list Favorite
+	// list Favorite
 	var collection = self.db.collection('Favorites');
 	var query = { uid: options.uid };
 	var sort = [['ctime', -1]];
 	collection.find(query).sort(sort).toArray(function (e, favorites) {
 		if(e) { e.code = '01002'; return cb(e); }
 
-		// find programs
-		var pids = favorites.map(function(favorite){ return favorite.pid });
-		var collection = self.db.collection('Programs');
-		var query = { _id: { $in : pids }};
-		collection.find(query).toArray(function(e, programs){
-			// merge data
-			cb(null, favorites.map(function(favorite){
-				var program = dvalue.search(programs, { _id : favorite.pid });
-				return dvalue.default(favorite, program);
-			}));
-		});
-
+		// merge by programs
+		self.getBot('ResourceAgent').mergeByPrograms(favorites, cb);
 	});
 };
 
 module.exports = Bot;
-
-
-// temp
-function mergeByPrograms(freshObjs, cb){
-	var self = this;
-	//
-	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
-
-	var collection = self.db.collection('Programs');
-	var query = { _id: { $in : pids }};
-	collection.find(query).toArray(function(e, programs){
-		var mergedObjs = freshObjs.map(function(freshObj){
-			var program = dvalue.search(programs, { _id : freshObjs.pid });
-			return dvalue.default(freshObj, program);
-		})
-		cb(null, mergedObjs);
-	});
-}

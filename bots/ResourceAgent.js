@@ -625,6 +625,26 @@ Bot.prototype.searchProgram = function (options, cb) {
 	})
 };
 
+/**
+ * Util function in bot
+ */
+Bot.prototype.mergeByPrograms = function(freshObjs, cb){
+	var self = this;
+	//
+	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
+
+	var collection = self.db.collection('Programs');
+	var query = { _id: { $in : pids }};
+	collection.find(query).toArray(function(e, programs){
+		var mergedObjs = freshObjs.map(function(freshObj){
+			var program = dvalue.search(programs, { _id : freshObj.pid });
+			return dvalue.default(freshObj, program);
+		})
+		cb(null, mergedObjs);
+	});
+}
+
+
 Bot.prototype.request = request;
 
 module.exports = Bot;
