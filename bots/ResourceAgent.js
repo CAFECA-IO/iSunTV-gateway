@@ -421,7 +421,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			});
 
 			// async backup: should use pid as _id
-			self.db.collection('Programs').insertOne(result, {pid: 's' + show.id});
+			self.db.collection('Programs').insertOne(dvalue.default(descProgram(show, true), {_id: 's' + show.id}));
 
 			// fill comments
 			var bot = self.getBot('Comment');
@@ -486,7 +486,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		});
 
 		// async backup: should use pid as _id
-		self.db.collection('Programs').insertOne(result, {pid: 'e' + episode.id});
+		self.db.collection('Programs').insertOne(dvalue.default(descProgram(episode, true), {_id: 'e' + episode.id}));
 
 		// fill comments
 		var bot = self.getBot('Comment');
