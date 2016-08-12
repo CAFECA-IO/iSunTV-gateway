@@ -130,10 +130,10 @@ function mergeByPrograms(freshObjs, cb){
 	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
 
 	var collection = self.db.collection('Programs');
-	var query = { pid: { $in : pids }};
+	var query = { _id: { $in : pids }};
 	collection.find(query).toArray(function(e, programs){
 		var mergedObjs = freshObjs.map(function(freshObj){
-			var program = dvalue.search(programs, { pid : favorite.pid });
+			var program = dvalue.search(programs, { _id : freshObjs.pid });
 			return dvalue.default(freshObj, program);
 		})
 		cb(null, mergedObjs);
