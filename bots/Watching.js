@@ -61,7 +61,7 @@ Bot.prototype.recordWatchingProgram = function (options, cb) {
 		else {
 			// Update Watching_programs
 			var criteria = { uid: options.uid, pid: options.pid };
-			var update = { $set: formatFavorite(options) };
+			var update = { $set: formatWatching(options) };
 			var updatedOptions = { upsert: true };
 			var collection = self.db.collection('Watching_programs');
 			collection.updateOne(criteria, update, updatedOptions, function(err, result){
@@ -81,20 +81,11 @@ Bot.prototype.listWatchingPrograms = function (options, cb) {
 	var collection = self.db.collection('Watching_programs');
 	var query = { uid: options.uid };
 	var sort = [['atime', -1]];
-	collection.find(query).sort(sort).toArray(function (e, favorites) {
+	collection.find(query).sort(sort).toArray(function (e, watchingPrograms) {
 		if(e) { e.code = '01002'; return cb(e); }
 
-		// find programs
-		var pids = favorites.map(function(favorite){ return favorite.pid });
-		var collection = self.db.collection('Programs');
-		var query = { pid: { $in : pids }};
-		collection.find(query).toArray(function(e, programs){
-			// merge data
-			cb(null, favorites.map(function(favorite){
-				var program = dvalue.search(programs, { pid : favorite.pid });
-				return dvalue.default(favorite, program);
-			}));
-		});
+		// merge programs
+		self.getBot('ResourceAgent').mergeByPrograms(watchingPrograms, cb);
 
 	});
 };

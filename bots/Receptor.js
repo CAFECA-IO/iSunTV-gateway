@@ -916,6 +916,40 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// Record watching
+	this.router.post('/program/:pid/watching', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Watching');
+		var options = {uid: req.session.uid, pid: req.params.pid, record: req.params.record, timing: req.params.timing};
+		bot.recordWatchingProgram(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Record Watching:', req.params.pid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// List watching
+	this.router.get('/watching', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Watching');
+		var options = {uid: req.session.uid};
+		bot.listWatchingPrograms(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('List Watching');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {
