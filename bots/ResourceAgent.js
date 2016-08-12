@@ -424,6 +424,12 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 				playable: true // fake data
 			});
 
+			// async backup: should use pid as _id
+			var criteria = { _id: 's' + show.id };
+			var update = { $set: dvalue.default(descProgram(show, true), { _id: 's' + show.id }) };
+			var updatedOptions = { upsert: true };
+			self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+
 			// fill comments
 			var bot = self.getBot('Comment');
 			bot.summaryProgramComments({pid: 's' + show.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
@@ -486,6 +492,14 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 			paymentPlans: [], // fake data
 			playable: true // fake data
 		});
+
+		// async backup: should use pid as _id
+		//self.db.collection('Programs').insertOne(dvalue.default(descProgram(episode, true), {_id: 'e' + episode.id}));
+		var criteria = { _id: 'e' + episode.id };
+		var update = { $set: dvalue.default(descProgram(episode, true), { _id: 'e' + episode.id }) };
+		var updatedOptions = { upsert: true };
+		self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+
 
 		// fill comments
 		var bot = self.getBot('Comment');
@@ -679,6 +693,25 @@ Bot.prototype.searchPrograms = function (options, cb) {
 		});
 
 		cb(null, searchPrograms);
+	});
+};
+
+/**
+ * Util function in bot
+ */
+Bot.prototype.mergeByPrograms = function(freshObjs, cb){
+	var self = this;
+	//
+	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
+
+	var collection = self.db.collection('Programs');
+	var query = { _id: { $in : pids }};
+	collection.find(query).toArray(function(e, programs){
+		var mergedObjs = freshObjs.map(function(freshObj){
+			var program = dvalue.search(programs, { _id : freshObj.pid });
+			return dvalue.default(freshObj, program);
+		})
+		cb(null, mergedObjs);
 	});
 };
 
