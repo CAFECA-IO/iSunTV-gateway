@@ -936,7 +936,7 @@ Bot.prototype.init = function(config) {
 	// Record watching
 	this.router.post('/program/:pid/watching', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');
-		var options = {uid: req.session.uid, pid: req.params.pid, record: req.params.record, timing: req.params.timing};
+		var options = {uid: req.session.uid, pid: req.params.pid, record: req.query.record, timing: req.query.timing};
 		bot.recordWatchingProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
