@@ -108,11 +108,11 @@ Bot.prototype.listFavorite = function (options, cb) {
 		// find programs
 		var pids = favorites.map(function(favorite){ return favorite.pid });
 		var collection = self.db.collection('Programs');
-		var query = { pid: { $in : pids }};
+		var query = { _id: { $in : pids }};
 		collection.find(query).toArray(function(e, programs){
 			// merge data
 			cb(null, favorites.map(function(favorite){
-				var program = dvalue.search(programs, { pid : favorite.pid });
+				var program = dvalue.search(programs, { _id : favorite.pid });
 				return dvalue.default(favorite, program);
 			}));
 		});
@@ -125,10 +125,10 @@ module.exports = Bot;
 
 // temp
 function mergeByPrograms(freshObjs, cb){
+	var self = this;
 	//
 	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
 
-	//
 	var collection = self.db.collection('Programs');
 	var query = { pid: { $in : pids }};
 	collection.find(query).toArray(function(e, programs){
