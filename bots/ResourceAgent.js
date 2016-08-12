@@ -421,7 +421,10 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			});
 
 			// async backup: should use pid as _id
-			self.db.collection('Programs').insertOne(dvalue.default(descProgram(show, true), {_id: 's' + show.id}));
+			var criteria = { _id: 's' + show.id };
+			var update = { $set: dvalue.default(descProgram(show, true), { _id: 's' + show.id }) };
+			var updatedOptions = { upsert: true };
+			self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
 
 			// fill comments
 			var bot = self.getBot('Comment');
@@ -486,7 +489,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		});
 
 		// async backup: should use pid as _id
-		self.db.collection('Programs').insertOne(dvalue.default(descProgram(episode, true), {_id: 'e' + episode.id}));
+		//self.db.collection('Programs').insertOne(dvalue.default(descProgram(episode, true), {_id: 'e' + episode.id}));
+		var criteria = { _id: 'e' + episode.id };
+		var update = { $set: dvalue.default(descProgram(episode, true), { _id: 'e' + episode.id }) };
+		var updatedOptions = { upsert: true };
+		self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+
 
 		// fill comments
 		var bot = self.getBot('Comment');
