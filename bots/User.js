@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const raid2x = require('raid2x');
 const dvalue = require('dvalue');
 const textype = require('textype');
+const fs = require('fs');
 
 var tokenLife = 86400000;
 var renewLife = 8640000000;
@@ -947,6 +948,28 @@ Bot.prototype.fetchUsers = function (options, cb) {
 		cb(null, users);
 	});
 };
+
+/* Update Profile */
+/* require: options.uid */
+/* options: options.username, options.photo */
+Bot.prototype.updateProfile = function (options, cb){
+	var self = this;
+	var setFields = {};
+	options.username && (setFields['username'] = options.username)
+	options.photo && (setFields['photo'] = self.config.url + 'uploads/' + options.uid)
+
+	// Update the fields
+	var collection = self.db.collection('Users');
+	var condition = { _id: new mongodb.ObjectID(options.uid), enable: true };
+	var update = { $set: setFields };
+	collection.findAndModify(condition, {}, update, {}, function (e, d) {
+		if(e) { e.code = '01003'; return cb(e); }
+		else if(!d.value) { e = new Error('incorrect code'); e.code = '39101'; cb(e); }
+		else {
+			cb(null, {})
+		}
+	});
+}
 
 Bot.prototype.encryptPassword = function (password) {
 	var salt = ":iSunCloud";

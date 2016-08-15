@@ -20,6 +20,7 @@ const dvalue = require('dvalue');
 const hashcashLevel = 3;
 const allowDelay = 10000 * 1000;
 
+
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
 		pathPw = path.join(__dirname, '../config/pw.txt'),
 		logger;
@@ -51,7 +52,7 @@ checkHashCash = function (req, res, next) {
 
 		res.result.setErrorCode('10101');
 		res.result.setMessage('Invalid Hashcash');
-		res.result.setData(d);	//-- for test
+		res.result.setData(d);  //-- for test
 		returnData(req, res, next);
 	};
 
@@ -763,7 +764,7 @@ Bot.prototype.init = function(config) {
 			case 'e':
 				var options = {eid: program.id, uid: req.session.uid};
 				bot.getEpisodeProgram(options, callbackFunction);
-			 	break;
+				break;
 			default:
 				var options = {eid: program.id, uid: req.session.uid};
 				bot.getEpisodeProgram(options, callbackFunction);
@@ -962,6 +963,28 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('List Watching');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// Update profile
+	var storage = multer.diskStorage({
+        destination: function (req, file, cb) { cb(null, __dirname + '/../uploads') },
+		filename: function (req, file, cb) { cb(null, req.session.uid);	},
+	});
+	var multerUpload = multer({ storage: storage });
+	this.router.put('/profile', checkLogin, multerUpload.single('photo'), function (req, res, next) {
+		var bot = self.getBot('User');
+		var options = {uid: req.session.uid, username: req.body.username, photo: req.file};
+		bot.updateProfile(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Update photo');
 				res.result.setData(d);
 			}
 			next();
