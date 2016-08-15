@@ -319,7 +319,11 @@ Bot.prototype.getProgram = function (options, cb) {
 			api.datatype = 'json';
 			request(api, function (e, d) {
 				if(d && d.data) {
-					var program = {title: d.data.title, cover: fetchImage(d.data).cover};
+					var program = {
+						pid: options.pid,
+						title: d.data.title,
+						cover: fetchImage(d.data).cover
+					};
 					cb(null, program);
 				}
 				else { cb(e); }
@@ -332,7 +336,7 @@ Bot.prototype.getProgram = function (options, cb) {
 			api.datatype = 'json';
 			request(api, function (e, d) {
 				if(d && d.data) {
-					var program = {title: d.data.title};
+					var program = {pid: options.pid, title: d.data.title};
 					program.cover = fetchImage(d.data).cover;
 					cb(null, program);
 				}
