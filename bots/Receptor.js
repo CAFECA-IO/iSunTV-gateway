@@ -968,15 +968,9 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
-	// Update profile
-	var storage = multer.diskStorage({
-        destination: function (req, file, cb) { cb(null, __dirname + '/../uploads') },
-		filename: function (req, file, cb) { cb(null, req.session.uid);	},
-	});
-	var multerUpload = multer({ storage: storage });
-	this.router.put('/profile', checkLogin, multerUpload.single('photo'), function (req, res, next) {
+	this.router.put('/profile', checkLogin, multer({ dest: self.config.path.upload }).any(), function (req, res, next) {
 		var bot = self.getBot('User');
-		var options = {uid: req.session.uid, username: req.body.username, photo: req.file};
+		var options = {uid: req.session.uid, username: req.body.username, photo: req.files[0]};
 		bot.updateProfile(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
