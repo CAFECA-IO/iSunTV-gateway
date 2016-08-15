@@ -113,8 +113,6 @@ Bot.prototype.writeComment = function (options, cb) {
 				var update = { $set: commentSet };
 				var bot = self.getBot('ResourceAgent');
 				bot.getProgram({pid: options.pid}, function (e, d) {
-					console.log('update!')
-					console.log(d)
 					commentSet.program = d;
 					commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
 						if(e) { e.code = '01002'; return cb(e); }
