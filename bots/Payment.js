@@ -75,12 +75,14 @@ var formatPaymentPlan = function (data) {
 		title: data.title || 'PlanX',
 		fee: data.fee,
 		programs: data.programs,
-		ticket: data.ticket
+		ticket: data.ticket,
+		visible: !!data.visible,
+		enable: !!data.enable
 	};
 	return PaymentPlan;
 };
 var descPaymentPlan = function (data, detail) {
-	if (Array.isArray(data)) { return data.map(descPaymentPlan, detail); }
+	if (Array.isArray(data)) { return data.map(function (v) { return descPaymentPlan(v, detail) } ); }
 	var PaymentPlan = {
 		ppid: data._id,
 		type: data.type,
@@ -110,13 +112,14 @@ Bot.prototype.init = function (config) {
 };
 
 Bot.prototype.start = function () {
+	var self = this;
 	this.initialPaymentPlan({}, function () {});
 };
 
 Bot.prototype.initialPaymentPlan = function (options, cb) {
 	var self = this;
 	this.loadPaymentPlan({}, function (e, d) {
-		if(Array.isArray(d) && d.length > 0) { return; }
+		if(Array.isArray(d) && d.length > 0) { return cb(null, d); }
 		var basicPlans = [
 			{
 				type: 1,
@@ -164,25 +167,40 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				}
 			}
 		];
-		collection.insertMany(formatPaymentPlan(basicPlans), {}, function () {});
+		self.plans = basicPlans;
+		var collection = self.db.collection('PaymentPlans');
+		collection.insertMany(formatPaymentPlan(basicPlans), {}, cb);
 	});
 };
 Bot.prototype.loadPaymentPlan = function (options, cb) {
 	var self = this;
 	var collection = this.db.collection("PaymentPlans");
 	collection.find({enable: true}).toArray(function (e, d) {
-		if(Array.isArray(d)) { self.plans = descPaymentPlan(d); }
+		if(Array.isArray(d)) { self.plans = descPaymentPlan(d, true); }
 		cb(e, d);
 	});
 };
 
 Bot.prototype.findPaymentPlan = function (options, cb) {
-	var self = this;
+	cb = dvalue.default(cb, function () {});
+	var self = this, rs;
 	var fillPlan = function (program) {
 		program.paymentPlans = [];
-		
+		self.plans.map(function (v) {
+			if(v.programs.some(function (vv) { return new RegExp(vv).test(program.pid); })) { program.paymentPlans.push(v); }
+		});
+		return program;
 	};
-	if(Array.isArray(options)) { return options.map(fillPlan); }
+	if(Array.isArray(options)) {
+		rs = options.map(fillPlan);
+		cb(null, rs);
+		return rs;
+	}
+	else {
+		rs = fillPlan(options);
+		cb(null, rs);
+		return rs;
+	}
 };
 
 Bot.prototype.generateClientToken = function (options, cb) {
