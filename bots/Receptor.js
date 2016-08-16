@@ -13,9 +13,11 @@ const url = require('url');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const http = require('http');
+const https = require('https');
 const echashcash = require('echashcash');
 const ecresult = require('ecresult');
 const dvalue = require('dvalue');
+const textype = require('textype');
 
 const hashcashLevel = 3;
 const allowDelay = 10000 * 1000;
@@ -85,7 +87,7 @@ returnData = function(req, res, next) {
 	if(!res.finished) {
 		json = res.result.response();
 		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-\.]+$").test(json.message);
-		isURL = new RegExp("https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,}").test(json.message);
+		isURL = textype.isURL(json.message);
 		if(res.result.isDone()) {
 			session = res.result.getSession();
 
@@ -108,9 +110,19 @@ returnData = function(req, res, next) {
 			res.end(json.data);
 		}
 		else if(isURL) {
+			var crawler;
 			var options = url.parse(json.message);
 			options.method = 'GET';
-			var crawler = http.request(options, function (cRes) {
+			switch(options.protocol) {
+				case 'http:':
+					crawler = http;
+					break;
+				case 'https:':
+				default:
+					crawler = https;
+					options.rejectUnauthorized = false;
+			}
+			crawler.request(options, function (cRes) {
 				res.header('Content-Type', cRes.headers['content-type']);
 				cRes.on('data', function (chunk) {
 					res.write(chunk);
@@ -290,6 +302,23 @@ Bot.prototype.init = function(config) {
 				res.result.setResult(1);
 				res.result.setMessage('user profile');
 				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// user photo
+	this.router.get('/profile/:uid/photo', function (req, res, next) {
+		var bot = self.getBot('User');
+		var condition = {uid: req.params.uid};
+		bot.getUserPhoto(condition, function (e, d) {
+			if(e) {
+				res.result.setResult(1);
+				res.result.setMessage('https://scontent.xx.fbcdn.net/v/t1.0-1/c15.0.50.50/p50x50/10354686_10150004552801856_220367501106153455_n.jpg?oh=5c43cf5cfa35da8de30688b57a56d839&oe=5824062F');
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage(d.mimetype);
+				res.result.setData(d.binary);
 			}
 			next();
 		});

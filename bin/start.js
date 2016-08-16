@@ -11,6 +11,7 @@ const mongodb = require('mongodb').MongoClient;
 var initFolder = function (name) {
 	var homepath = path.join(process.env.HOME || process.env.USERPROFILE, name);
 	var upload = path.join(homepath, "uploads/");
+	var profiles = path.join(homepath, "profiles/");
 	var logs = path.join(homepath, "logs/");
 	var dataset = path.join(homepath, "dataset/");
 	var tmp = path.join(homepath, "tmp/");
@@ -18,12 +19,14 @@ var initFolder = function (name) {
 
 	if (!fs.existsSync(homepath)) { fs.mkdirSync(homepath); }
 	if (!fs.existsSync(upload)) { fs.mkdirSync(upload); }
+	if (!fs.existsSync(profiles)) { fs.mkdirSync(profiles); }
 	if (!fs.existsSync(logs)) { fs.mkdirSync(logs); }
 	if (!fs.existsSync(tmp)) { fs.mkdirSync(tmp); }
 
 	var rs = {
 		home: homepath,
 		upload: upload,
+		profiles: profiles,
 		logs: logs,
 		dataset: dataset,
 		tmp: tmp,

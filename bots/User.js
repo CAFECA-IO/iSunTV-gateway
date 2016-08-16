@@ -1,6 +1,7 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
 const mongodb = require('mongodb');
+const fs = require('fs');
 const q = require('q');
 const url = require('url');
 const path = require('path');
@@ -8,7 +9,6 @@ const crypto = require('crypto');
 const raid2x = require('raid2x');
 const dvalue = require('dvalue');
 const textype = require('textype');
-const fs = require('fs');
 
 var tokenLife = 86400000;
 var renewLife = 8640000000;
@@ -420,6 +420,15 @@ Bot.prototype.getProfile = function (user, cb) {
 				payment_status: payment_status}
 			));
 		}
+	});
+};
+
+Bot.prototype.getUserPhoto = function (options, cb) {
+	options = dvalue.default(options, {uid: 'default'});
+	var f = path.join(this.config.path.profiles, options.uid);
+	fs.readFile(f, function (e, d) {
+		if(e) { cb(e); }
+		else { cb(null, {mimetype: 'image/png', binary: d}); }
 	});
 };
 
