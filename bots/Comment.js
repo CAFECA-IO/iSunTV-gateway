@@ -111,10 +111,14 @@ Bot.prototype.writeComment = function (options, cb) {
 				commentSet.atime = new Date().getTime();
 				var cond = { _id: foundComment._id };
 				var update = { $set: commentSet };
-				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
-					if(e) { e.code = '01002'; return cb(e); }
-					if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
-					cb(null, {cmid: d.value._id})
+				var bot = self.getBot('ResourceAgent');
+				bot.getProgram({pid: options.pid}, function (e, d) {
+					commentSet.program = d;
+					commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
+						if(e) { e.code = '01002'; return cb(e); }
+						if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
+						cb(null, {cmid: d.value._id})
+					});
 				});
 			}
 		});
@@ -301,7 +305,7 @@ Bot.prototype.listUserComments = function (options, cb) {
 			if(e) { e.code = '01002'; return cb(e); }
 
 			var ret = descComment(comments).map(function(comment){
-				comment.user = {username: user.username, photo: user.photo };
+				comment.user = {uid: user._id, username: user.username, photo: user.photo };
 				return comment
 			});
 			cb(null, ret);
