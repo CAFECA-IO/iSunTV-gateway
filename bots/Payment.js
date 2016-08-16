@@ -21,11 +21,11 @@ Bot.prototype.init = function (config) {
 	this.gateway = braintree.connect(btcfg);
 };
 
-Bot.prototype.start = function () {
+Bot.prototype.start = function () {};
 
-};
-
-Bot.prototype.generateClientToken = function (options, cb) {
+/* require: options.uid, options.ppid, options.pid */
+/* optional: options */
+Bot.prototype.order = function (options, cb) {
 	var token = this.gateway.clientToken.generate({}, function (e, d) {
 		if(e) { e.code = '57101'; cb(e); }
 		else { cb(null, d); }
