@@ -964,8 +964,17 @@ Bot.prototype.fetchUsers = function (options, cb) {
 Bot.prototype.updateProfile = function (options, cb){
 	var self = this;
 	var setFields = {};
-	options.username && (setFields['username'] = options.username)
-	options.photo && (setFields['photo'] = self.config.url + 'uploads/' + options.uid)
+	options.username && (setFields.username = options.username);
+	// check photo
+	if (options.photo) {
+		if (options.photo.mimetype.split("/")[0] !== 'image') {
+			e = new Error('incorrect image type'); e.code = '19105'; cb(e);
+		}
+		setFields.photo = dvalue.sprintf(this.config.url + 'profile/%s/photo', options.uid);
+		var oldPath = options.photo.path;
+		var newPath = path.join(this.config.path.profiles, options.uid);
+		fs.rename(oldPath, newPath)
+	}
 
 	// Update the fields
 	var collection = self.db.collection('Users');

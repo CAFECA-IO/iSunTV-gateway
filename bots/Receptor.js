@@ -999,7 +999,8 @@ Bot.prototype.init = function(config) {
 	});
 	this.router.put('/profile', checkLogin, multer({ dest: self.config.path.upload }).any(), function (req, res, next) {
 		var bot = self.getBot('User');
-		var options = {uid: req.session.uid, username: req.body.username, photo: req.files[0]};
+		var options = { uid: req.session.uid, username: req.body.username };
+		if (req.files) options.photo = req.files[0];
 		bot.updateProfile(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -1007,7 +1008,7 @@ Bot.prototype.init = function(config) {
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('Update photo');
+				res.result.setMessage('Update profile');
 				res.result.setData(d);
 			}
 			next();
