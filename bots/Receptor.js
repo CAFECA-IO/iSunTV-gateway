@@ -863,10 +863,10 @@ Bot.prototype.init = function(config) {
 	});
 
 	// list user comment
-	// /mycomment?page={$page}&limit={$limit}
-	this.router.get('/mycomment', checkLogin, function (req, res, next) {
+	// /mycomment/{$page}/{$limit}
+	this.router.get(['/mycomment', '/mycomment/:page', '/mycomment/:page/:limit'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Comment');
-		var options = {uid: req.session.uid, page: req.query.page, limit: req.query.limit};
+		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listUserComments(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -936,7 +936,7 @@ Bot.prototype.init = function(config) {
 	// Record watching
 	this.router.post('/program/:pid/watching', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');
-		var options = {uid: req.session.uid, pid: req.params.pid, record: req.params.record, timing: req.params.timing};
+		var options = {uid: req.session.uid, pid: req.params.pid, record: req.sessionID, timing: req.params.timing};
 		bot.recordWatchingProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
