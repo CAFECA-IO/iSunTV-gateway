@@ -1,7 +1,9 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
+const mongodb = require('mongodb');
 const braintree = require('braintree');
 const dvalue = require('dvalue');
+const textype = require('textype');
 
 var logger;
 
@@ -91,6 +93,26 @@ var descPaymentPlan = function (data, detail) {
 	};
 	if(!!detail) { PaymentPlan.programs = data.programs; }
 	return PaymentPlan;
+};
+
+var formatOrder = function (data) {
+	if(Array.isArray(data)) { return data.map(formatOrder); }
+	var order = {
+		uid: data.uid,
+		ppid: data.ppid,
+		pid: data.pid,
+		clientToken: data.clientToken
+	};
+	order.ctime = data.ctime || new Date().getTime();
+	order.mtime = data.mtime || order.ctime;
+	order.atime = data.atime || order.ctime;
+	return order;
+};
+var descOrder = function (data) {
+	if(Array.isArray(data)) { return data.map(descOrder); }
+	data.oid = data._id;
+	delete data._id;
+	return data;
 };
 
 var Bot = function (config) {
@@ -203,15 +225,87 @@ Bot.prototype.findPaymentPlan = function (options, cb) {
 	}
 };
 
-Bot.prototype.generateClientToken = function (options, cb) {
-	var token = this.gateway.clientToken.generate({}, function (e, d) {
-		if(e) { e.code = '57101'; cb(e); }
-		else { cb(null, d); }
+/* require: options.uid */
+Bot.prototype.getUserTickets = function (options, cb) {
+
+};
+Bot.prototype.checkPlayable = function (options, cb) {
+
+};
+
+/* require: uid, nonce */
+Bot.prototype.createBrainTreeID = function (options, cb) {
+	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	var self = this;
+	var condition = {_id: new mongodb.ObjectID(options.uid), BrainTreeID: {$exist: true}};
+	var collection = this.db.collection('Users');
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(d[0]) {
+			return cb(null, d[0].BrainTreeID);
+		}
+		else {
+			self.gateway.customer.create({
+				paymentMethodNonce: options.nonce
+			}, function (err, result) {
+				if(result.success) {
+					delete condition.BrainTreeID;
+					var updateQuery = {$set: {BrainTreeID: result.customer.id}};
+					collection.findAndModify(condition, {}, updateQuery, {}, function (e, d) {
+						if(e) { e.code = '01003'; return cb(e); }
+						else { cb(null, result.customer.id); }
+					});
+				}
+				else {
+					err = new Error('remote api error');
+					err.code = '54001';
+					cb(err);
+				}
+			});
+		}
+	});
+};
+/* require: uid */
+Bot.prototype.fetchBrainTreeID = function (options, cb) {
+	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	var self = this;
+	var condition = {_id: new mongodb.ObjectID(options.uid), BrainTreeID: {$exist: true}};
+	var collection = this.db.collection('Users');
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else {
+			return cb(null, d[0]? d[0].BrainTreeID: undefined);
+		}
 	});
 };
 
-/* require: nonce, plid */
-Bot.prototype.checkoutTransaction = function  (options, cb) {
+/* require: options.uid, options.ppid */
+/* optional: options.pid */
+Bot.prototype.order = function (options, cb) {
+	if(!textype.isObjectID(options.uid) || !textype.isObjectID(options.ppid)) { var e = new Error('invalid order'); e.code = '19701'; return cb(e); }
+	var self = this;
+	this.fetchBrainTreeID(options, function (e, d) {
+		var cond = {};
+		if(d) { cond.customerId = d; }
+		self.gateway.clientToken.generate(cond, function (e, d) {
+			if(e) { e.code = '57101'; cb(e); }
+			else {
+				console.log(d);
+				options.clientToken = d.clientToken;
+				var order = formatOrder(options);
+				var collection = self.db.collection('Orders');
+				collection.insert(order, {}, function (ee, dd) {
+					if(ee) { ee.code = '01001'; return cb(ee); }
+					else { return cb(null, descOrder(order)); }
+				});
+			}
+		});
+	});
+};
+
+/* require: options.nonce, options.oid, options.uid */
+Bot.prototype.checkoutTransaction = function (options, cb) {
+	var self = this;
 	this.gateway.transaction.sale({
 		amount: "10.00",
 		paymentMethodNonce: options.nonce,
@@ -220,8 +314,19 @@ Bot.prototype.checkoutTransaction = function  (options, cb) {
 		}
 	}, function (e, result) {
 		if(e) { e.code = '17201'; cb(e); }
-		else { cb(null, result); }
+		else {
+			self.createBrainTreeID(options, function () {});
+			cb(null, result);
+		}
 	});
+};
+
+Bot.prototype.generateTicket = function () {
+
+};
+
+Bot.prototype.openTicket = function () {
+
 };
 
 module.exports = Bot;
