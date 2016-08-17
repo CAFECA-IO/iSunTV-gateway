@@ -93,7 +93,7 @@ Bot.prototype.descChannel = function (options, cb) {
 	}
 
 	data.programs.find(function(v, i, arr) {
-		if(v.start >= now) {
+		if((i + 1)< arr.length && arr[i + 1].start > now) {
 			data.current_program = v;
 			data.next_program = arr[i + 1];
 			return true;
