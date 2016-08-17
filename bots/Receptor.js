@@ -917,9 +917,9 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List my favorite
-	this.router.get('/favorite', checkLogin, function (req, res, next) {
+	this.router.get(['/favorite', '/favorite/:page', '/favorite/:page/:limit'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Favorite');
-		var options = {uid: req.session.uid};
+		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listFavorite(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
