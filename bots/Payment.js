@@ -51,7 +51,8 @@ var formatOrder = function (data) {
 		uid: data.uid,
 		ppid: data.ppid,
 		pid: data.pid,
-		clientToken: data.clientToken
+		clientToken: data.clientToken,
+		fee: data.fee
 	};
 	order.ctime = data.ctime || new Date().getTime();
 	order.mtime = data.mtime || order.ctime;
@@ -219,25 +220,25 @@ Bot.prototype.createBrainTreeID = function (options, cb) {
 	var self = this;
 	var condition = {_id: new mongodb.ObjectID(options.uid)};
 	var collection = this.db.collection('Users');
-	collection.find(condition).toArray(function (e, d) {
+	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!(d.length > 0)) {
+		else if(!d) {
 			e = new Error('user not found');
 			e.code = '39102';
 			return cb(e);
 		}
-		else if(!!d[0].BrainTreeID) {
-			return cb(null, d[0].BrainTreeID);
+		else if(!!d.BrainTreeID) {
+			return cb(null, d.BrainTreeID);
 		}
 		else {
 			self.gateway.customer.create({
-				email: d[0].email
+				email: d.email
 			}, function (err, result) {
 				if(result.success) {
 					delete condition.BrainTreeID;
 					var updateQuery = {$set: {BrainTreeID: result.customer.id}};
-					collection.findAndModify(condition, {}, updateQuery, {}, function (e, d) {
-						if(e) { e.code = '01003'; return cb(e); }
+					collection.findAndModify(condition, {}, updateQuery, {}, function (e1, d1) {
+						if(e1) { e1.code = '01003'; return cb(e1); }
 						else { cb(null, result.customer.id); }
 					});
 				}
@@ -256,10 +257,10 @@ Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	var self = this;
 	var condition = {_id: new mongodb.ObjectID(options.uid), BrainTreeID: {$exist: true}};
 	var collection = this.db.collection('Users');
-	collection.find(condition).toArray(function (e, d) {
+	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
 		else {
-			return cb(null, d[0]? d[0].BrainTreeID: undefined);
+			return cb(null, d? d.BrainTreeID: undefined);
 		}
 	});
 };
@@ -271,36 +272,35 @@ Bot.prototype.fetchPrice = function (options, cb) {
 	var self = this;
 	var plans_collection = this.db.collection("PaymentPlans");
 	var plans_condition = {_id: new mongodb.ObjectID(options.ppid)};
-	plans_collection.find(plans_condition).toArray(function (e, d) {
+	plans_collection.findOne(plans_condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!(d.length > 0)) { e = new Error('payment plan not found'); e.code = '39801'; return cb(e); }
+		else if(!d) { e = new Error('payment plan not found'); e.code = '39801'; return cb(e); }
 		else {
-			fee = d[0].fee;
-			switch(d[0].type) {
+			fee = d.fee;
+			switch(d.type) {
 				// 單租費用 = 片長 * 單價
 				case 1:
-					var fee = d[0].fee;
-					if(!textype.isObjectID(options.pid)) { e = new Error('program not found'); e.code = '39201'; return cb(e); }
+					var fee = d.fee;
 					var programs_collection = self.db.collection("Programs");
-					var programs_condition = {_id: new mongodb.ObjectID(options.pid)};
-					programs_collection.find(programs_condition).toArray(function (ee, dd) {
+					var programs_condition = {_id: options.pid};
+					programs_collection.findOne(programs_condition, {}, function (ee, dd) {
 						if(ee) { ee.code = '01002'; return cb(ee); }
-						else if(!(d.length > 0)) { ee = new Error('program not found'); ee.code = '39201'; return cb(ee); }
+						else if(!dd) { ee = new Error('program not found'); ee.code = '39201'; return cb(ee); }
 						else {
-							var unit = Math.ceil(d[0].duration / 30) || 1;
-							fee.price *= unit;
+							var unit = Math.ceil(dd.duration / 30) || 1;
+							fee.price = ((fee.price * unit) || 0 ).toFixed(2);
 							return cb(null, fee);
 						}
 					});
 					break;
 				//-- 套餐費用 = 總片長 * 單價
 				case 2:
-					var fee = d[0].fee;
+					var fee = d.fee;
 					return cb(null, fee);
 					break;
 				// VIP 費用 = 單價
 				case 3:
-					var fee = d[0].fee;
+					var fee = d.fee;
 					return cb(null, fee);
 					break;
 				// 免費影片
@@ -323,6 +323,8 @@ Bot.prototype.order = function (options, cb) {
 	if(!textype.isObjectID(options.uid) || !textype.isObjectID(options.ppid)) { var e = new Error('invalid order'); e.code = '19701'; return cb(e); }
 	var self = this;
 	this.fetchPrice(options, function (e, d) {
+		if(e) { return cb(e); }
+		else { options.fee = d; }
 		self.fetchBrainTreeID(options, function (e1, d1) {
 			var cond = {};
 			if(d1) { cond.customerId = d1; }
@@ -342,9 +344,24 @@ Bot.prototype.order = function (options, cb) {
 	});
 };
 
-/* require: options.nonce, options.oid, options.uid */
+/* require: options.nonce, options.oid, options.uid, options.gateway */
+/* gateway: braintree, iosiap */
 Bot.prototype.checkoutTransaction = function (options, cb) {
+	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	var self = this;
+	options.gateway = dvalue.default(options.gateway, 'BrainTree').toLowerCase();
+
+	// load order detail
+	var collection = this.db.collection('Orders');
+	var condition = {_id: new mongodb.ObjectID(options.oid)};
+	collection.findOne(condition, {}, function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(!d) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
+		else {
+
+		}
+	});
+
 	this.gateway.transaction.sale({
 		amount: "10.00",
 		paymentMethodNonce: options.nonce,
@@ -358,6 +375,9 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 			cb(null, result);
 		}
 	});
+};
+Bot.prototype.fetchTransactionDetail = function (options, cb) {
+
 };
 
 Bot.prototype.generateTicket = function () {
