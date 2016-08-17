@@ -331,7 +331,7 @@ Bot.prototype.order = function (options, cb) {
 			self.gateway.clientToken.generate(cond, function (e2, d2) {
 				if(e2) { e2.code = '57101'; cb(e2); }
 				else {
-					options.clientToken = d.clientToken;
+					options.clientToken = d2.clientToken;
 					var order = formatOrder(options);
 					var collection = self.db.collection('Orders');
 					collection.insert(order, {}, function (e3, d3) {
@@ -347,6 +347,7 @@ Bot.prototype.order = function (options, cb) {
 /* require: options.nonce, options.oid, options.uid, options.gateway */
 /* gateway: braintree, iosiap */
 Bot.prototype.checkoutTransaction = function (options, cb) {
+	console.log(options);//--
 	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	var self = this;
 	options.gateway = dvalue.default(options.gateway, 'BrainTree').toLowerCase();
@@ -358,26 +359,51 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 		if(e) { e.code = '01002'; return cb(e); }
 		else if(!d) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 		else {
-
+			options.fee = d.fee;
+			self.fetchTransactionDetail(options, function (e1, d1) {
+				if(e1) { return cb(e1); }
+				else {
+					var receipt = {
+						nonce: options.nonce,
+						gateway: options.gateway,
+						detail: d1
+					};
+					var updateQuery = {$set: {receipt: receipt}};
+					collection.findAndModify(condition, {}, updateQuery, {}, function (e2, d2) {
+						if(e2) { e2.code = '01003'; return cb(e2); }
+						else { return cb(null, receipt); }
+					});
+				}
+			});
 		}
 	});
 
-	this.gateway.transaction.sale({
-		amount: "10.00",
-		paymentMethodNonce: options.nonce,
-		options: {
-		  submitForSettlement: true
-		}
-	}, function (e, result) {
-		if(e) { e.code = '17201'; cb(e); }
-		else {
-			self.createBrainTreeID(options, function () {});
-			cb(null, result);
-		}
-	});
+
 };
+/* require: options.gateway, options.nonce, options.fee */
+/* gateway: braintree, iosiap */
 Bot.prototype.fetchTransactionDetail = function (options, cb) {
-
+	var self = this;
+	switch(options.gateway) {
+		case 'ios':
+			cb(null, {detail: "ok, cool"});
+			break;
+		case 'braintree':
+		default:
+			this.gateway.transaction.sale({
+				amount: options.fee.price,
+				paymentMethodNonce: options.nonce,
+				options: {
+				  submitForSettlement: true
+				}
+			}, function (e, result) {
+				if(e || !result.success) { e = new Error('payment failed'); e.code = '17201'; cb(e); }
+				else {
+					self.createBrainTreeID(options, function () {});
+					cb(null, result);
+				}
+			});
+	}
 };
 
 Bot.prototype.generateTicket = function () {
