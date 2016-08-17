@@ -738,12 +738,12 @@ Bot.prototype.loadCustomData = function(query, cb){
 	}
 
 	// Get is_favored from Favorite
-	self.db.collection('Favorite').findOne(query, {}, function(e, d){
-		data.is_favored = d ? true : false;
+	self.db.collection('Favorites').findOne(query, {}, function(e, favorite){
+		data.is_favored = favorite ? true : false;
 
 		// Get playback_time_at from Favorite
-		self.db.collection('Watching_programs').findOne(query, {}, function(e, d){
-			data.playback_time_at = d ? d.value.timing : null;
+		self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
+			data.playback_time_at = program ? program.timing : null;
 			cb(null, data);
 		});
 	});
