@@ -715,6 +715,20 @@ Bot.prototype.mergeByPrograms = function(freshObjs, cb){
 	});
 };
 
+/**
+ * [mergeByPrograms description]
+ * @param  {object}   options [options.pids(array)]
+ * @param  {Function} cb      [description]
+ */
+Bot.prototype.mergeByPrograms = function(options, cb){
+	var self = this;
+	var collection = self.db.collection('Programs');
+	collection.find({ _id: { $in : options.pids }}).toArray(function(e, programs){
+		cb(null, programs);
+	});
+};
+
+
 Bot.prototype.request = request;
 
 module.exports = Bot;

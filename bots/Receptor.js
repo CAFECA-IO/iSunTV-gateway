@@ -936,7 +936,13 @@ Bot.prototype.init = function(config) {
 	// Record watching
 	this.router.post('/program/:pid/watching', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');
-		var options = {uid: req.session.uid, pid: req.params.pid, record: req.params.record, timing: req.params.timing};
+		var options = {
+			uid: req.session.uid,
+			pid: req.params.pid,
+			record: req.body.record,
+			timing: req.body.timing,
+			is_finished: req.body.is_finished,
+		};
 		bot.recordWatchingProgram(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -950,18 +956,35 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
-	// List watching
-	this.router.get('/watching', checkLogin, function (req, res, next) {
+	// List watched history
+	this.router.get(['/watching', '/watching/:page', '/watching/:page/:limit'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');
-		var options = {uid: req.session.uid};
-		bot.listWatchingPrograms(options, function (e, d) {
+		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
+		bot.listWatchedHistory(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('List Watching');
+				res.result.setMessage('List watched history');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// list Continue Watching
+	this.router.get(['/watching/continue', '/watching/continue/:page', '/watching/continue/:page/:limit'], checkLogin, function (req, res, next) {
+		var bot = self.getBot('Watching');
+		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
+		bot.listContinueWatching(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('List continue watching');
 				res.result.setData(d);
 			}
 			next();
