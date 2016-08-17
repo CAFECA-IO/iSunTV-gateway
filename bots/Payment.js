@@ -7,57 +7,7 @@ const textype = require('textype');
 
 var logger;
 
-/*
-{
-	type: 1,
-	title: '單租',
-	fee: {
-		price: 0.99,
-		currency: USD
-	},
-	programs: ['^[eE][0-9]+'],
-	enable: true,
-	visible: true,
-	ticket: {
-		expire: 86400 * 1000 * 7,
-		duration: 86400 * 1000 * 3
-	}
-}
----
-{
-	type: 2,
-	title: '單租',
-	fee: {
-		price: 0.99,
-		currency: USD
-	},
-	programs: ['^[sS][0-9]+'],
-	enable: true,
-	visible: true,
-	ticket: {
-		expire: 86400 * 1000 * 7,
-		duration: 86400 * 1000 * 3
-	}
-}
----
-{
-	type: 3,
-	title: 'VIP',
-	fee: {
-		price: 9.99,
-		currency: USD
-	},
-	programs: ['^[eEpP][0-9]+'],
-	enable: true,
-	visible: true,
-	ticket: {
-		expire: 86400 * 1000 * 7,
-		duration: 86400 * 1000 * 30
-	}
-}
- */
-
-// PaymentPlan.type: 1 = 單租, 2 = 套餐, 3 = subscribe
+// PaymentPlan.type: 1 = 單租, 2 = 套餐, 3 = subscribe, 4 = free, 5 = login to free
 var formatPaymentPlan = function (data) {
 	if (Array.isArray(data)) { return data.map(formatPaymentPlan); }
 	data.type = parseInt(data.type);
@@ -154,8 +104,8 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				enable: true,
 				visible: true,
 				ticket: {
-					expire: 86400 * 1000 * 7,
-					duration: 86400 * 1000 * 3
+					expire: 86400 * 1000 * 30,
+					duration: 86400 * 1000 * 2
 				}
 			},
 			{
@@ -169,8 +119,8 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				enable: true,
 				visible: true,
 				ticket: {
-					expire: 86400 * 1000 * 7,
-					duration: 86400 * 1000 * 3
+					expire: 86400 * 1000 * 30,
+					duration: 86400 * 1000 * 2
 				}
 			},
 			{
@@ -186,6 +136,36 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				ticket: {
 					expire: 86400 * 1000 * 7,
 					duration: 86400 * 1000 * 30
+				}
+			},
+			{
+				type: 4,
+				title: 'Free',
+				fee: {
+					price: 0,
+					currency: 'USD'
+				},
+				programs: ['^[eE]10'],
+				enable: true,
+				visible: true,
+				ticket: {
+					expire: 86400 * 1000 * 1,
+					duration: 86400 * 1000 * 1
+				}
+			},
+			{
+				type: 5,
+				title: 'Free',
+				fee: {
+					price: 0,
+					currency: 'USD'
+				},
+				programs: ['^[eE]20'],
+				enable: true,
+				visible: true,
+				ticket: {
+					expire: 86400 * 1000 * 1,
+					duration: 86400 * 1000 * 1
 				}
 			}
 		];
@@ -237,16 +217,21 @@ Bot.prototype.checkPlayable = function (options, cb) {
 Bot.prototype.createBrainTreeID = function (options, cb) {
 	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
 	var self = this;
-	var condition = {_id: new mongodb.ObjectID(options.uid), BrainTreeID: {$exist: true}};
+	var condition = {_id: new mongodb.ObjectID(options.uid)};
 	var collection = this.db.collection('Users');
 	collection.find(condition).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(d[0]) {
+		else if(!(d.length > 0)) {
+			e = new Error('user not found');
+			e.code = '39102';
+			return cb(e);
+		}
+		else if(!!d[0].BrainTreeID) {
 			return cb(null, d[0].BrainTreeID);
 		}
 		else {
 			self.gateway.customer.create({
-				paymentMethodNonce: options.nonce
+				email: d[0].email
 			}, function (err, result) {
 				if(result.success) {
 					delete condition.BrainTreeID;
@@ -279,26 +264,80 @@ Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	});
 };
 
+/* require: options.ppid */
+/* optional: options.pid */
+Bot.prototype.fetchPrice = function (options, cb) {
+	if(!textype.isObjectID(options.ppid)) { var e = new Error('payment plan not found'); e.code = '39801'; return cb(e); }
+	var self = this;
+	var plans_collection = this.db.collection("PaymentPlans");
+	var plans_condition = {_id: new mongodb.ObjectID(options.ppid)};
+	plans_collection.find(plans_condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(!(d.length > 0)) { e = new Error('payment plan not found'); e.code = '39801'; return cb(e); }
+		else {
+			fee = d[0].fee;
+			switch(d[0].type) {
+				// 單租費用 = 片長 * 單價
+				case 1:
+					var fee = d[0].fee;
+					if(!textype.isObjectID(options.pid)) { e = new Error('program not found'); e.code = '39201'; return cb(e); }
+					var programs_collection = self.db.collection("Programs");
+					var programs_condition = {_id: new mongodb.ObjectID(options.pid)};
+					programs_collection.find(programs_condition).toArray(function (ee, dd) {
+						if(ee) { ee.code = '01002'; return cb(ee); }
+						else if(!(d.length > 0)) { ee = new Error('program not found'); ee.code = '39201'; return cb(ee); }
+						else {
+							var unit = Math.ceil(d[0].duration / 30) || 1;
+							fee.price *= unit;
+							return cb(null, fee);
+						}
+					});
+					break;
+				//-- 套餐費用 = 總片長 * 單價
+				case 2:
+					var fee = d[0].fee;
+					return cb(null, fee);
+					break;
+				// VIP 費用 = 單價
+				case 3:
+					var fee = d[0].fee;
+					return cb(null, fee);
+					break;
+				// 免費影片
+				case 4:
+				case 5:
+				default:
+					var fee = {
+						price: 0,
+						currency: 'USD'
+					};
+					return cb(null, fee);
+			}
+		}
+	});
+};
+
 /* require: options.uid, options.ppid */
 /* optional: options.pid */
 Bot.prototype.order = function (options, cb) {
 	if(!textype.isObjectID(options.uid) || !textype.isObjectID(options.ppid)) { var e = new Error('invalid order'); e.code = '19701'; return cb(e); }
 	var self = this;
-	this.fetchBrainTreeID(options, function (e, d) {
-		var cond = {};
-		if(d) { cond.customerId = d; }
-		self.gateway.clientToken.generate(cond, function (e, d) {
-			if(e) { e.code = '57101'; cb(e); }
-			else {
-				console.log(d);
-				options.clientToken = d.clientToken;
-				var order = formatOrder(options);
-				var collection = self.db.collection('Orders');
-				collection.insert(order, {}, function (ee, dd) {
-					if(ee) { ee.code = '01001'; return cb(ee); }
-					else { return cb(null, descOrder(order)); }
-				});
-			}
+	this.fetchPrice(options, function (e, d) {
+		self.fetchBrainTreeID(options, function (e1, d1) {
+			var cond = {};
+			if(d1) { cond.customerId = d1; }
+			self.gateway.clientToken.generate(cond, function (e2, d2) {
+				if(e2) { e2.code = '57101'; cb(e2); }
+				else {
+					options.clientToken = d.clientToken;
+					var order = formatOrder(options);
+					var collection = self.db.collection('Orders');
+					collection.insert(order, {}, function (e3, d3) {
+						if(e3) { e3.code = '01001'; return cb(e3); }
+						else { return cb(null, descOrder(order)); }
+					});
+				}
+			});
 		});
 	});
 };
