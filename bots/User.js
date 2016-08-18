@@ -1,6 +1,7 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
 const mongodb = require('mongodb');
+const fs = require('fs');
 const q = require('q');
 const url = require('url');
 const path = require('path');
@@ -419,6 +420,15 @@ Bot.prototype.getProfile = function (user, cb) {
 				payment_status: payment_status}
 			));
 		}
+	});
+};
+
+Bot.prototype.getUserPhoto = function (options, cb) {
+	options = dvalue.default(options, {uid: 'default'});
+	var f = path.join(this.config.path.profiles, options.uid);
+	fs.readFile(f, function (e, d) {
+		if(e) { cb(e); }
+		else { cb(null, {mimetype: 'image/png', binary: d}); }
 	});
 };
 
@@ -947,6 +957,37 @@ Bot.prototype.fetchUsers = function (options, cb) {
 		cb(null, users);
 	});
 };
+
+/* Update Profile */
+/* require: options.uid */
+/* options: options.username, options.photo */
+Bot.prototype.updateProfile = function (options, cb){
+	var self = this;
+	var setFields = {};
+	options.username && (setFields.username = options.username);
+	// check photo
+	if (options.photo) {
+		if (options.photo.mimetype.split("/")[0] !== 'image') {
+			e = new Error('incorrect image type'); e.code = '19105'; cb(e);
+		}
+		setFields.photo = dvalue.sprintf(this.config.url + 'profile/%s/photo', options.uid);
+		var oldPath = options.photo.path;
+		var newPath = path.join(this.config.path.profiles, options.uid);
+		fs.rename(oldPath, newPath)
+	}
+
+	// Update the fields
+	var collection = self.db.collection('Users');
+	var condition = { _id: new mongodb.ObjectID(options.uid), enable: true };
+	var update = { $set: setFields };
+	collection.findAndModify(condition, {}, update, {}, function (e, d) {
+		if(e) { e.code = '01003'; return cb(e); }
+		else if(!d.value) { e = new Error('incorrect code'); e.code = '39101'; cb(e); }
+		else {
+			cb(null, {})
+		}
+	});
+}
 
 Bot.prototype.encryptPassword = function (password) {
 	var salt = ":iSunCloud";
