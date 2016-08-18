@@ -111,10 +111,14 @@ Bot.prototype.writeComment = function (options, cb) {
 				commentSet.atime = new Date().getTime();
 				var cond = { _id: foundComment._id };
 				var update = { $set: commentSet };
-				commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
-					if(e) { e.code = '01002'; return cb(e); }
-					if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
-					cb(null, {cmid: d.value._id})
+				var bot = self.getBot('ResourceAgent');
+				bot.getProgram({pid: options.pid}, function (e, d) {
+					commentSet.program = d;
+					commentsCollection.findAndModify(cond, {}, update, {}, function (e, d) {
+						if(e) { e.code = '01002'; return cb(e); }
+						if(!d.value){ e = new Error('Comment not found'); e.code = ''; return cb(e); }
+						cb(null, {cmid: d.value._id})
+					});
 				});
 			}
 		});
@@ -168,7 +172,7 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 	var collection = this.db.collection('Comments');
 	var condition = {pid: options.pid};
 	var startPoint = (options.page - 1) * options.limit;
-	var endPoint = startPoint + options.limit;
+	var endPoint = startPoint + options.limit + 1;
 	collection.find(condition).sort({atime: -1}).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
 		var rs = {}, picks = [], uids = [], mycomment, total = 0, count = new Array(5).fill(0);
@@ -194,12 +198,15 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 			bot.fetchUsers(uopt, function (e1, d1) {
 				if(e1) { return cb(e1); }
 				else {
+					var removeIndex = options.limit;
 					picks = picks.map(function (v, i) {
+						if(v.uid == options.uid) { removeIndex = i; }
 						var tmpu = dvalue.search(d1, {uid: v.uid});
 						v.user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
 						v = descComment(v);
 						return v;
 					});
+					picks.splice(removeIndex, 1);
 					rs.comments = picks;
 					cb(null, rs);
 				}
@@ -301,7 +308,7 @@ Bot.prototype.listUserComments = function (options, cb) {
 			if(e) { e.code = '01002'; return cb(e); }
 
 			var ret = descComment(comments).map(function(comment){
-				comment.user = {username: user.username, photo: user.photo };
+				comment.user = {uid: user._id, username: user.username, photo: user.photo };
 				return comment
 			});
 			cb(null, ret);

@@ -327,7 +327,11 @@ Bot.prototype.getProgram = function (options, cb) {
 			api.datatype = 'json';
 			request(api, function (e, d) {
 				if(d && d.data) {
-					var program = {title: d.data.title, cover: fetchImage(d.data).cover};
+					var program = {
+						pid: options.pid,
+						title: d.data.title,
+						cover: fetchImage(d.data).cover
+					};
 					cb(null, program);
 				}
 				else { cb(e); }
@@ -340,7 +344,7 @@ Bot.prototype.getProgram = function (options, cb) {
 			api.datatype = 'json';
 			request(api, function (e, d) {
 				if(d && d.data) {
-					var program = {title: d.data.title};
+					var program = {pid: options.pid, title: d.data.title};
 					program.cover = fetchImage(d.data).cover;
 					cb(null, program);
 				}
@@ -442,7 +446,12 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			var bot = self.getBot('Comment');
 			bot.summaryProgramComments({pid: 's' + show.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
 				result = dvalue.default(d, result);
-				cb(null, result);
+
+				// fill playback_time_at and is_favored
+				self.loadCustomData({pid: 's' + show.id, uid: options.uid}, function (e, d){
+					result = dvalue.default(d, result);
+					cb(null, result);
+				});
 			});
 		})
 	})
@@ -513,7 +522,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		var bot = self.getBot('Comment');
 		bot.summaryProgramComments({pid: 'e' + episode.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
 			result = dvalue.default(d, result);
-			cb(null, result);
+
+			// fill playback_time_at and is_favored
+			self.loadCustomData({pid: 'e' + episode.id, uid: options.uid}, function (e, d){
+				result = dvalue.default(d, result);
+				cb(null, result);
+			});
 		});
 	})
 };
@@ -720,6 +734,26 @@ Bot.prototype.mergeByPrograms = function(freshObjs, cb){
 			return dvalue.default(freshObj, program);
 		})
 		cb(null, mergedObjs);
+	});
+};
+
+
+Bot.prototype.loadCustomData = function(query, cb){
+	var self = this;
+	var data = {
+		is_favored : null,
+		playback_time_at : null,
+	}
+
+	// Get is_favored from Favorite
+	self.db.collection('Favorites').findOne(query, {}, function(e, favorite){
+		data.is_favored = favorite ? true : false;
+
+		// Get playback_time_at from Favorite
+		self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
+			data.playback_time_at = program ? program.timing : null;
+			cb(null, data);
+		});
 	});
 };
 

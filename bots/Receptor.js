@@ -13,12 +13,15 @@ const url = require('url');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const http = require('http');
+const https = require('https');
 const echashcash = require('echashcash');
 const ecresult = require('ecresult');
 const dvalue = require('dvalue');
+const textype = require('textype');
 
 const hashcashLevel = 3;
 const allowDelay = 10000 * 1000;
+
 
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
 		pathPw = path.join(__dirname, '../config/pw.txt'),
@@ -51,7 +54,7 @@ checkHashCash = function (req, res, next) {
 
 		res.result.setErrorCode('10101');
 		res.result.setMessage('Invalid Hashcash');
-		res.result.setData(d);	//-- for test
+		res.result.setData(d);  //-- for test
 		returnData(req, res, next);
 	};
 
@@ -84,7 +87,7 @@ returnData = function(req, res, next) {
 	if(!res.finished) {
 		json = res.result.response();
 		isFile = new RegExp("^[a-zA-Z0-9\-]+/[a-zA-Z0-9\-\.]+$").test(json.message);
-		isURL = new RegExp("https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,}").test(json.message);
+		isURL = textype.isURL(json.message);
 		if(res.result.isDone()) {
 			session = res.result.getSession();
 
@@ -107,9 +110,19 @@ returnData = function(req, res, next) {
 			res.end(json.data);
 		}
 		else if(isURL) {
+			var crawler;
 			var options = url.parse(json.message);
 			options.method = 'GET';
-			var crawler = http.request(options, function (cRes) {
+			switch(options.protocol) {
+				case 'http:':
+					crawler = http;
+					break;
+				case 'https:':
+				default:
+					crawler = https;
+					options.rejectUnauthorized = false;
+			}
+			crawler.request(options, function (cRes) {
 				res.header('Content-Type', cRes.headers['content-type']);
 				cRes.on('data', function (chunk) {
 					res.write(chunk);
@@ -289,6 +302,23 @@ Bot.prototype.init = function(config) {
 				res.result.setResult(1);
 				res.result.setMessage('user profile');
 				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// user photo
+	this.router.get('/profile/:uid/photo', function (req, res, next) {
+		var bot = self.getBot('User');
+		var condition = {uid: req.params.uid};
+		bot.getUserPhoto(condition, function (e, d) {
+			if(e) {
+				res.result.setResult(1);
+				res.result.setMessage('https://scontent.xx.fbcdn.net/v/t1.0-1/c15.0.50.50/p50x50/10354686_10150004552801856_220367501106153455_n.jpg?oh=5c43cf5cfa35da8de30688b57a56d839&oe=5824062F');
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage(d.mimetype);
+				res.result.setData(d.binary);
 			}
 			next();
 		});
@@ -763,7 +793,7 @@ Bot.prototype.init = function(config) {
 			case 'e':
 				var options = {eid: program.id, uid: req.session.uid};
 				bot.getEpisodeProgram(options, callbackFunction);
-			 	break;
+				break;
 			default:
 				var options = {eid: program.id, uid: req.session.uid};
 				bot.getEpisodeProgram(options, callbackFunction);
@@ -962,6 +992,23 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('List Watching');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	this.router.put('/profile', checkLogin, multer({ dest: self.config.path.upload }).any(), function (req, res, next) {
+		var bot = self.getBot('User');
+		var options = { uid: req.session.uid, username: req.body.username };
+		if (req.files) options.photo = req.files[0];
+		bot.updateProfile(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Update profile');
 				res.result.setData(d);
 			}
 			next();
