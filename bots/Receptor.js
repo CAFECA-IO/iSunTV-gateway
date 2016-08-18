@@ -967,6 +967,42 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+
+	/* payment plans */
+	// order
+	this.router.post('/order', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Payment');
+		var options = {uid: req.session.uid, ppid: req.body.ppid, pid: req.body.pid};
+		bot.order(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('order plan:', options.ppid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// checkout
+	this.router.post(['/checkout', '/checkout/:gateway'], checkLogin, function (req, res, next) {
+		var bot = self.getBot('Payment');
+		var options = {uid: req.session.uid, oid: req.body.oid, nonce: req.body.nonce || req.body.payment_method_nonce, gateway: req.params.gateway};
+		bot.checkoutTransaction(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('checkout payment:', options.ppid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {
