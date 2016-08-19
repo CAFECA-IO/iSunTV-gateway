@@ -12,7 +12,7 @@ var formatPaymentPlan = function (data) {
 	if (Array.isArray(data)) { return data.map(formatPaymentPlan); }
 	data.type = parseInt(data.type);
 	data.fee = data.fee || {};
-	if(!(data.type > 0 && data.type <= 6)) { data.type = 1; }
+	if(!(data.type > 0 && data.type <= 9)) { data.type = 1; }
 	if(!(data.fee.price > 0)) { data.fee.price = 0; }
 	if(!(data.fee.currency)) { data.fee.currency = 'USD'; }
 	if(!Array.isArray(data.programs)) { data.programs = []; }
@@ -29,14 +29,15 @@ var formatPaymentPlan = function (data) {
 		programs: data.programs,
 		ticket: data.ticket,
 		visible: !!data.visible,
-		enable: !!data.enable
+		enable: !!data.enable,
+		gpid: data.gpid
 	};
 	return PaymentPlan;
 };
 var descPaymentPlan = function (data, detail) {
 	if (Array.isArray(data)) { return data.map(function (v) { return descPaymentPlan(v, detail) } ); }
 	var PaymentPlan = {
-		ppid: data._id,
+		ppid: data._id.toString(),
 		type: data.type,
 		title: data.title,
 		fee: data.fee
@@ -67,7 +68,7 @@ var formatOrder = function (data) {
 };
 var descOrder = function (data) {
 	if(Array.isArray(data)) { return data.map(descOrder); }
-	data.oid = data._id;
+	data.oid = data._id.toString();
 	delete data._id;
 	return data;
 };
@@ -76,8 +77,10 @@ var formatTicket = function (data) {
 	if(Array.isArray(data)) { return data.map(formatTicket); }
 	var ticket = {
 		type: data.type,
+		gateway: data.gateway,
 		oid: data.oid,
 		uid: data.uid,
+		ppid: data.ppid,
 		programs: data.programs,
 		enable: false,
 		expire: data.expire,
@@ -85,7 +88,7 @@ var formatTicket = function (data) {
 		ctime: data.ctime,
 		mtime: data.mtime,
 		atime: data.atime
-	}
+	};
 	return ticket;
 };
 
@@ -155,7 +158,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				type: 3,
 				title: 'VIP',
 				fee: {
-					price: 9.99,
+					price: 6.95,
 					currency: 'USD'
 				},
 				programs: ['^[eEpP][0-9]+'],
@@ -164,6 +167,10 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				ticket: {
 					expire: 86400 * 1000 * 30,
 					duration: 86400 * 1000 * 30
+				},
+				gpid: {
+					braintree: 'MonthVIP',
+					iosiap: ''
 				}
 			},
 			{
@@ -273,6 +280,57 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 	}
 };
 
+/* require: options.uid */
+Bot.prototype.fillVIPInformation = function (options, cb) {
+	var self = this;
+	var subcribeOptions = {uids: [options.uid]};
+	this.fetchSubscribeTickets(subcribeOptions, function (e, d) {
+		if(e) { return cb(e); }
+		if(!Array.isArray(d) || d.length == 0) {
+			var pp = self.plans.find(function (v) { return v.type == 3; });
+			options.paymentstatus = {
+				gateway: 'free',
+				ppid: pp.ppid,
+				fee: pp.fee,
+				expire: 0,
+				next_charge: 0
+			};
+			return cb(null, options);
+		}
+		else {
+			var now = new Date().getTime();
+			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
+			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
+			options.paymentstatus = {
+				gateway: now > ticket.expire? 'free': ticket.gateway,
+				ppid: ticket.ppid,
+				fee: pp.fee,
+				expire: ticket.expire,
+				next_charge: now > ticket.expire? 0: ticket.expire
+			};
+			return cb(null, options);
+		}
+	});
+};
+
+/* optional: options.uids */
+Bot.prototype.fetchSubscribeTickets = function (options, cb) {
+	var self = this;
+	var collection = this.db.collection('Tickets');
+	var now = new Date().getTime();
+	var uids = Array.isArray(options.uids)? options.uids: [options.uids];
+	var condition = {type: 3, uid: {$in: uids}};
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		if(!Array.isArray(d)) { d = []; }
+		d = d.map(function (v) {
+			var pp = self.plans.find(function (v1) { return v1.ppid == v.ppid; });
+			v.fee = pp.fee;
+			return v;
+		});
+		cb(null, d);
+	});
+};
 
 /* require: uid, nonce */
 Bot.prototype.createBrainTreeID = function (options, cb) {
@@ -434,7 +492,8 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 						if(e2) { e2.code = '01003'; return cb(e2); }
 						else {
 							self.generateTicket(descOrder(dvalue.default(updateQuery.$set, d)), function () {});
-							return cb(null, receipt);
+							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
+							return cb(null, checkoutResult);
 						}
 					});
 				}
@@ -477,8 +536,10 @@ Bot.prototype.generateTicket = function (options, cb) {
 	var now = new Date().getTime();
 	var ticket = {
 		type: paymentPlan.type,
+		gateway: options.receipt.gateway,
 		oid: options.oid,
 		uid: options.uid,
+		ppid: options.ppid,
 		enable: false,
 		expire: now + paymentPlan.ticket.expire,
 		duration: paymentPlan.ticket.duration,
