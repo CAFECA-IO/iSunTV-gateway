@@ -546,15 +546,16 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			programs: [],
 		};
 
-		for (var i = 0, len = programs.length; i < len; i++){
-			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
-			var program = dvalue.default(descProgram(programs[i]), {
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-			});
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length];
+			return descProgram(program)
+		});
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
 			result.programs.push(program);
-		}
-		cb(null, result);
+			cb(null, result);
+		});
 	})
 };
 
