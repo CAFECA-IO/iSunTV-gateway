@@ -1044,7 +1044,7 @@ Bot.prototype.init = function(config) {
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('checkout payment:', options.ppid);
+				res.result.setMessage('checkout payment:', options.oid);
 				res.result.setData(d);
 			}
 			next();

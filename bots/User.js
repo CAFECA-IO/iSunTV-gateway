@@ -393,32 +393,19 @@ Bot.prototype.cleanInvalidAccount = function (user, cb) {
 	collection.remove(condition, cb);
 };
 
-Bot.prototype.getProfile = function (user, cb) {
-	var condition = {_id: new mongodb.ObjectID(user.uid)};
+Bot.prototype.getProfile = function (options, cb) {
+	var self = this;
+	var bot = this.getBot('Payment');
+	var condition = {_id: new mongodb.ObjectID(options.uid)};
 	var collection = this.db.collection('Users');
 	collection.findOne(condition, {}, function (e, user) {
 		if(e) { e.code = '01002'; cb(e); }
 		else if(!user) { e = new Error('User not found'); e.code = '39102'; cb(e); }
 		else {
-			// new field about payment_status
-			var methods = ['Free', 'iOS', 'Android' ,'BrainTree'];
-			var fees = [{ currency: 'HKD', value: 23 },
-					    { currency: 'USD', value: 3 },
-					    { currency: 'TWD', value: 90 },
-					    { currency: 'RMB', value: 20 }]
-			var methodsRandomIdx = Math.floor(Math.random() * methods.length)
-			var feesRandomIdx = Math.floor(Math.random() * fees.length)
-			payment_status = {
-				method: methods[methodsRandomIdx],
-				plan: new mongodb.ObjectID(),
-				next_charge: new Date().getTime() + (86400 * 30 * 1000),
-				fee: fees[feesRandomIdx],
-			}
-
-			// extend the original data
-			cb(null, dvalue.default(descUser(user), {
-				payment_status: payment_status}
-			));
+			bot.fillVIPInformation(descUser(user), function (e1, d) {
+				if(e) { cb(e1); }
+				else { cb(null, d) }
+			});
 		}
 	});
 };
