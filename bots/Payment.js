@@ -211,6 +211,17 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					duration: 86400 * 1000 * 1
 				}
 			},
+			{
+				type: 7,
+				title: 'shareFree',
+				fee: {
+					price: 0,
+					currency: 'USD'
+				},
+				programs: ['^[eE]40'],
+				enable: true,
+				visible: false
+			}
 		];
 		self.plans = basicPlans;
 		var collection = self.db.collection('PaymentPlans');
