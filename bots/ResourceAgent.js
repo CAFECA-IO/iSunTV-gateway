@@ -479,36 +479,33 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	request(episodeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		var episode = res.data;
+
+		var episode = descProgram(res.data);
 		episode.type = 'episode';
+		episode.programType = self.programTypes[(parseInt(options.eid) || 0) % self.programTypes.length];
 
-		// mapping data except programs
-		episode.programType = self.programTypes[(parseInt(episode.id) || 0) % self.programTypes.length]; //-- fake programType
-		var result = dvalue.default(descProgram(episode, true), {
-			paymentPlans: [], // fake data
-			playable: true // fake data
-		});
+		// merge payment and playable fields
+		var opts = {uid: options.uid ,programs: episode};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, episode){
+			var pid = 'e' + episode.id;
 
-		// async backup: should use pid as _id
-		//self.db.collection('Programs').insertOne(dvalue.default(descProgram(episode, true), {_id: 'e' + episode.id}));
-		var criteria = { _id: 'e' + episode.id };
-		var update = { $set: dvalue.default(descProgram(episode, true), { _id: 'e' + episode.id }) };
-		var updatedOptions = { upsert: true };
-		self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+			//
+			self.asyncRecordingProgram(pid, episode);
 
+			// fill comments
+			var bot = self.getBot('Comment');
+			bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+				episode = dvalue.default(d, episode);
 
-		// fill comments
-		var bot = self.getBot('Comment');
-		bot.summaryProgramComments({pid: 'e' + episode.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
-			result = dvalue.default(d, result);
-
-			// fill playback_time_at and is_favored
-			self.loadCustomData({pid: 'e' + episode.id, uid: options.uid}, function (e, d){
-				result = dvalue.default(d, result);
-				cb(null, result);
+				// fill playback_time_at and is_favored
+				self.loadCustomData({pid: pid, uid: options.uid}, function (e, d){
+					episode = dvalue.default(d, episode);
+					cb(null, episode);
+				});
 			});
 		});
-	})
+
+	});
 };
 
 // special series
