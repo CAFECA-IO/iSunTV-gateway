@@ -577,21 +577,18 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var result = [];
-		var programs = res.data;
 		var startIndex = limit * (page - 1);
 		var endIndex = startIndex + limit;
-		console.log(startIndex, endIndex)
-		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
-			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
-			var program = dvalue.default(descProgram(programs[i]), {
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-			});
-			result.push(program);
-		}
 
-		cb(null, result);
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length];
+			return descProgram(program)
+		});
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
+		});
 
 	})
 };
