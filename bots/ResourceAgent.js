@@ -286,7 +286,7 @@ Bot.prototype.listSeries = function (options, cb) {
 
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length];
+			program.programType = self.getProgramTypes(program.id)
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -409,7 +409,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
 				//console.log(episodes);
 				show.programs = episodes;
-				show.programType = self.programTypes[(parseInt(show.id) || 0) % self.programTypes.length];
+				show.programType = self.getProgramTypes(show.id);
 
 				// merge payment and playable fields for single show
 				var opts = {uid: options.uid ,programs: show};
@@ -482,7 +482,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 
 		var episode = descProgram(res.data);
 		episode.type = 'episode';
-		episode.programType = self.programTypes[(parseInt(options.eid) || 0) % self.programTypes.length];
+		episode.programType = self.getProgramTypes(options.eid)
 
 		// merge payment and playable fields
 		var opts = {uid: options.uid ,programs: episode};
@@ -545,7 +545,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length];
+			program.programType = self.getProgramTypes(program.id);
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -582,7 +582,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length];
+			program.programType = self.getProgramTypes(program.id);
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -619,7 +619,12 @@ Bot.prototype.listPrgramType = function (options, cb) {
 				text: programType.title,
 			}
 		});
+
+		// Cache in Bot
 		self.programTypes = prgramTypes;
+		self.getProgramTypes = function(id){
+			return self.programTypes[(parseInt(id) || 0) % self.programTypes.length];
+		}
 
 		cb(null, prgramTypes);
 	})
