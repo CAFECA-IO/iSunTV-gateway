@@ -646,17 +646,16 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		// merge payment and playable fields
 		var programType = dvalue.search(self.programTypes, { ptid: options.ptid });
 		var programsByType = res.data.map(function(program){
-			// clean data
 			program.programType = programType;
-			return dvalue.default(descProgram(program), {
-				paymentPlans: [], //-- fake data
-				playable: true, //-- fake data
-			})
+			return descProgram(program);
 		});
-
-		cb(null, programsByType);
+		var opts = {uid: options.uid ,programs: programsByType};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
+		});
 	})
 };
 
@@ -685,15 +684,16 @@ Bot.prototype.searchPrograms = function (options, cb) {
 	request(searchedUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		var searchPrograms = res.data.map(function(program){
-			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length]; //-- fake programType
-			return dvalue.default(descProgram(program), {
-				paymentPlans: [], //-- fake data
-				playable: true, //-- fake data
-			})
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.getProgramTypes(program.id);
+			return descProgram(program)
+		}
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
 		});
 
-		cb(null, searchPrograms);
 	});
 };
 
