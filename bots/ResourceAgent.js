@@ -688,7 +688,7 @@ Bot.prototype.searchPrograms = function (options, cb) {
 		var programs = res.data.map(function(program){
 			program.programType = self.getProgramTypes(program.id);
 			return descProgram(program)
-		}
+		});
 		var opts = {uid: options.uid ,programs: programs};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
 			cb(null, programs);
