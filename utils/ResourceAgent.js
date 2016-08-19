@@ -36,7 +36,7 @@ const descProgram = function (data, detail) {
 			program.pid = 'e' + data.id;
 			program.type = 'episode';
 			program.eid = data.id;
-			program.duration = parseInt(Math.random() * 180); //-- fake data
+			program.duration = data.length || 0; // unit: min
 			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
 			break;
 	}
