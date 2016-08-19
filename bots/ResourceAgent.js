@@ -99,7 +99,7 @@ Bot.prototype.descChannel = function (options, cb) {
 			return true;
 		}
 	});
-	
+
 	cb(null, data);
 };
 
@@ -181,9 +181,8 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 	]
 
 	// crawl the tv program api
-	var bannerUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
+	var bannerUrl = url.resolve(this.config.resourceAPI, '/api/shows?page=%s&limit=%s')
 	bannerUrl = dvalue.sprintf(bannerUrl, options.page, options.limit);
-	bannerUrl = url.parse(bannerUrl);
 	bannerUrl.datatype = 'json';
 	request(bannerUrl, function(e, res){
 		// error
@@ -232,9 +231,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var featuredUrl = this.config.resourceAPI + '/api/featured?page=%s&limit=%s'
-	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
-	featuredUrl = url.parse(featuredUrl);
+	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
+    featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
 	featuredUrl.datatype = 'json';
 	request(featuredUrl, function(e, res){
 		// error
@@ -286,7 +284,7 @@ Bot.prototype.listSeries = function (options, cb) {
 	});
 
 	// crawl the tv program api
-	var seriesUrl = this.config.resourceAPI + '/api/shows?page=%s&limit=%s'
+	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows?page=%s&limit=%s')
 	seriesUrl = dvalue.sprintf(seriesUrl, options.page, options.limit);
 	seriesUrl = url.parse(seriesUrl);
 	seriesUrl.datatype = 'json';
@@ -398,7 +396,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 	var self = this;
 
 	// crawl show
-	var showUrl = self.config.resourceAPI + '/api/show?id=%s'
+	var showUrl = url.resolve(self.config.resourceAPI, '/api/show?id=%s')
 	showUrl = dvalue.sprintf(showUrl, options.sid);
 	showUrl = url.parse(showUrl);
 	showUrl.datatype = 'json';
@@ -410,7 +408,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		show.type = 'show';
 
 		// crawl episodes
-		var episodesUrl = self.config.resourceAPI + '/api/episodes?show_id=%s&page=%s&limit=%s';
+		var episodesUrl = url.resolve(self.config.resourceAPI, '/api/episodes?show_id=%s&page=%s&limit=%s');
 		episodesUrl = dvalue.sprintf(episodesUrl, options.sid, options.page, options.limit);
 		episodesUrl = url.parse(episodesUrl);
 		episodesUrl.datatype = 'json';
@@ -493,7 +491,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	var self = this;
 
 	// crawl the tv program api
-	var episodeUrl = this.config.resourceAPI + '/api/episode?id=%s'
+	var episodeUrl = url.resolve(self.config.resourceAPI, '/api/episodes?show_id=%s&page=%s&limit=%s');
 	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
 	episodeUrl = url.parse(episodeUrl);
 	episodeUrl.datatype = 'json';
@@ -550,7 +548,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 	var limitOpt = Number(options.limit);
 	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
 	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = this.config.resourceAPI + '/api/featured?page=%s&limit=%s'
+	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
@@ -632,8 +630,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 Bot.prototype.listPrgramType = function (options, cb) {
 	var self = this;
 
-	var prgramTypeUrl = this.config.resourceAPI + '/api/showsbycategory?parent_id=0';
-	prgramTypeUrl = url.parse(prgramTypeUrl);
+	var prgramTypeUrl = url.parse(this.config.resourceAPI + '/api/showsbycategory?parent_id=0');
 	prgramTypeUrl.datatype = 'json';
 	request(prgramTypeUrl, function(e, res){
 		// error
@@ -659,7 +656,7 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 	page = page >= 1 ? page: 1;
 	limit = limit > 0 ? limit: 8;
 
-	var theProgramTypeUrl = this.config.resourceAPI + '/api/showsbycategory?parent_id=%s';
+	var theProgramTypeUrl = url.resolve(this.config.resourceAPI, '/api/showsbycategory?parent_id=%s');
 	theProgramTypeUrl = dvalue.sprintf(theProgramTypeUrl, options.ptid);
 	theProgramTypeUrl = url.parse(theProgramTypeUrl);
 	theProgramTypeUrl.datatype = 'json';
@@ -676,6 +673,7 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 				playable: true, //-- fake data
 			})
 		});
+		console.log(programsByType)
 
 		cb(null, programsByType);
 	})
