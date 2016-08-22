@@ -16,6 +16,7 @@ var formatWatching = function (watching) {
 		pid: "",
 		record: "",
 		timing: "",
+		is_finished: false,
 		atime: new Date().getTime(),
 	});
 	return watching;
@@ -72,22 +73,52 @@ Bot.prototype.recordWatchingProgram = function (options, cb) {
 	});
 };
 
-// listWatchingPrograms
+// listWatchedHistory
 // require: options.uid */
-Bot.prototype.listWatchingPrograms = function (options, cb) {
-	var self = this;
-
+Bot.prototype.listWatchedHistory = function (options, cb) {
 	//list Watching_programs
-	var collection = self.db.collection('Watching_programs');
 	var query = { uid: options.uid };
+
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var skip = pageOpt ? (pageOpt - 1) * limit : 0;
+	var limit = limitOpt ? limitOpt : 0;
+	this._listWatchedProgram(query, skip, limit, cb);
+};
+
+// listWatchedHistory
+// require: options.uid */
+Bot.prototype.listContinueWatching = function (options, cb) {
+	//list Watching_programs
+	var query = { uid: options.uid, is_finished: true };
+
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var skip = pageOpt ? (pageOpt - 1) * limit : 0;
+	var limit = limitOpt ? limitOpt : 0;
+	this._listWatchedProgram(query, skip, limit, cb);
+};
+
+/**
+ * util
+ */
+Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
+	var self = this;
+	var collection = self.db.collection('Watching_programs');
 	var sort = [['atime', -1]];
-	collection.find(query).sort(sort).toArray(function (e, watchingPrograms) {
+	collection.find(query).skip(skip).limit(limit).sort(sort).toArray(function (e, watchingPrograms) {
 		if(e) { e.code = '01002'; return cb(e); }
 
 		// merge programs
-		self.getBot('ResourceAgent').mergeByPrograms(watchingPrograms, cb);
-
+		var pids = watchingPrograms.map(function(program){ return program.pid });
+		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs){
+			cb(null, watchingPrograms.map(function (watchingProgram){
+				var program = dvalue.search(programs, { _id : watchingProgram.pid });
+				return dvalue.default(program, watchingProgram);
+			}))
+		});
 	});
-};
+}
+
 
 module.exports = Bot;
