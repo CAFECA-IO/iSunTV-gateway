@@ -720,17 +720,13 @@ Bot.prototype.searchPrograms = function (options, cb) {
 Bot.prototype.listRentPrograms = function (options, cb) {
 	var self = this;
 	var collection = self.db.collection('Tickets');
-	collection.find().toArray(function(e, tickets){
+	var query = { uid: options.uid };
+	var limit = options.limit ? Number(options.limit) : 0;
+	var skip = options.page ? (Number(options.page) - 1) * limit : 0;
+	collection.find(query).skip(skip).limit(limit).toArray(function(e, tickets){
 		if(e) { e.code = '01002'; return cb(e); }
 
 		console.log(tickets)
-
-		/*
-		tickets = tickets.map(function(ticket){
-			ticket.programType = self.getProgramTypes(tickets.id)
-			return ticket
-		})
-		*/
 
 		cb(null, tickets);
 	});
