@@ -411,7 +411,6 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			var episodes = res.data.reverse().map(descProgram);
 			var opts = {uid: options.uid ,programs: episodes};
 			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
-				//console.log(episodes);
 				show.programs = episodes;
 				show.programType = self.getProgramTypes(show.id);
 
@@ -489,11 +488,10 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		// merge payment and playable fields
 		var opts = {uid: options.uid ,programs: episode};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, episode){
-			var pid = 'e' + episode.id;
+			var pid = episode.pid;
 
 			//
 			self.asyncRecordingProgram(pid, episode);
-
 			// fill comments
 			var bot = self.getBot('Comment');
 			bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e, d) {
