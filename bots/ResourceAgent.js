@@ -404,7 +404,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
 			// merge payment and playable fields for each episode
-			var episodes = res.data.map(descProgram);
+			var episodes = res.data.reverse().map(descProgram);
 			var opts = {uid: options.uid ,programs: episodes};
 			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
 				//console.log(episodes);
