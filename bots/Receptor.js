@@ -980,6 +980,23 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// list Rent Programs
+	this.router.post(['/program/rent', '/program/rent/:page', '/program/rent/:page/:limit'], checkLogin, function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
+		bot.listRentPrograms(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('List rent programs');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 	// List watching
 	this.router.get('/watching', checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');

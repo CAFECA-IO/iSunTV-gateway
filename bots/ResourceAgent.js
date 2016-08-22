@@ -701,6 +701,22 @@ Bot.prototype.searchPrograms = function (options, cb) {
 	});
 };
 
+//listRentPrograms
+Bot.prototype.listRentPrograms = function (options, cb) {
+	var self = this;
+	var collection = self.db.collection('Tickets');
+	collection.find(query).toArray(function(e, tickets){
+		if(e) { e.code = '01002'; return cb(e); }
+
+		tickets = tickets.map(function(ticket){
+			ticket.programType = self.getProgramTypes(tickets.id)
+			return ticket
+		})
+
+		cb(null, tickets);
+	});
+}
+
 /**
  * Util function in bot
  */
