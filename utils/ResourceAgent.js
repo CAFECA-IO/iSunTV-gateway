@@ -36,7 +36,20 @@ const descProgram = function (data, detail) {
 			program.pid = 'e' + data.id;
 			program.type = 'episode';
 			program.eid = data.id;
-			program.duration = data.length || 0; // unit: min
+
+			if (data.length && typeof data.length === 'string'){
+				var lengthArr = data.length.split(':');
+				if (lengthArr.length == 3){
+					program.duration = lengthArr[0] * 60 + lengthArr[1] * 1 + lengthArr[2] / 60.0;
+					program.duration = program.duration.toFixed(2);
+				} else if (lengthArr.length == 2){
+					program.duration = lengthArr[0] * 1 + lengthArr[1] / 60.0;
+					program.duration = program.duration.toFixed(2);
+				}
+			} else {
+				program.duration = 0;
+			}
+
 			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
 			break;
 	}
