@@ -395,7 +395,7 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var show = res.data;
+		var show = descProgram(res.data, true);
 		show.type = 'show';
 
 		// crawl episodes
@@ -482,7 +482,7 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	request(episodeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		var episode = descProgram(res.data);
+		var episode = descProgram(res.data, true);
 		episode.type = 'episode';
 		episode.programType = self.getProgramTypes(options.eid)
 		// merge payment and playable fields
@@ -503,7 +503,6 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 				});
 			});
 		});
-
 	});
 };
 
