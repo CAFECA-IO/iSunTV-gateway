@@ -394,9 +394,8 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 	request(showUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
+		res.data.type = 'show';
 		var show = descProgram(res.data, true);
-		show.type = 'show';
 
 		// crawl episodes
 		var episodesUrl = url.resolve(self.config.resourceAPI, '/api/episodes?show_id=%s&page=%s&limit=%s');
@@ -413,12 +412,10 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
 				show.programs = episodes;
 				show.programType = self.getProgramTypes(show.id);
-
 				// merge payment and playable fields for single show
 				var opts = {uid: options.uid ,programs: show};
 				self.getBot('Payment').fillPaymentInformation(opts, function(err, show){
-					var pid = 's' + show.id;
-
+					var pid = show.pid;
 					// async backup: should use pid as _id
 					self.asyncRecordingProgram(pid, show);
 
@@ -482,8 +479,8 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	request(episodeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+		res.data.type = 'episode';
 		var episode = descProgram(res.data, true);
-		episode.type = 'episode';
 		episode.programType = self.getProgramTypes(options.eid)
 		// merge payment and playable fields
 		var opts = {uid: options.uid ,programs: episode};
