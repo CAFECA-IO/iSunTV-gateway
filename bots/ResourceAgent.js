@@ -411,7 +411,6 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			var episodes = res.data.reverse().map(descProgram);
 			var opts = {uid: options.uid ,programs: episodes};
 			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
-				//console.log(episodes);
 				show.programs = episodes;
 				show.programType = self.getProgramTypes(show.id);
 
@@ -476,31 +475,27 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	var self = this;
 
 	// crawl the tv program api
-	var episodeUrl = url.resolve(self.config.resourceAPI, '/api/episodes?show_id=%s&page=%s&limit=%s');
+	var episodeUrl = url.resolve(self.config.resourceAPI, '/api/episode?id=%s');
 	episodeUrl = dvalue.sprintf(episodeUrl, options.eid);
 	episodeUrl = url.parse(episodeUrl);
 	episodeUrl.datatype = 'json';
 	request(episodeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
 		var episode = descProgram(res.data);
 		episode.type = 'episode';
 		episode.programType = self.getProgramTypes(options.eid)
-
 		// merge payment and playable fields
 		var opts = {uid: options.uid ,programs: episode};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, episode){
-			var pid = 'e' + episode.id;
+			var pid = episode.pid;
 
 			//
 			self.asyncRecordingProgram(pid, episode);
-
 			// fill comments
 			var bot = self.getBot('Comment');
 			bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e, d) {
 				episode = dvalue.default(d, episode);
-
 				// fill playback_time_at and is_favored
 				self.loadCustomData({pid: pid, uid: options.uid}, function (e, d){
 					episode = dvalue.default(d, episode);
@@ -544,7 +539,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			title: '中國文化專題',
 			description: '',
 			cover: '',
-			programs: [],
+			programs: []
 		};
 
 		// merge payment and playable fields
@@ -554,7 +549,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		});
 		var opts = {uid: options.uid ,programs: programs};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			result.programs.push(programs);
+			result.programs = programs;
 			cb(null, result);
 		});
 	})
@@ -575,7 +570,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	var limit = Number(options.limit);
 	page = page >= 1 ? page: 1;
 	limit = limit > 0 ? limit: 12;
-	var latestUrl = url.parse(this.config.resourceAPI + '/api/latest');
+	var latestUrl = url.parse(url.resolve(this.config.resourceAPI, '/api/latest'));
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res){
 		// error
