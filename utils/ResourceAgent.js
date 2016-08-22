@@ -39,7 +39,7 @@ const descProgram = function (data, detail) {
 
 			//
 			if (data.length && typeof data.length === 'string'){
-				var lengthArr = data.length.split('');
+				var lengthArr = data.length.split(':');
 				if (lengthArr.length == 3){
 					program.duration = lengthArr[0] * 60 + lengthArr[1] * 1 + lengthArr[2] / 60.0;
 					program.duration = program.duration.toString();
