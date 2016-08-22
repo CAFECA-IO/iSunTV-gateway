@@ -550,7 +550,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		});
 		var opts = {uid: options.uid ,programs: programs};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			result.programs.push(program);
+			result.programs.push(programs);
 			cb(null, result);
 		});
 	})
