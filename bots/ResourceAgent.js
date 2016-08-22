@@ -103,7 +103,7 @@ Bot.prototype.descChannel = function (options, cb) {
 			return true;
 		}
 	});
-	
+
 	cb(null, data);
 };
 
@@ -230,10 +230,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 Bot.prototype.listFeaturedProgram = function (options, cb) {
 	var self = this;
 	// default value
-	options = dvalue.default(options, {
-		page: 1,
-		limit: 10,
-	});
+	options = dvalue.default(options, { page: 1, limit: 10 });
 
 	// crawl the tv program api
 	var featuredUrl = this.config.resourceAPI + '/api/featured?page=%s&limit=%s'
@@ -244,18 +241,11 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		// mapping data
-		var result = [];
-		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
-			var program = dvalue.default(descProgram(programs[i]), {
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-			});
-			result.push(program);
-		}
-
-		cb(null, result);
+		// merge payment and playable fields
+		var opts = {uid: options.uid ,programs: res.data.map(descProgram)};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
+		});
 	})
 };
 
@@ -298,20 +288,15 @@ Bot.prototype.listSeries = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		// mapping data
-		var result = [];
-		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
-			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
-			var program = dvalue.default(descProgram(programs[i]), {
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-			});
-			result.push(program);
-		}
-
-		// return data when correct
-		cb(null, result);
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.getProgramTypes(program.id)
+			return descProgram(program)
+		});
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
+		});
 	})
 };
 
@@ -422,39 +407,33 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			// error
 			if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-			var episodes = res.data;
-			// mapping data with programs
+			// merge payment and playable fields for each episode
+			var episodes = res.data.reverse().map(descProgram);
+			var opts = {uid: options.uid ,programs: episodes};
+			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
+				//console.log(episodes);
+				show.programs = episodes;
+				show.programType = self.getProgramTypes(show.id);
 
-			show.programs = episodes.map(function (v) {
-				v = dvalue.default(descProgram(v), {
-					paymentPlans: [], // fake data
-					playable: true // fake data
-				});
-				return v;
-			});
+				// merge payment and playable fields for single show
+				var opts = {uid: options.uid ,programs: show};
+				self.getBot('Payment').fillPaymentInformation(opts, function(err, show){
+					var pid = 's' + show.id;
 
-			// mapping data except programs
-			show.programType = self.programTypes[(parseInt(show.id) || 0) % self.programTypes.length]; //-- fake programType
-			var result = dvalue.default(descProgram(show, true), {
-				paymentPlans: [], // fake data
-				playable: true // fake data
-			});
+					// async backup: should use pid as _id
+					self.asyncRecordingProgram(pid, show);
 
-			// async backup: should use pid as _id
-			var criteria = { _id: 's' + show.id };
-			var update = { $set: dvalue.default(descProgram(show, true), { _id: 's' + show.id }) };
-			var updatedOptions = { upsert: true };
-			self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+					// merge comments
+					var bot = self.getBot('Comment');
+					bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+						show = dvalue.default(d, show);
 
-			// fill comments
-			var bot = self.getBot('Comment');
-			bot.summaryProgramComments({pid: 's' + show.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
-				result = dvalue.default(d, result);
-
-				// fill playback_time_at and is_favored
-				self.loadCustomData({pid: 's' + show.id, uid: options.uid}, function (e, d){
-					result = dvalue.default(d, result);
-					cb(null, result);
+						// fill playback_time_at and is_favored
+						self.loadCustomData({pid: pid, uid: options.uid}, function (e, d){
+							show = dvalue.default(d, show);
+							cb(null, show);
+						});
+					});
 				});
 			});
 		})
@@ -504,36 +483,33 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	request(episodeUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		var episode = res.data;
+
+		var episode = descProgram(res.data);
 		episode.type = 'episode';
+		episode.programType = self.getProgramTypes(options.eid)
 
-		// mapping data except programs
-		episode.programType = self.programTypes[(parseInt(episode.id) || 0) % self.programTypes.length]; //-- fake programType
-		var result = dvalue.default(descProgram(episode, true), {
-			paymentPlans: [], // fake data
-			playable: true // fake data
-		});
+		// merge payment and playable fields
+		var opts = {uid: options.uid ,programs: episode};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, episode){
+			var pid = 'e' + episode.id;
 
-		// async backup: should use pid as _id
-		//self.db.collection('Programs').insertOne(dvalue.default(descProgram(episode, true), {_id: 'e' + episode.id}));
-		var criteria = { _id: 'e' + episode.id };
-		var update = { $set: dvalue.default(descProgram(episode, true), { _id: 'e' + episode.id }) };
-		var updatedOptions = { upsert: true };
-		self.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+			//
+			self.asyncRecordingProgram(pid, episode);
 
+			// fill comments
+			var bot = self.getBot('Comment');
+			bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e, d) {
+				episode = dvalue.default(d, episode);
 
-		// fill comments
-		var bot = self.getBot('Comment');
-		bot.summaryProgramComments({pid: 'e' + episode.id, uid: options.uid, page: 1, limit: 7}, function (e, d) {
-			result = dvalue.default(d, result);
-
-			// fill playback_time_at and is_favored
-			self.loadCustomData({pid: 'e' + episode.id, uid: options.uid}, function (e, d){
-				result = dvalue.default(d, result);
-				cb(null, result);
+				// fill playback_time_at and is_favored
+				self.loadCustomData({pid: pid, uid: options.uid}, function (e, d){
+					episode = dvalue.default(d, episode);
+					cb(null, episode);
+				});
 			});
 		});
-	})
+
+	});
 };
 
 // special series
@@ -571,15 +547,16 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			programs: [],
 		};
 
-		for (var i = 0, len = programs.length; i < len; i++){
-			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
-			var program = dvalue.default(descProgram(programs[i]), {
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-			});
-			result.programs.push(program);
-		}
-		cb(null, result);
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.getProgramTypes(program.id);
+			return descProgram(program)
+		});
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			result.programs.push(programs);
+			cb(null, result);
+		});
 	})
 };
 
@@ -604,21 +581,18 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
-		var result = [];
-		var programs = res.data;
 		var startIndex = limit * (page - 1);
 		var endIndex = startIndex + limit;
-		console.log(startIndex, endIndex)
-		for (var i = startIndex; i < programs.length && i < endIndex; i++) {
-			programs[i].programType = self.programTypes[(parseInt(programs[i].id) || 0) % self.programTypes.length]; //-- fake programType
-			var program = dvalue.default(descProgram(programs[i]), {
-				paymentPlans: [], // fake data
-				playable: true, // fake data
-			});
-			result.push(program);
-		}
 
-		cb(null, result);
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.getProgramTypes(program.id);
+			return descProgram(program)
+		});
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
+		});
 
 	})
 };
@@ -649,7 +623,12 @@ Bot.prototype.listPrgramType = function (options, cb) {
 				text: programType.title,
 			}
 		});
+
+		// Cache in Bot
 		self.programTypes = prgramTypes;
+		self.getProgramTypes = function(id){
+			return self.programTypes[(parseInt(id) || 0) % self.programTypes.length];
+		}
 
 		cb(null, prgramTypes);
 	})
@@ -671,17 +650,16 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 
+		// merge payment and playable fields
 		var programType = dvalue.search(self.programTypes, { ptid: options.ptid });
 		var programsByType = res.data.map(function(program){
-			// clean data
 			program.programType = programType;
-			return dvalue.default(descProgram(program), {
-				paymentPlans: [], //-- fake data
-				playable: true, //-- fake data
-			})
+			return descProgram(program);
 		});
-
-		cb(null, programsByType);
+		var opts = {uid: options.uid ,programs: programsByType};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
+		});
 	})
 };
 
@@ -710,15 +688,16 @@ Bot.prototype.searchPrograms = function (options, cb) {
 	request(searchedUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		var searchPrograms = res.data.map(function(program){
-			program.programType = self.programTypes[(parseInt(program.id) || 0) % self.programTypes.length]; //-- fake programType
-			return dvalue.default(descProgram(program), {
-				paymentPlans: [], //-- fake data
-				playable: true, //-- fake data
-			})
+		// merge payment and playable fields
+		var programs = res.data.map(function(program){
+			program.programType = self.getProgramTypes(program.id);
+			return descProgram(program)
+		});
+		var opts = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
+			cb(null, programs);
 		});
 
-		cb(null, searchPrograms);
 	});
 };
 
@@ -741,7 +720,6 @@ Bot.prototype.mergeByPrograms = function(freshObjs, cb){
 	});
 };
 
-
 Bot.prototype.loadCustomData = function(query, cb){
 	var self = this;
 	var data = {
@@ -760,6 +738,13 @@ Bot.prototype.loadCustomData = function(query, cb){
 		});
 	});
 };
+
+Bot.prototype.asyncRecordingProgram = function (pid, program) {
+	var criteria = { _id: pid };
+	var update = { $set: dvalue.default(descProgram(program, true), criteria) };
+	var updatedOptions = { upsert: true };
+	this.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+}
 
 Bot.prototype.request = request;
 
