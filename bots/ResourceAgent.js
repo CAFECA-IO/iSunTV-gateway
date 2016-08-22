@@ -702,22 +702,6 @@ Bot.prototype.searchPrograms = function (options, cb) {
 /**
  * Util function in bot
  */
-Bot.prototype.mergeByPrograms = function(freshObjs, cb){
-	var self = this;
-	//
-	var pids = freshObjs.map(function(freshObj){ return freshObj.pid });
-
-	var collection = self.db.collection('Programs');
-	var query = { _id: { $in : pids }};
-	collection.find(query).toArray(function(e, programs){
-		var mergedObjs = freshObjs.map(function(freshObj){
-			var program = dvalue.search(programs, { _id : freshObj.pid });
-			return dvalue.default(freshObj, program);
-		})
-		cb(null, mergedObjs);
-	});
-};
-
 Bot.prototype.loadCustomData = function(query, cb){
 	var self = this;
 	var data = {
@@ -743,6 +727,20 @@ Bot.prototype.asyncRecordingProgram = function (pid, program) {
 	var updatedOptions = { upsert: true };
 	this.db.collection('Programs').updateOne(criteria, update, updatedOptions);
 }
+
+/**
+ * [mergeByPrograms description]
+ * @param  {object}   options [options.pids(array)]
+ * @param  {Function} cb      [description]
+ */
+Bot.prototype.mergeByPrograms = function(options, cb){
+	var self = this;
+	var collection = self.db.collection('Programs');
+	collection.find({ _id: { $in : options.pids }}).toArray(function(e, programs){
+		cb(null, programs);
+	});
+};
+
 
 Bot.prototype.request = request;
 

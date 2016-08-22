@@ -115,11 +115,24 @@ Bot.prototype.listFavorite = function (options, cb) {
 	var collection = self.db.collection('Favorites');
 	var query = { uid: options.uid };
 	var sort = [['ctime', -1]];
-	collection.find(query).sort(sort).toArray(function (e, favorites) {
+
+	// page and limit
+	var pageOpt = Number(options.page);
+	var limitOpt = Number(options.limit);
+	var skip = pageOpt ? (pageOpt - 1) * limit : 0;
+	var limit = limitOpt ? limitOpt : 0;
+
+	collection.find(query).skip(skip).limit(limit).sort(sort).toArray(function (e, favorites) {
 		if(e) { e.code = '01002'; return cb(e); }
 
-		// merge by programs
-		self.getBot('ResourceAgent').mergeByPrograms(favorites, cb);
+		// merge programs
+		var pids = favorites.map(function(favorite){ return favorite.pid });
+		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs){
+			cb(null, favorites.map(function (favorite){
+				var program = dvalue.search(programs, { _id : favorite.pid });
+				return dvalue.default(program, favorite);
+			}))
+		});
 	});
 };
 
