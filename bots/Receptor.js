@@ -981,7 +981,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// list Rent Programs
-	this.router.post(['/program/rent', '/program/rent/:page', '/program/rent/:page/:limit'], checkLogin, function (req, res, next) {
+	this.router.get(['/program/rent', '/program/rent/:page', '/program/rent/:page/:limit'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listRentPrograms(options, function (e, d) {
