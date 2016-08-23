@@ -8,6 +8,7 @@ var logger;
 
 var formatComment = function (data) {
 	if(Array.isArray(data)) { return data.map(formatComment); }
+	var now = new Date().getTime();
 	var comment = dvalue.default(data, {
 		uid: '',
 		pid: '',
@@ -15,24 +16,24 @@ var formatComment = function (data) {
 		comment: '',
 		rating: 0,
 		verified: false,
-		ctime: new Date().getTime(),
-		mtime: undefined,
-		atime: new Date().getTime()
+		ctime: now,
+		mtime: now,
+		atime: now
 	});
 	return comment;
 };
 var descComment = function (data) {
 	if(Array.isArray(data)) { return data.map(descComment); }
 	var comment = {
-		cmid: data._id,
+		cmid: data._id.toString(),
 		user: data.user,
 		program: data.program,
 		rating: data.rating,
 		title: data.title,
 		comment: data.comment,
-		ctime: data.ctime,
-		mtime: data.mtime,
-		atime: data.atime
+		ctime: data.ctime || 0,
+		mtime: data.mtime || 0,
+		atime: data.atime || 0
 	};
 	return comment;
 };
