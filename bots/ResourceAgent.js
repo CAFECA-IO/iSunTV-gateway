@@ -716,6 +716,27 @@ Bot.prototype.asyncRecordingProgram = function (pid, program) {
 	this.db.collection('Programs').updateOne(criteria, update, updatedOptions);
 };
 
+Bot.prototype.crawl = function () {
+
+};
+Bot.prototype.crawlSeries = function () {
+	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows');
+};
+Bot.prototype.crawlEpisodes = function () {
+
+};
+Bot.prototype.saveProgram = function (program, cb) {
+	var condition = {_id: program.pid};
+	var updateQuery = {$set: program};
+	var collection = this.db.collection('Programs');
+	collection.update(condition, updateQuery, {upsert: true}, function (e, d) {
+		if(e) { e.code = '01003'; return cb(e); }
+		else { return cb(null, programs); }
+	});
+};
+
+
+
 /**
  * [mergeByPrograms description]
  * @param  {object}   options [options.pids(array)]
