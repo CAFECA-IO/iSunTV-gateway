@@ -5,6 +5,7 @@ const textype = require('textype');
 const dvalue = require('dvalue');
 
 const descProgram = function (data, detail) {
+	if(Array.isArray(data)) { return data.map(function (v) { return descProgram(v, detail); }); }
 	var img = fetchImage(data);
 	var stream = fetchStream(data);
 	var program = {
@@ -70,7 +71,7 @@ const descProgram = function (data, detail) {
 		]; //-- fakedata
 	}
 
-	return program
+	return program;
 };
 
 

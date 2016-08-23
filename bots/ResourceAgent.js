@@ -238,13 +238,12 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	request(featuredUrl, function(e, res){
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
 		// merge payment and playable fields
-		var opts = {uid: options.uid ,programs: descProgram(res.data)};
+		var opts = {uid: options.uid, programs: descProgram(res.data)};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
 			cb(null, programs);
 		});
-	})
+	});
 };
 
 // list series
