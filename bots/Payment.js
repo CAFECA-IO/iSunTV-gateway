@@ -580,6 +580,8 @@ Bot.prototype.generateTicket = function (options, cb) {
 
 /* require: options.uid */
 Bot.prototype.fetchUserTickets = function (options, cb) {
+	var collection = this.db.collection('Tickets');
+	var condition = {uid: options.uid, expire: {$lt: new Date().getTime()}};
 
 };
 
