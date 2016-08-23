@@ -191,7 +191,7 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 			count: count,
 			total: d.length
 		};
-		if(!!options.uid) { rs.mycomment = mycomment; }
+		rs.mycomment = mycomment || {};
 		if(startPoint >= 0 && endPoint >= 0) {
 			var bot = self.getBot('User');
 			var uopt = {uids: uids}
