@@ -784,7 +784,7 @@ Bot.prototype.saveProgram = function (program, cb) {
 Bot.prototype.mergeByPrograms = function(options, cb){
 	var self = this;
 	var collection = self.db.collection('Programs');
-	collection.find({ _id: { $in : options.pids }}).toArray(function(e, programs) {
+	collection.find({ pid: { $in : options.pids }}).toArray(function(e, programs) {
 		if(e) { e.code = '01002'; return cb(e); }
 		cb(null, programs);
 	});
