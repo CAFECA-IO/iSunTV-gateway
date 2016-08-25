@@ -23,7 +23,7 @@ const descProgram = function (data, detail) {
 		programType: data.programType
 	}
 	// series/ episode/ episode of series
-	switch(data.type) {
+	switch(data.itemType) {
 		case 'show':
 			program.pid = 's' + data.id;
 			program.type = 'series';
