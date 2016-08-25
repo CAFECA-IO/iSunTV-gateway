@@ -409,7 +409,7 @@ Bot.prototype.fetchPrice = function (options, cb) {
 				case 1:
 					var fee = d.fee;
 					var programs_collection = self.db.collection("Programs");
-					var programs_condition = {_id: options.pid};
+					var programs_condition = {pid: options.pid};
 					programs_collection.findOne(programs_condition, {}, function (ee, dd) {
 						if(ee) { ee.code = '01002'; return cb(ee); }
 						else if(!dd) { ee = new Error('program not found'); ee.code = '39201'; return cb(ee); }
