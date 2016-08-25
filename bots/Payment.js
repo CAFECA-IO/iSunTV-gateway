@@ -386,7 +386,7 @@ Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	var collection = this.db.collection('Users');
 	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!d.verify) {
+		else if(!d.verified) {
 			e = new Error('Account not verified');
 			e.code = '69101';
 			return cb(e);
