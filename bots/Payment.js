@@ -315,7 +315,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				ppid: ticket.ppid,
 				fee: pp.fee,
 				expire: ticket.expire,
-				next_charge: now > ticket.expire? 0: ticket.expire
+				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: ticket.expire
 			};
 			return cb(null, options);
 		}
@@ -386,6 +386,11 @@ Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	var collection = this.db.collection('Users');
 	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
+		else if(!d.verify) {
+			e = new Error('Account not verified');
+			e.code = '69101';
+			return cb(e);
+		}
 		else {
 			return cb(null, d? d.BrainTreeID: undefined);
 		}
@@ -454,6 +459,7 @@ Bot.prototype.order = function (options, cb) {
 		if(e) { return cb(e); }
 		else { options.fee = d; }
 		self.fetchBrainTreeID(options, function (e1, d1) {
+			if(e1) { return cb(e1); }
 			var cond = {};
 			if(d1) { cond.customerId = d1; }
 			self.gateway.clientToken.generate(cond, function (e2, d2) {
