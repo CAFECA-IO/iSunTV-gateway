@@ -128,10 +128,14 @@ Bot.prototype.listFavorite = function (options, cb) {
 		// merge programs
 		var pids = favorites.map(function(favorite){ return favorite.pid });
 		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs){
-			cb(null, favorites.map(function (favorite){
-				var program = dvalue.search(programs, { _id : favorite.pid });
-				return dvalue.default(program, favorite);
-			}))
+			if(err) { return cb(err); }
+			else {
+				programs.map(function (v, i) {
+					var fav = dvalue.search(favorites, {pid: v.pid});
+					if(fav) { programs[i].add_to_favorite = fav.ctime; }
+				});
+				return cb(null, programs);
+			}
 		});
 	});
 };

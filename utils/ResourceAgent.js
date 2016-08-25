@@ -30,7 +30,7 @@ const descProgram = function (data, detail) {
 			program.sid = data.id;
 			program.isEnd = true; //-- fake data
 			program.programs = data.programs;
-			program.number_of_episodes = Array.isArray(data.programs)? data.programs.length: parseInt(Math.random() * 200);
+			program.number_of_episodes = data.number_of_episodes > 0? data.number_of_episodes: Array.isArray(data.programs)? data.programs.length: 0;
 			break;
 		case 'episode':
 		default:
