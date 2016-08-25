@@ -38,7 +38,7 @@ Bot.prototype.init = function (config) {
 Bot.prototype.start = function () {
 	var self = this;
 
-	this.listPrgramType({}, function () {});
+	this.listPrgramType({}, function () { self.crawl({}, function() {}); });
 };
 
 
@@ -287,7 +287,7 @@ Bot.prototype.listSeries = function (options, cb) {
 
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.getProgramTypes(program.id)
+			program.programType = self.getProgramType(program.id)
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -408,13 +408,11 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 			var opts = {uid: options.uid ,programs: episodes};
 			self.getBot('Payment').fillPaymentInformation(opts, function(err, episodes){
 				show.programs = episodes;
-				show.programType = self.getProgramTypes(show.id);
+				show.programType = self.getProgramType(show.id);
 				// merge payment and playable fields for single show
 				var opts = {uid: options.uid ,programs: show};
 				self.getBot('Payment').fillPaymentInformation(opts, function(err, show){
 					var pid = show.pid;
-					// async backup: should use pid as _id
-					self.asyncRecordingProgram(pid, show);
 
 					// merge comments
 					var bot = self.getBot('Comment');
@@ -478,14 +476,12 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		res.data.type = 'episode';
 		var episode = descProgram(res.data, true);
-		episode.programType = self.getProgramTypes(options.eid)
+		episode.programType = self.getProgramType(options.eid)
 		// merge payment and playable fields
 		var opts = {uid: options.uid ,programs: episode};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, episode){
 			var pid = episode.pid;
 
-			//
-			self.asyncRecordingProgram(pid, episode);
 			// fill comments
 			var bot = self.getBot('Comment');
 			bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e1, d1) {
@@ -537,7 +533,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.getProgramTypes(program.id);
+			program.programType = self.getProgramType(program.id);
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -574,7 +570,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.getProgramTypes(program.id);
+			program.programType = self.getProgramType(program.id);
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -607,17 +603,21 @@ Bot.prototype.listPrgramType = function (options, cb) {
 			return {
 				ptid: programType.id,
 				text: programType.title,
-			}
+			};
 		});
 
 		// Cache in Bot
 		self.programTypes = prgramTypes;
-		self.getProgramTypes = function(id){
-			return self.programTypes[(parseInt(id) || 0) % self.programTypes.length];
-		}
-
 		cb(null, prgramTypes);
 	})
+};
+Bot.prototype.getProgramType = function(id) {
+	var defaultType = {
+		ptid: 0,
+		text: "其他"
+	};
+	if(!Array.isArray(this.programTypes) || this.programTypes) { return defaultType; }
+	return this.programTypes.find(function (v) { return v.ptid == id; }) || defaultType;
 };
 
 // listPrgramByType
@@ -676,7 +676,7 @@ Bot.prototype.searchPrograms = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		// merge payment and playable fields
 		var programs = res.data.map(function(program){
-			program.programType = self.getProgramTypes(program.id);
+			program.programType = self.getProgramType(program.id);
 			return descProgram(program)
 		});
 		var opts = {uid: options.uid ,programs: programs};
@@ -709,12 +709,72 @@ Bot.prototype.loadCustomData = function(query, cb){
 	});
 };
 
-Bot.prototype.asyncRecordingProgram = function (pid, program) {
-	var criteria = { _id: pid };
-	var update = { $set: dvalue.default(descProgram(program, true), criteria) };
-	var updatedOptions = { upsert: true };
-	this.db.collection('Programs').updateOne(criteria, update, updatedOptions);
+Bot.prototype.crawl = function (options, cb) {
+	this.crawlSeries({}, cb);
 };
+Bot.prototype.crawlSeries = function (options, cb) {
+	var self = this;
+	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows');
+	seriesUrl = url.parse(seriesUrl);
+	seriesUrl.datatype = 'json';
+	request(seriesUrl, function (e1, d1) {
+		if(!Array.isArray(d1.data)) { return cb(null, 0); }
+		// filter programTypes
+		d1 = d1.data.filter(function(v) { return !self.programTypes.find(function (vv) { return v.id == vv.ptid; }); });
+		var todo = d1.length + 1;
+		var done = function (e2, d2) {
+			if(--todo == 0) {
+				cb(null, d1.length);
+			}
+		};
+
+		d1.map(function (v) {
+			var options = {sid: v.id};
+			self.crawlEpisodes(options, function (e3, d3) {
+				v.number_of_episodes = parseInt(d3) || 0;
+				self.saveProgram(descProgram(v, true), done);
+			});
+		});
+		done();
+	});
+};
+Bot.prototype.crawlEpisodes = function (options, cb) {
+	if(!options.sid) { cb(null, 0); }
+	var self = this;
+	var tmpUrl = url.resolve(this.config.resourceAPI, '/api/episodes?show_id=%s&page=%s&limit=%s');
+	var total = 0;
+	var list = [];
+	options = options || {};
+	var crawlByPage = function (page) {
+		var page = page || 1;
+		var limit = 50;
+		episodesUrl = dvalue.sprintf(tmpUrl, options.sid, page, limit);
+		episodesUrl = url.parse(episodesUrl);
+		episodesUrl.datatype = 'json';
+		request(episodesUrl, function (e1, d1) {
+			if(!Array.isArray(d1.data)) { cb(null, total); }
+			total += d1.data.length;
+			d1.data.map(function (v) {
+				self.saveProgram(descProgram(v, true), function () {});
+			});
+			if(d1.data.length == limit) { crawlByPage(++page); }
+			else { cb(null, total); }
+		});
+	};
+	crawlByPage(1);
+};
+Bot.prototype.saveProgram = function (program, cb) {
+	var condition = {pid: program.pid};
+	delete program.pid;
+	var updateQuery = {$set: program};
+	var collection = this.db.collection('Programs');
+	collection.update(condition, updateQuery, {upsert: true}, function (e, d) {
+		if(e) { e.code = '01003'; return cb(e); }
+		else { return cb(null, program); }
+	});
+};
+
+
 
 /**
  * [mergeByPrograms description]
@@ -724,7 +784,8 @@ Bot.prototype.asyncRecordingProgram = function (pid, program) {
 Bot.prototype.mergeByPrograms = function(options, cb){
 	var self = this;
 	var collection = self.db.collection('Programs');
-	collection.find({ _id: { $in : options.pids }}).toArray(function(e, programs){
+	collection.find({ pid: { $in : options.pids }}).toArray(function(e, programs) {
+		if(e) { e.code = '01002'; return cb(e); }
 		cb(null, programs);
 	});
 };

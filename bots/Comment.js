@@ -183,7 +183,7 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 				picks.push(v);
 				uids.push(v.uid);
 			}
-			if(!!v.uid && v.uid == options.uid) { mycomment = descComment(v); }
+			if(!!v.uid && v.uid == options.uid) { mycomment = v; uids.push(v.uid); }
 			total += v.rating;
 			count[(v.rating - 1)]++;
 		});
@@ -201,9 +201,9 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 				else {
 					var removeIndex = options.limit;
 					picks = picks.map(function (v, i) {
-						if(v.uid == options.uid) { removeIndex = i; }
 						var tmpu = dvalue.search(d1, {uid: v.uid});
 						v.user = {uid: tmpu.uid, username: tmpu.username, photo: tmpu.photo};
+						if(v.uid == options.uid) {removeIndex = i; rs.mycomment = descComment(v);}
 						v = descComment(v);
 						return v;
 					});

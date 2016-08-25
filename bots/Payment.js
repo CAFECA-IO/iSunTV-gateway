@@ -42,6 +42,12 @@ var descPaymentPlan = function (data, detail) {
 		title: data.title,
 		fee: data.fee
 	};
+	data.gpid = data.gpid || {};
+	PaymentPlan.gpid = {
+		braintree: !!data.gpid.braintree? data.gpid.braintree: false,
+		iosiap: !!data.gpid.iosiap? data.gpid.iosiap: false
+	};
+
 	if(!!detail) { 
 		PaymentPlan.programs = data.programs;
 		PaymentPlan.ticket = data.ticket;
@@ -85,6 +91,7 @@ var formatTicket = function (data) {
 		enable: false,
 		expire: data.expire,
 		duration: data.duration,
+		subscribe: !!data.subscribe,
 		ctime: data.ctime,
 		mtime: data.mtime,
 		atime: data.atime
@@ -254,11 +261,13 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 	var fillPlan = function (program) {
 		program.paymentPlans = [];
 		program.playable = false;
+		program.free_to_play = false;
 		program.ad_to_play = false;
 		program.login_to_play = false;
 		self.plans.map(function (v) {
 			if(v.programs.some(function (vv) { return isPlayable(vv, program.pid); })) {
-				if(v.type == 5) { program.login_to_play = true; }
+				if(v.type == 4) { program.free_to_play = true; }
+				else if(v.type == 5) { program.login_to_play = true; }
 				else if(v.type == 6) { program.ad_to_play = true; }
 				program.paymentPlans.push(v);
 			}
@@ -276,7 +285,7 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 		self.checkPlayable(options, function (e, d) {
 			programs.playable = !!d;
 			cb(null, programs);
-		})
+		});
 	}
 };
 
