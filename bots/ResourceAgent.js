@@ -687,6 +687,37 @@ Bot.prototype.searchPrograms = function (options, cb) {
 	});
 };
 
+//listRentPrograms
+// require: uid
+// optional: page, limit
+/*
+{ _id: 57b58ee04227940409571f0e,
+    type: 1,
+    oid: 57b58ecc4227940409571f0d,
+    uid: '57971c7b1b7d91663fa2a23c',
+    programs: [ 'e102' ],
+    enable: false,
+    expire: 1474108384328,
+    duration: 172800000,
+    ctime: 1471516384328,
+    mtime: 1471516384328,
+    atime: 1471516384328 }
+ */
+Bot.prototype.listRentPrograms = function (options, cb) {
+	var self = this;
+	var collection = self.db.collection('Tickets');
+	var query = { uid: options.uid };
+	var limit = options.limit ? Number(options.limit) : 0;
+	var skip = options.page ? (Number(options.page) - 1) * limit : 0;
+	collection.find(query).skip(skip).limit(limit).toArray(function(e, tickets){
+		if(e) { e.code = '01002'; return cb(e); }
+
+		console.log(tickets)
+
+		cb(null, tickets);
+	});
+}
+
 /**
  * Util function in bot
  */
