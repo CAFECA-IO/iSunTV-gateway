@@ -54,7 +54,6 @@ var descPaymentPlan = function (data, detail) {
 		PaymentPlan.visible = data.visible;
 		PaymentPlan.enable = data.enable;
 	}
-	delete PaymentPlan._id
 	return PaymentPlan;
 };
 
@@ -520,8 +519,6 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 			});
 		}
 	});
-
-
 };
 /* require: options.gateway, options.nonce, options.fee */
 /* gateway: braintree, iosiap */
@@ -611,6 +608,24 @@ Bot.prototype.isFree = function (options) {
 		return (v.type == 5) && isPlayable(v.programs, options.pid) && textype.isObjectID(options.uid)
 			|| (v.type == 4 || v.type == 6) && isPlayable(v.programs, options.pid);
 	});
+};
+
+/* require: options */
+Bot.prototype.findPlan = function (keyword) {
+	var plans = [];
+	switch(keyword) {
+		case 'VIP':
+			plans.push(this.plans.find(function (v) { return v.type == 3; }));
+			break;
+		case 'Free':
+			plans.push(this.plans.find(function (v) { return v.type == 4; }));
+			break;
+		case 'Member':
+			plans.push(this.plans.find(function (v) { return v.type == 5; }));
+			break;
+	}
+	if(plans.length == 0) { plans.push(this.plans.find(function (v) { return v.type == 4; })); }
+	return plans;
 };
 
 /*  require: options.uid, options.pid */

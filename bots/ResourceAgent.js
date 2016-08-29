@@ -39,7 +39,7 @@ Bot.prototype.start = function () {
 	var self = this;
 
 	this.listPrgramType({}, function () {
-		// self.crawl({}, function() {});
+		self.crawl({}, function() {});
 	});
 };
 
@@ -589,8 +589,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
 			cb(null, programs);
 		});
-
-	})
+	});
 };
 
 // listPrgramType
@@ -781,6 +780,8 @@ Bot.prototype.loadCustomData = function(query, cb){
 Bot.prototype.crawl = function (options, cb) {
 	this.crawlSeries({}, cb);
 };
+Bot.prototype.addToPlan = function () {};
+Bot.prototype.savePlan = function () {};
 Bot.prototype.crawlSeries = function (options, cb) {
 	var self = this;
 	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows');
@@ -789,7 +790,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 	request(seriesUrl, function (e1, d1) {
 		if(!Array.isArray(d1.data)) { return cb(null, 0); }
 		// filter programTypes
-		d1 = d1.data.filter(function(v) { return !self.programTypes.find(function (vv) { return v.id == vv.ptid; }); });
+		d1 = d1.data;
 		var todo = d1.length + 1;
 		var done = function (e2, d2) {
 			if(--todo == 0) {
@@ -801,7 +802,10 @@ Bot.prototype.crawlSeries = function (options, cb) {
 			var options = {sid: v.id};
 			self.crawlEpisodes(options, function (e3, d3) {
 				v.number_of_episodes = parseInt(d3) || 0;
-				self.saveProgram(descProgram(v, true), done);
+				v.paymentPlans = self.getBot('Payment').findPlan(v.type);
+				if(self.programTypes.some(function (vv) { return vv.ptid == v.id; })) { return console.log('Skip', v.id); }
+				v = descProgram(v, true);
+				self.saveProgram(v, done);
 			});
 		});
 		done();
@@ -824,7 +828,9 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 			if(!Array.isArray(d1.data)) { cb(null, total); }
 			total += d1.data.length;
 			d1.data.map(function (v) {
-				self.saveProgram(descProgram(v, true), function () {});
+				v.paymentPlans = self.getBot('Payment').findPlan(v.type);
+				v = descProgram(v, true);
+				self.saveProgram(v, function () {});
 			});
 			if(d1.data.length == limit) { crawlByPage(++page); }
 			else { cb(null, total); }
