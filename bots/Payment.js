@@ -100,7 +100,12 @@ var formatTicket = function (data) {
 };
 
 var isPlayable = function (rule, pid) {
-	return new RegExp(rule).test(pid);
+	if(Array.isArray(rule)) {
+		return rule.some(function (v) { return new RegExp(v).test(pid); });
+	}
+	else {
+		return new RegExp(rule).test(pid);
+	}
 };
 
 var Bot = function (config) {
