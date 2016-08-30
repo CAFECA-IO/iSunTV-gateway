@@ -37,17 +37,17 @@ Bot.prototype.init = function (config) {
 
 Bot.prototype.start = function () {
 	var self = this;
-	var crawler = this.config.crawler || {};
-	var period = this.config.crawler.period || 86400000;
+	var crawlerConfig = this.config.crawler || {};
+	var period = crawlerConfig.period || 86400000;
 
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
-		timer = now + period - (now % period);
+		timer = period - (now % period);
 		// crawl the program at the start of the day
 		setTimeout(function () {
 			self.crawl({}, function () {
-				logger.info.info('Crawl all programs from', self.config.resourceAPI);
-				self.setInterval(function () {
+				logger.info.info('Crawl all programs from:', self.config.resourceAPI);
+				self.crawlerInterval = setInterval(function () {
 					self.crawl({}, function () {});
 				}, period);
 			});
