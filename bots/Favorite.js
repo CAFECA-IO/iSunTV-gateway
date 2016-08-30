@@ -140,4 +140,27 @@ Bot.prototype.listFavorite = function (options, cb) {
 	});
 };
 
+// fill favorite
+/* require: options.uid, options.programs */
+Bot.prototype.fillFavoriteData = function (options, cb) {
+	if(!options.uid) { return cb(null, options.programs); }
+	var collection = this.db.collection('Favorites');
+	var condition = {uid: options.uid};
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; cb(e); }
+		var programs = options.programs;
+		if(Array.isArray(programs)) {
+			programs = programs.map(function (v) {
+				v.is_favorite = d.some(function (vv) { return vv.pid == v.pid });
+				return v;
+			});
+			
+		}
+		else {
+			programs.is_favorite = d.some(function (v) { return v.pid == programs.pid });
+		}
+		cb(null, programs);
+	});
+};
+
 module.exports = Bot;

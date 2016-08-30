@@ -243,8 +243,14 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		// merge payment and playable fields
 		var opts = {uid: options.uid, programs: descProgram(res.data)};
-		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			cb(null, programs);
+		self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+			if(err) { return cb(err); }
+			// fill favorite data
+			var ffopts = {uid: options.uid, programs: programs};
+			self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+				if(e) { return cb(e); }
+				else { cb(null, d); }
+			});
 		});
 	});
 };
@@ -296,8 +302,14 @@ Bot.prototype.listSeries = function (options, cb) {
 			return program;
 		});
 		var opts = {uid: options.uid ,programs: programs};
-		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			cb(null, programs);
+		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs) {
+			if(err) { return cb(err); }
+			// fill favorite data
+			var ffopts = {uid: options.uid, programs: programs};
+			self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+				if(e) { return cb(e); }
+				else { cb(null, d); }
+			});
 		});
 	})
 };
@@ -542,15 +554,23 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		};
 
 		// merge payment and playable fields
-		var programs = res.data.map(function(program){
+		var programs = res.data.map(function (program) {
 			program = descProgram(program);
 			program.programType = self.getProgramType(program.pid);
 			return program;
 		});
 		var opts = {uid: options.uid ,programs: programs};
-		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			result.programs = programs;
-			cb(null, result);
+		self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+			if(err) { return cb(err); }
+			// fill favorite data
+			var ffopts = {uid: options.uid, programs: programs};
+			self.getBot('Favorite').fillFavoriteData(ffopts, function (e1, d1) {
+				if(e1) { return cb(e1); }
+				else {
+					result.programs = d1;
+					cb(null, result);
+				}
+			});
 		});
 	})
 };
@@ -586,8 +606,14 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			return program;
 		});
 		var opts = {uid: options.uid ,programs: programs};
-		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			cb(null, programs);
+		self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+			if(err) { return cb(err); }
+			// fill favorite data
+			var ffopts = {uid: options.uid, programs: programs};
+			self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+				if(e) { return cb(e); }
+				else { cb(null, d); }
+			});
 		});
 	});
 };
@@ -680,7 +706,13 @@ Bot.prototype.listPrgramByType = function (options, cb) {
 		});
 		var opts = {uid: options.uid ,programs: programsByType};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			cb(null, programs);
+			if(err) { return cb(err); }
+			// fill favorite data
+			var ffopts = {uid: options.uid, programs: programs};
+			self.getBot('Favorite').fillFavoriteData(ffopts, function (e1, d1) {
+				if(e1) { return cb(e1); }
+				else { cb(null, d1); }
+			});
 		});
 	})
 };
@@ -718,7 +750,13 @@ Bot.prototype.searchPrograms = function (options, cb) {
 		});
 		var opts = {uid: options.uid ,programs: programs};
 		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			cb(null, programs);
+			if(err) { return cb(err); }
+			// fill favorite data
+			var ffopts = {uid: options.uid, programs: programs};
+			self.getBot('Favorite').fillFavoriteData(ffopts, function (e1, d1) {
+				if(e1) { return cb(e1); }
+				else { cb(null, d1); }
+			});
 		});
 
 	});
