@@ -21,9 +21,10 @@ const descProgram = function (data, detail) {
 		publish: '2099-12-31', //-- fake data
 		grading: "16+", //-- fake data
 		programType: data.programType
-	}
+	};
+	if(data.paymentPlans) { program.paymentPlans = data.paymentPlans; }
 	// series/ episode/ episode of series
-	switch(data.type) {
+	switch(data.itemType) {
 		case 'show':
 			program.pid = 's' + data.id;
 			program.type = 'series';
