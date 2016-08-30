@@ -445,9 +445,20 @@ Bot.prototype.fetchPrice = function (options, cb) {
 						}
 					});
 					break;
-				//-- 套餐費用 = 總片長 * 單價
+				// 套餐費用 = 總片長 * 單價
 				case 2:
 					var fee = d.fee;
+					var programs_collection = self.db.collection("Programs");
+					var programs_condition = {pid: options.pid};
+					programs_collection.findOne(programs_condition, {}, function (ee, dd) {
+						if(ee) { ee.code = '01002'; return cb(ee); }
+						else if(!dd) { ee = new Error('program not found'); ee.code = '39201'; return cb(ee); }
+						else {
+							var unit = Math.ceil(dd.number_of_episodes) || 1;
+							fee.price = ((fee.price * unit) || 0 ).toFixed(2);
+							return cb(null, fee);
+						}
+					});
 					return cb(null, fee);
 					break;
 				// VIP 費用 = 單價
@@ -500,7 +511,7 @@ Bot.prototype.order = function (options, cb) {
 
 /* require: options.nonce, options.oid, options.uid, options.gateway */
 /* gateway: braintree, iosiap */
-Bot.prototype.checkoutTransaction = function (options, cb) {console.log(options);
+Bot.prototype.checkoutTransaction = function (options, cb) {
 	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	var self = this;
 	options.gateway = dvalue.default(options.gateway, 'BrainTree').toLowerCase();
