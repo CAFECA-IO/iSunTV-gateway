@@ -712,9 +712,24 @@ Bot.prototype.listRentPrograms = function (options, cb) {
 	collection.find(query).skip(skip).limit(limit).toArray(function(e, tickets){
 		if(e) { e.code = '01002'; return cb(e); }
 
-		console.log(tickets)
+		var pidMap = {};
+		tickets.map(function(ticket){
+			ticket.programs.map(function(pid){
+				pidMap[pid] = ticket.expire
+			})
+		})
 
-		cb(null, tickets);
+		var pids = Object.keys(pidMap);
+		self.mergeByPrograms({pids: pids}, function(err, programs){
+			if(err) { return cb(err); }
+			else {
+				programs.map(function (v) {
+					v.expire = pidMap[v.pid]
+					return v
+				});
+				return cb(null, programs);
+			}
+		})
 	});
 }
 
