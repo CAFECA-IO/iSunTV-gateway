@@ -5,6 +5,8 @@ const braintree = require('braintree');
 const dvalue = require('dvalue');
 const textype = require('textype');
 
+const defaultPeriod = 86400 * 1000 * 30;
+
 var logger;
 
 // PaymentPlan.type: 1 = 單租, 2 = 套餐, 3 = subscribe, 4 = free, 5 = login to free
@@ -80,6 +82,7 @@ var descOrder = function (data) {
 
 var formatTicket = function (data) {
 	if(Array.isArray(data)) { return data.map(formatTicket); }
+	var now = new Date().getTime();
 	var ticket = {
 		type: data.type,
 		gateway: data.gateway,
@@ -91,9 +94,9 @@ var formatTicket = function (data) {
 		expire: data.expire,
 		duration: data.duration,
 		subscribe: !!data.subscribe,
-		ctime: data.ctime,
-		mtime: data.mtime,
-		atime: data.atime
+		ctime: data.ctime || now,
+		mtime: data.mtime || now,
+		atime: data.atime || now
 	};
 	return ticket;
 };
@@ -273,20 +276,33 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 				if(v.type == 4) { program.free_to_play = true; }
 				else if(v.type == 5) { program.login_to_play = true; }
 				else if(v.type == 6) { program.ad_to_play = true; }
-				program.paymentPlans.push(v);
+				var plan = dvalue.clone(v);
+				delete plan.programs;
+				program.paymentPlans.push(plan);
 			}
 		});
 		return program;
 	};
 	if(Array.isArray(programs)) {
-		rs = programs.map(fillPlan);
-		//-- check tickets
-		cb(null, programs);
+		// check tickets
+		var futOptions = {uid: options.uid};
+		this.fetchUserTickets(futOptions, function (e, d) {
+			rs = programs.map(function (v) {
+				v = fillPlan(v);
+				v.playable = self.isFree({uid: options.uid, pid: v.pid}) || d.some(function (v2) {
+					return v2.programs.some(function (v3) {
+						return new RegExp(v3).test(v.pid);
+					});
+				});
+				return v;
+			});
+			cb(null, programs);
+		});
 	}
 	else {
 		rs = fillPlan(programs);
 		var options = {uid: options.uid, pid: programs.pid};
-		self.checkPlayable(options, function (e, d) {
+		this.checkPlayable(options, function (e, d) {
 			programs.playable = !!d;
 			cb(null, programs);
 		});
@@ -390,7 +406,7 @@ Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	var collection = this.db.collection('Users');
 	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!d.verify) {
+		else if(!d.verified) {
 			e = new Error('Account not verified');
 			e.code = '69101';
 			return cb(e);
@@ -484,7 +500,7 @@ Bot.prototype.order = function (options, cb) {
 
 /* require: options.nonce, options.oid, options.uid, options.gateway */
 /* gateway: braintree, iosiap */
-Bot.prototype.checkoutTransaction = function (options, cb) {
+Bot.prototype.checkoutTransaction = function (options, cb) {console.log(options);
 	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	var self = this;
 	options.gateway = dvalue.default(options.gateway, 'BrainTree').toLowerCase();
@@ -595,11 +611,45 @@ Bot.prototype.generateTicket = function (options, cb) {
 	});
 };
 
+/* require: options.uid, duration */
+Bot.prototype.renewVIP = function (options, cb) {
+	var collection = this.db.collection('Tickets');
+	var condition = {uid: options.uid, type: 3};
+	var orderby = {expire: -1};
+	collection.update({uid: options.uid, type: 3}, {$set: {subscribe: false}}, {}, function (e1, d1) {});
+	collection.find(condition).sort(orderby).limit(1).toArray(function (e, d) {
+		if(e) { e.code = '01002'; }
+		ticket = d[0] || {};
+		var now = new Date().getTime();
+		ticket.duration = ticket.duration || defaultPeriod;
+		ticket.expire = tocket.expire > now? ticket.duration + defaultPeriod: now + ticket.duration;
+		ticket.subscribe = true;
+		ticket = formatTicket(ticket);
+		collection.insert(ticket, {}, function (e2, d2) {
+			if(e2) { e2.code = '01001'; return cb(e2); }
+			else { cb(null, ticket); }
+		});
+	});
+};
+
+/* require: options.uid */
+Bot.prototype.subscribe = function (options, cb) {
+
+};
+
+/* require: options.uid */
+Bot.prototype.autoRenew = function (options, cb) {
+
+};
+
 /* require: options.uid */
 Bot.prototype.fetchUserTickets = function (options, cb) {
 	var collection = this.db.collection('Tickets');
-	var condition = {uid: options.uid, expire: {$lt: new Date().getTime()}};
-
+	var condition = {uid: options.uid, expire: {$gt: new Date().getTime()}};
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		cb(null, d);
+	});
 };
 
 /*  require: options.uid, options.pid */
@@ -615,20 +665,31 @@ Bot.prototype.findPlan = function (keyword) {
 	var plans = [];
 	switch(keyword) {
 		case 'VIP':
-			plans.push(this.plans.find(function (v) { return v.type == 3; }));
+			var p = dvalue.clone(this.plans.find(function (v) { return v.type == 3; }));
+			delete p.programs;
+			plans.push(p);
 			break;
 		case 'Free':
-			plans.push(this.plans.find(function (v) { return v.type == 4; }));
+			var p = dvalue.clone(this.plans.find(function (v) { return v.type == 4; }));
+			delete p.programs;
+			plans.push(p);
 			break;
 		case 'Member':
-			plans.push(this.plans.find(function (v) { return v.type == 5; }));
+			var p = dvalue.clone(this.plans.find(function (v) { return v.type == 5; }));
+			delete p.programs;
+			plans.push(p);
 			break;
 	}
-	if(plans.length == 0) { plans.push(this.plans.find(function (v) { return v.type == 4; })); }
+	if(plans.length == 0) {
+		var p = dvalue.clone(this.plans.find(function (v) { return v.type == 4; }));
+		delete p.programs;
+		plans.push(p);
+	}
 	return plans;
 };
 
-/*  require: options.uid, options.pid */
+/* require: options.uid, options.pid */
+/* do not support multiple data */
 Bot.prototype.checkPlayable = function (options, cb) {
 	// free program
 	if(this.isFree(options)) { return cb(null, true); }

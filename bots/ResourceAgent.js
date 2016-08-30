@@ -39,7 +39,7 @@ Bot.prototype.start = function () {
 	var self = this;
 
 	this.listPrgramType({}, function () {
-		self.crawl({}, function() {});
+		// self.crawl({}, function() {});
 	});
 };
 
