@@ -402,7 +402,7 @@ Bot.prototype.createBrainTreeID = function (options, cb) {
 Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
 	var self = this;
-	var condition = {_id: new mongodb.ObjectID(options.uid), BrainTreeID: {$exists: true}};
+	var condition = {_id: new mongodb.ObjectID(options.uid)};
 	var collection = this.db.collection('Users');
 	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }

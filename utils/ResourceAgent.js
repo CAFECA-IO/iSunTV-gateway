@@ -9,7 +9,7 @@ const descProgram = function (data, detail) {
 	var img = fetchImage(data);
 	var stream = fetchStream(data);
 	var program = {
-		pid: '',
+		pid: data.pid,
 		type: '',
 		title: data.title,
 		description: data.description,
@@ -26,7 +26,7 @@ const descProgram = function (data, detail) {
 	// series/ episode/ episode of series
 	switch(data.itemType) {
 		case 'show':
-			program.pid = 's' + data.id;
+			program.pid = data.pid || 's' + data.id;
 			program.type = 'series';
 			program.sid = data.id;
 			program.isEnd = true; //-- fake data
@@ -35,7 +35,7 @@ const descProgram = function (data, detail) {
 			break;
 		case 'episode':
 		default:
-			program.pid = 'e' + data.id;
+			program.pid = data.pid || 'e' + data.id;
 			program.type = 'episode';
 			program.eid = data.id;
 
