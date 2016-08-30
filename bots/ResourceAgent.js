@@ -4,12 +4,12 @@ const url = require('url');
 const path = require('path');
 
 const dvalue = require('dvalue');
+const textype = require('textype');
 
 const ParentBot = require('./_Bot.js');
 const descProgram = require('../utils/ResourceAgent.js').descProgram;
 const fetchImage = require('../utils/ResourceAgent.js').fetchImage;
 const request = require('../utils/Crawler.js').request;
-
 
 var logger;
 
@@ -37,9 +37,21 @@ Bot.prototype.init = function (config) {
 
 Bot.prototype.start = function () {
 	var self = this;
+	var crawler = this.config.crawler || {};
+	var period = this.config.crawler.period || 86400000;
 
 	this.listPrgramType({}, function () {
-		// self.crawl({}, function() {});
+		var now = new Date().getTime();
+		timer = now + period - (now % period);
+		// crawl the program at the start of the day
+		setTimeout(function () {
+			self.crawl({}, function () {
+				logger.info.info('Crawl all programs from', self.config.resourceAPI);
+				self.setInterval(function () {
+					self.crawl({}, function () {});
+				}, period);
+			});
+		}, timer);
 	});
 };
 
@@ -833,8 +845,26 @@ Bot.prototype.loadCustomData = function(query, cb){
 Bot.prototype.crawl = function (options, cb) {
 	this.crawlSeries({}, cb);
 };
-Bot.prototype.addToPlan = function () {};
-Bot.prototype.savePlan = function () {};
+/* require: options.ppid, options.pid */
+Bot.prototype.addToPlan = function (options) {
+	if(!this.plans) { this.plans = {}; }
+	if(!Array.isArray(this.plans[options.ppid])) { this.plans[options.ppid] = []; }
+	if(options.pid) { this.plans[options.ppid].push(options.pid); }
+	return true;
+};
+Bot.prototype.savePlan = function (options, cb) {
+	if(!this.plans) { return cb(null); }
+	var bot = this.getBot('Payment');
+	for(var k in this.plans) {
+		var plan = {
+			ppid: k,
+			programs: this.plans[k]
+		};
+		bot.updatePaymentPlan(plan, function () {});
+	}
+	delete this.plans;
+	cb(null);
+};
 Bot.prototype.crawlSeries = function (options, cb) {
 	var self = this;
 	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows');
@@ -847,6 +877,8 @@ Bot.prototype.crawlSeries = function (options, cb) {
 		var todo = d1.length + 1;
 		var done = function (e2, d2) {
 			if(--todo == 0) {
+				// save programs of plan
+				self.savePlan({}, function () {});
 				cb(null, d1.length);
 			}
 		};
@@ -856,8 +888,10 @@ Bot.prototype.crawlSeries = function (options, cb) {
 			self.crawlEpisodes(options, function (e3, d3) {
 				v.number_of_episodes = parseInt(d3) || 0;
 				v.paymentPlans = self.getBot('Payment').findPlan(v.type);
-				if(self.programTypes.some(function (vv) { return vv.ptid == v.id; })) { return console.log('Skip', v.id); }
+				if(self.programTypes.some(function (vv) { return vv.ptid == v.id; })) { return done(); }
 				v = descProgram(v, true);
+				// collect series of plan
+				v.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: v.pid}) });
 				self.saveProgram(v, done);
 			});
 		});
@@ -883,6 +917,8 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 			d1.data.map(function (v) {
 				v.paymentPlans = self.getBot('Payment').findPlan(v.type);
 				v = descProgram(v, true);
+				// collect episode of plan
+				v.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: v.pid}); });
 				self.saveProgram(v, function () {});
 			});
 			if(d1.data.length == limit) { crawlByPage(++page); }

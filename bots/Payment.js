@@ -257,6 +257,24 @@ Bot.prototype.loadPaymentPlan = function (options, cb) {
 		cb(e, d);
 	});
 };
+/* require: options.ppid, options.programs */
+Bot.prototype.updatePaymentPlan = function(options, cb) {
+	if(!textype.isObjectID(options.ppid)) { var e = new Error('payment plan not found'); e.code = '39801'; return cb(e); }
+	if(!Array.isArray(options.programs)) { options.programs = []; }
+	var self = this;
+	var collection = this.db.collection("PaymentPlans");
+	var condition = {_id: new mongodb.ObjectID(options.ppid)};
+	var updateQuery = {$set: {programs: options.programs}};
+	collection.findAndModify(condition, {}, updateQuery, {}, function (e, d) {
+		if(e) { e.code = '01003'; cb(e); }
+		else {
+			self.plans.some(function (v, i) { if(v.ppid == options.ppid) {
+				self.plans[i].programs = options.programs;
+				return true;
+			}});
+		}
+	});
+};
 
 /* require: options.uid, options.programs */
 /* playable, ad_to_play, login_to_play, paymentPlans */
