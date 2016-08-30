@@ -6,6 +6,8 @@
     * [Comment API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Comment_API(no.2XX))
     * [Favorite API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Favorite_API(no.3XX))
     * [Watching API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Watching_API(No.4xx))
+    * [Payment API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Payment_API(no.5XX))
+    * [Receipt API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Receipt_API(no.6XX))
     * [TMP API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/TMP_API(no.1XXX))
 * [Error Code](https://bitbucket.org/tidenet/isuntv-gateway/wiki/Error)
 
