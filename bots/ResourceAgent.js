@@ -37,8 +37,8 @@ Bot.prototype.init = function (config) {
 
 Bot.prototype.start = function () {
 	var self = this;
-	var crawler = this.config.crawler || {};
-	var period = this.config.crawler.period || 86400000;
+	var crawlerConfig = this.config.crawler || {};
+	var period = crawlerConfig.period || 86400000;
 
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
