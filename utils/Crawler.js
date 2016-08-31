@@ -8,6 +8,14 @@ const dvalue = require('dvalue');
 
 var request = function (options, cb) {
 	var operator;
+	var retry = function (rOptions, rCb) {
+		if(rOptions.retry > 3) { return false; }
+		rOptions.retry = rOptions.retry > 0? rOptions.retry + 1: 1;
+		setTimeout(function () {
+			request(rOptions, rCb);
+		}, Math.random() * 1000);
+		return true;
+	};
 	if(typeof(options) == 'string') { options = url.parse(options); }
 	options = dvalue.default(options, {
 		method: 'GET'
@@ -31,13 +39,21 @@ var request = function (options, cb) {
 		res.on('end', function () {
 			switch(options.datatype) {
 				case 'json':
-					try { rs.data = JSON.parse(rs.data); } catch(e) { return cb(e); }
+					try {
+						rs.data = JSON.parse(rs.data);
+					}
+					catch(e) {
+						if(!retry(options, cb)) { return cb(e); }
+						return; 
+					}
 					break;
 			}
 			cb(null, rs)
 		})
 	});
-	crawler.on('error', function (e) { cb(e); })
+	crawler.on('error', function (e) {
+		if(!retry(options, cb)) { return cb(e); }
+	})
 	if(options.post) {crawler.write(JSON.stringify(options.post));}
 	crawler.end();
 };

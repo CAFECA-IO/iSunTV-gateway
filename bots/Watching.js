@@ -15,9 +15,9 @@ var formatWatching = function (watching) {
 		uid: "",
 		pid: "",
 		record: "",
-		timing: "",
+		timing: 0,
 		is_finished: false,
-		atime: new Date().getTime(),
+		atime: new Date().getTime()
 	});
 	return watching;
 };
@@ -49,9 +49,10 @@ Bot.prototype.start = function () {
 *                                               *
 ************************************************/
 // recordWatchingProgram
-// require: uid, pid, record, timing
+// require: uid, pid, record, timing, is_finished
 Bot.prototype.recordWatchingProgram = function (options, cb) {
 	var self = this;
+	options.is_finished = !!options.is_finished;
 
 	// Check user
 	var collection = self.db.collection('Users');
@@ -90,7 +91,7 @@ Bot.prototype.listWatchedHistory = function (options, cb) {
 // require: options.uid */
 Bot.prototype.listContinueWatching = function (options, cb) {
 	//list Watching_programs
-	var query = { uid: options.uid, is_finished: true };
+	var query = { uid: options.uid, is_finished: false };
 
 	var pageOpt = Number(options.page);
 	var limitOpt = Number(options.limit);
@@ -108,7 +109,6 @@ Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
 	var sort = [['atime', -1]];
 	collection.find(query).skip(skip).limit(limit).sort(sort).toArray(function (e, watchingPrograms) {
 		if(e) { e.code = '01002'; return cb(e); }
-
 		// merge programs
 		var pids = watchingPrograms.map(function(program){ return program.pid });
 		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs){

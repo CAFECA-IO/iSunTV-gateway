@@ -465,7 +465,7 @@ Bot.prototype.init = function(config) {
 	});
 	// forget password
 	this.router.post('/password/forget', checkHashCash, function (req, res, next) {
-		var user = {email: req.body.email};
+		var user = {email: req.body.email, language: req.language};
 		var bot = self.getBot('User');
 		bot.forgetPassword(user, function (e, d) {
 			if(e) {
@@ -734,7 +734,7 @@ Bot.prototype.init = function(config) {
 	// List Program By Type
 	this.router.get(['/programtype/:ptid', '/programtype/:ptid/:page', '/programtype/:ptid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {ptid: req.params.ptid, page: req.params.page, limit: req.params.limit};
+		var options = {uid: req.session.uid, ptid: req.params.ptid, page: req.params.page, limit: req.params.limit};
 		bot.listPrgramByType(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -751,7 +751,7 @@ Bot.prototype.init = function(config) {
 	// Search Program
 	this.router.get(['/search/:keyword', '/search/:keyword/:page', '/search/:keyword/:page/:limit'], checkHashCash, function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var options = {keyword: req.params.keyword, page: req.params.page, limit: req.params.limit};
+		var options = {uid: req.session.uid, keyword: req.params.keyword, page: req.params.page, limit: req.params.limit};
 		bot.searchPrograms(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -831,6 +831,23 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('write comment');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// delete comment
+	this.router.delete('/program/:pid/comment/', checkLogin, function (req, res, next) {
+		var bot = self.getBot('Comment');
+		var options = {uid: req.session.uid, pid: req.params.pid};
+		bot.deleteCommentByPID(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('delete comment');
 				res.result.setData(d);
 			}
 			next();
@@ -987,7 +1004,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List watched history
-	this.router.get(['/watching', '/watching/:page', '/watching/:page/:limit'], checkLogin, function (req, res, next) {
+	this.router.get(['/watched', '/watched/:page', '/watched/:page/:limit'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listWatchedHistory(options, function (e, d) {
@@ -1004,7 +1021,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// list Continue Watching
-	this.router.get(['/watching/continue', '/watching/continue/:page', '/watching/continue/:page/:limit'], checkLogin, function (req, res, next) {
+	this.router.get(['/watching', '/watching/:page', '/watching/:page/:limit'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Watching');
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listContinueWatching(options, function (e, d) {
@@ -1077,7 +1094,7 @@ Bot.prototype.init = function(config) {
 	// checkout
 	this.router.post(['/checkout', '/checkout/:gateway'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Payment');
-		var options = {uid: req.session.uid, oid: req.body.oid, nonce: req.body.nonce || req.body.payment_method_nonce, gateway: req.params.gateway};
+		var options = {uid: req.session.uid, oid: req.body.oid, ppid: req.body.ppid, pid: req.body.pid, nonce: req.body.nonce || req.body.payment_method_nonce, gateway: req.params.gateway};
 		bot.checkoutTransaction(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -1145,7 +1162,7 @@ Bot.prototype.filter = function (req, res, next) {
 		}).sort(function (a, b) { return b.quality > a.quality; });
 		return la;
 	};
-	res.language = processLanguage(req.headers['accept-language'] || 'en-US');
+	req.language = processLanguage(req.headers['accept-language'] || 'en-US');
 
 	res.result = new ecresult();
 	res.header('X-Powered-By', powerby);

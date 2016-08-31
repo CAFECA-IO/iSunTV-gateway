@@ -143,7 +143,12 @@ Bot.prototype.listFavorite = function (options, cb) {
 // fill favorite
 /* require: options.uid, options.programs */
 Bot.prototype.fillFavoriteData = function (options, cb) {
-	if(!options.uid) { return cb(null, options.programs); }
+	if(!options.uid) {
+		return cb(null, options.programs.map(function(v) {
+			v.is_favorite = false;
+			return v;
+		}));
+	}
 	var collection = this.db.collection('Favorites');
 	var condition = {uid: options.uid};
 	collection.find(condition).toArray(function (e, d) {
@@ -154,7 +159,6 @@ Bot.prototype.fillFavoriteData = function (options, cb) {
 				v.is_favorite = d.some(function (vv) { return vv.pid == v.pid });
 				return v;
 			});
-			
 		}
 		else {
 			programs.is_favorite = d.some(function (v) { return v.pid == programs.pid });

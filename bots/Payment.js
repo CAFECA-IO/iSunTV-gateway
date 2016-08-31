@@ -145,12 +145,16 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					price: 0.99,
 					currency: 'USD'
 				},
-				programs: ['^[eE][0-9]+'],
+				programs: [],
 				enable: true,
 				visible: true,
 				ticket: {
 					expire: 86400 * 1000 * 30,
 					duration: 86400 * 1000 * 2
+				},
+				gpid: {
+					braintree: 'SingleRent',
+					iosiap: 'SingleRent'
 				}
 			},
 			{
@@ -160,7 +164,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					price: 0.99,
 					currency: 'USD'
 				},
-				programs: ['^[sS][0-9]+'],
+				programs: [],
 				enable: true,
 				visible: true,
 				ticket: {
@@ -175,7 +179,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					price: 6.95,
 					currency: 'USD'
 				},
-				programs: ['^[eEpP][0-9]+'],
+				programs: [],
 				enable: true,
 				visible: true,
 				ticket: {
@@ -184,7 +188,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				},
 				gpid: {
 					braintree: 'MonthVIP',
-					iosiap: ''
+					iosiap: 'MonthVIP'
 				}
 			},
 			{
@@ -194,9 +198,9 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					price: 0,
 					currency: 'USD'
 				},
-				programs: ['^[eE]10'],
+				programs: [],
 				enable: true,
-				visible: false,
+				visible: true,
 				ticket: {
 					expire: 86400 * 1000 * 1,
 					duration: 86400 * 1000 * 1
@@ -204,14 +208,14 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 			},
 			{
 				type: 5,
-				title: 'loginFree',
+				title: 'Free',
 				fee: {
 					price: 0,
 					currency: 'USD'
 				},
-				programs: ['^[eE]20'],
+				programs: [],
 				enable: true,
-				visible: false,
+				visible: true,
 				ticket: {
 					expire: 86400 * 1000 * 1,
 					duration: 86400 * 1000 * 1
@@ -224,7 +228,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					price: 0,
 					currency: 'USD'
 				},
-				programs: ['^[eE]30'],
+				programs: [],
 				enable: true,
 				visible: false,
 				ticket: {
@@ -239,7 +243,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					price: 0,
 					currency: 'USD'
 				},
-				programs: ['^[eE]40'],
+				programs: [],
 				enable: true,
 				visible: false
 			}
@@ -530,10 +534,12 @@ Bot.prototype.order = function (options, cb) {
 /* require: options.nonce, options.oid, options.uid, options.gateway */
 /* gateway: braintree, iosiap */
 Bot.prototype.checkoutTransaction = function (options, cb) {
-	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	var self = this;
 	options.gateway = dvalue.default(options.gateway, 'BrainTree').toLowerCase();
 
+	if(options.gateway == 'iosiap') { return cb(null, true); } //-- for iOS IAP
+
+	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	// load order detail
 	var collection = this.db.collection('Orders');
 	var condition = {_id: new mongodb.ObjectID(options.oid)};

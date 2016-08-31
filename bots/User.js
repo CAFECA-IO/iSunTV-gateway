@@ -92,7 +92,7 @@ var descUser = function (user) {
 	if(user.username.length == 0) { user.username = user.email; }
 	if(user.email.length == 0 && user.emails.length > 0) { user.email = user.emails[0]; }
 	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
-	user.password = user.password.length > 0;
+	user.password = user.password && user.password.length > 0;
 	delete user._id;
 	delete user.emails;
 	delete user.photos;
@@ -800,7 +800,10 @@ Bot.prototype.forgetPassword = function (user, cb) {
 				if(self.addMailHistory(d.value.email)){
 					var bot = self.getBot('Mailer');
 					var template = self.getTemplate('mail_pw_reset.html');
-					var resetUrl = dvalue.sprintf(self.config.frontend + '/updatePassword?resetcode=%s&uid=%s', code, d.value._id);
+					var lang = new String(user.language[0] || "").toLowerCase();
+					var langList = ["zh", "cn"];
+					var language = langList.find(function (v) { return new RegExp(v).test(lang); }) || "zh";
+					var resetUrl = dvalue.sprintf(url.resolve(self.config.frontend, '/%s/updatePassword?resetcode=%s&uid=%s'), language, code, d.value._id);
 					var content = dvalue.sprintf(template, user.email, resetUrl, code);
 					bot.send(user.email, 'Welcome to iSunTV - Forget password', content, function () {});
 					cb(null, { uid:d.value._id });
