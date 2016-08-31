@@ -826,8 +826,8 @@ Bot.prototype.listRentPrograms = function (options, cb) {
 Bot.prototype.loadCustomData = function(query, cb){
 	var self = this;
 	var data = {
-		is_favored : null,
-		playback_time_at : null,
+		is_favored : false,
+		playback_time_at : 0,
 	}
 
 	// Get is_favored from Favorite
@@ -836,7 +836,7 @@ Bot.prototype.loadCustomData = function(query, cb){
 
 		// Get playback_time_at from Favorite
 		self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
-			data.playback_time_at = program ? program.timing : null;
+			data.playback_time_at = program ? program.timing : 0;
 			cb(null, data);
 		});
 	});
