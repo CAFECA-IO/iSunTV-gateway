@@ -188,7 +188,7 @@ Bot.prototype.summaryProgramComments = function (options, cb) {
 			count[(v.rating - 1)]++;
 		});
 		rs.rating = {
-			average: parseFloat(parseFloat(total/d.length).toFixed(1)),
+			average: parseFloat(parseFloat(total/d.length).toFixed(1)) || 0,
 			count: count,
 			total: d.length
 		};
