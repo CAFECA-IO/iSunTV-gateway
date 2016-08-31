@@ -139,6 +139,32 @@ Bot.prototype.verifyComment = function (options, cb) {
 	});
 };
 
+/* require: options.uid, options.pid */
+// 檢查 uid 格式
+// 無回傳資料
+// problem
+Bot.prototype.deleteCommentByPID = function (options, cb) {
+	if (!options.uid){ e = new Error('User not found'); e.code = '39102'; return cb(e); }
+	var self = this;
+
+	// Fetch user
+	var usersCollection = self.db.collection('Users');
+	var usersCond = {_id: new mongodb.ObjectID(options.uid)};
+	usersCollection.findOne(usersCond, {}, function (e, user) {
+		if(e) { e.code = '01002'; return cb(e); }
+		if(!user){ e = new Error('User not found'); e.code = '39102'; return cb(e); }
+
+		// Delete comment
+		var commentsCollection = self.db.collection('Comments');
+		var commentsCond = { pid: options.pid, uid: options.uid };
+		commentsCollection.deleteOne(commentsCond, function (e, result) {
+			if(e) { e.code = '01002'; return cb(e); }
+			if(result.deletedCount === 0) { e = new Error('Comment not found'); e.code = '39102'; return cb(e); }
+			cb(null, {});
+		});
+	});
+};
+
 /* require: options.uid, options.cmid */
 // 檢查 uid 格式
 // 檢查 cmid 格式
