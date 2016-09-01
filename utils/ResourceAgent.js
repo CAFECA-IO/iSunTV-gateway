@@ -38,6 +38,10 @@ const descProgram = function (data, detail) {
 			program.pid = data.pid || 'e' + data.id;
 			program.type = 'episode';
 			program.eid = data.id;
+			if(data.sid) {
+				program.sid = data.sid;
+				program.ep = data.ep || 1;
+			}
 
 			if (data.length && typeof data.length === 'string'){
 				var lengthArr = data.length.split(':');
@@ -71,7 +75,6 @@ const descProgram = function (data, detail) {
 			"路平"
 		]; //-- fakedata
 	}
-
 	return program;
 };
 

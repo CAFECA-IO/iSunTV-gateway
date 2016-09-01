@@ -103,7 +103,7 @@ var formatTicket = function (data) {
 
 var isPlayable = function (rule, pid) {
 	if(Array.isArray(rule)) {
-		return rule.some(function (v) { return new RegExp(v).test(pid); });
+		return rule.some(function (v) { return new RegExp('^' + v + '$').test(pid); });
 	}
 	else {
 		return new RegExp(rule).test(pid);
@@ -294,7 +294,7 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 		program.ad_to_play = false;
 		program.login_to_play = false;
 		self.plans.map(function (v) {
-			if(v.programs.some(function (vv) { return isPlayable(vv, program.pid); })) {
+			if(isPlayable(v.programs, program.pid)) {
 				if(v.type == 4) { program.free_to_play = true; }
 				else if(v.type == 5) { program.login_to_play = true; }
 				else if(v.type == 6) { program.ad_to_play = true; }
@@ -619,7 +619,7 @@ Bot.prototype.generateTicket = function (options, cb) {
 	// ticket detail
 	switch(paymentPlan.type) {
 		case 1:
-			if(!options.receipt || !paymentPlan.programs.some(function (v) { return isPlayable(v, options.pid); })) {
+			if(!options.receipt || !isPlayable(paymentPlan.programs, options.pid)) {
 				var e = new Error('failed to generate resource ticket'); e.code = '19901'; return cb(e);
 			}
 			ticket.programs = [options.pid];
