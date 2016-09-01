@@ -111,9 +111,9 @@ Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
 		if(e) { e.code = '01002'; return cb(e); }
 		// merge programs
 		var pids = watchingPrograms.map(function(program){ return program.pid });
-		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs){
+		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs) {
 			cb(null, watchingPrograms.map(function (watchingProgram){
-				var program = dvalue.search(programs, { _id : watchingProgram.pid });
+				var program = dvalue.search(programs, { pid : watchingProgram.pid });
 				return dvalue.default(program, watchingProgram);
 			}))
 		});
