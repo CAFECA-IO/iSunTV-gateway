@@ -253,15 +253,20 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	request(featuredUrl, function (e, res) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		// merge payment and playable fields
-		var opts = {uid: options.uid, programs: descProgram(res.data)};
-		self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-			if(err) { return cb(err); }
-			// fill favorite data
-			var ffopts = {uid: options.uid, programs: programs};
-			self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
-				if(e) { return cb(e); }
-				else { cb(null, d); }
+		// merge db data
+		var programs = descProgram(res.data);
+		var pids = programs.map(function (v) { return v.pid; });
+		self.mergeByPrograms({pids: pids}, function (e2, d2) {
+			// merge payment and playable fields
+			var opts = {uid: options.uid, programs: d2};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
+				// fill favorite data
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+					if(e) { return cb(e); }
+					else { cb(null, d); }
+				});
 			});
 		});
 	});
@@ -530,6 +535,78 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 	});
 };
 
+/* required: options.pid
+   optional: options.uid
+ */
+Bot.prototype.getProgramFromDB = function (options, cb) {
+	if(!options.pid) { var e = new Error('program not found'); e.code = '39201' ; return cb(e); }
+	var self = this;
+	var opts1 = {pids: [options.pid]};
+	this.mergeByPrograms(opts1, function (e1, d1) {
+		if(e1) { return cb(e1); }
+		else if(!Array.isArray(d1) || d1.length == 0) { e = new Error('program not found'); e.code = '39201' ; return cb(e); }
+		d1 = d1[0];
+		var opts2 = {uid: options.uid ,programs: d1};
+		self.getBot('Payment').fillPaymentInformation(opts2, function(e2, d2) {
+			if(e2) { return cb(e2); }
+			var pid = d2.pid;
+
+			// fill comments
+			var opts3 = {pid: pid, uid: options.uid, page: 1, limit: 7};
+			self.getBot('Comment').summaryProgramComments(opts3, function (e3, d3) {
+				d3 = dvalue.default(d3, d2);
+				// fill playback_time_at and is_favored
+				var opts4 = {pid: pid, uid: options.uid};
+				self.loadCustomData(opts4, function (e4, d4){
+					d4 = dvalue.default(d4, d3);
+					if(d4.type == 'series') {
+						// fetch episodes data
+						var opts5 = {pids: d4.programs};
+						self.mergeByPrograms(opts5, function (e5, d5) {
+							if(e5) { return cb(e5); }
+							var opts6 = {uid: options.uid ,programs: d5};
+							self.getBot('Payment').fillPaymentInformation(opts6, function (e6, d6) {
+								if(e6) { return cb(e6); }
+								d4.programs = d6;
+								cb(null, d4);
+							});
+						});
+					}
+					else {
+						cb(null, d4);
+					}
+				});
+			});
+		});
+	});
+};
+
+/* required: options.pid
+   optional: options.uid
+ */
+Bot.prototype.getProgramPlayData = function (options, cb) {
+	var self = this;
+	this.getProgramFromDB(options, function (e1, d1) {
+		if(e1) { return cb(e1); }
+		else if(d1.type == 'series') {
+			d1.stream = d1.programs[0].stream;
+			return cb(null, d1);
+		}
+		else if(!!d1.sid) {
+			var opts2 = {uid: options.uid, pid: d1.sid};
+			self.getProgramFromDB(opts2, function (e2, d2) {
+				if(e2) { return cb(e2); }
+				d2.selected = d1.ep - 1;
+				d2.stream = d2.programs[d2.selected].stream;
+				return cb(null, d2);
+			});
+		}
+		else {
+			return cb(null, d1);
+		}
+	});
+};
+
 // special series
 /* random pick series
 {
@@ -564,24 +641,25 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			cover: '',
 			programs: []
 		};
-
-		// merge payment and playable fields
-		var programs = res.data.map(function (program) {
+		var pids = res.data.map(function (program) {
 			program = descProgram(program);
-			program.programType = self.getProgramType(program.pid);
-			return program;
+			return program.pid;
 		});
-		var opts = {uid: options.uid ,programs: programs};
-		self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-			if(err) { return cb(err); }
-			// fill favorite data
-			var ffopts = {uid: options.uid, programs: programs};
-			self.getBot('Favorite').fillFavoriteData(ffopts, function (e1, d1) {
-				if(e1) { return cb(e1); }
-				else {
-					result.programs = d1;
-					cb(null, result);
-				}
+		var opts1 = {uid: options.uid, pids: pids};
+		self.mergeByPrograms(opts1, function (e1, d1) {
+			if(e1) { return cb(e1); }
+			var opts2 = {uid: options.uid ,programs: d1};
+			self.getBot('Payment').fillPaymentInformation(opts2, function (e2, d2) {
+				if(e2) { return cb(e2); }
+				// fill favorite data
+				var opts3 = {uid: options.uid, programs: d2};
+				self.getBot('Favorite').fillFavoriteData(opts3, function (e3, d3) {
+					if(e3) { return cb(e3); }
+					else {
+						result.programs = d3;
+						cb(null, result);
+					}
+				});
 			});
 		});
 	})
@@ -604,27 +682,23 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	limit = limit > 0 ? limit: 12;
 	var latestUrl = url.parse(url.resolve(this.config.resourceAPI, '/api/latest'));
 	latestUrl.datatype = 'json';
-	request(latestUrl, function(e, res){
+	request(latestUrl, function(e, res) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
-		var startIndex = limit * (page - 1);
-		var endIndex = startIndex + limit;
-
-		// merge payment and playable fields
-		var programs = res.data.map(function(program){
-			program = descProgram(program);
-			program.programType = self.getProgramType(program.pid);
-			return program;
-		});
-		var opts = {uid: options.uid ,programs: programs};
-		self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-			if(err) { return cb(err); }
-			// fill favorite data
-			var ffopts = {uid: options.uid, programs: programs};
-			self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
-				if(e) { return cb(e); }
-				else { cb(null, d); }
+		// merge db data
+		var programs = descProgram(res.data);
+		var pids = programs.map(function (v) { return v.pid; });
+		self.mergeByPrograms({pids: pids}, function (e2, d2) {
+			// merge payment and playable fields
+			var opts = {uid: options.uid, programs: d2};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
+				// fill favorite data
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+					if(e) { return cb(e); }
+					else { cb(null, d); }
+				});
 			});
 		});
 	});
@@ -679,7 +753,7 @@ Bot.prototype.listPrgramType = function (options, cb) {
 };
 Bot.prototype.getProgramType = function(id) {
 	var defaultType = {
-		ptid: 0,
+		ptid: '0',
 		text: "其他"
 	};
 	var rs;
@@ -694,39 +768,32 @@ Bot.prototype.getProgramType = function(id) {
 };
 
 // listPrgramByType
-Bot.prototype.listPrgramByType = function (options, cb) {
+// require: ptid
+// optional: uid, page, limit
+Bot.prototype.listProgramByType = function (options, cb) {
 	var self = this;
 	var page = Number(options.page);
 	var limit = Number(options.limit);
+	var skip;
 	page = page >= 1 ? page: 1;
 	limit = limit > 0 ? limit: 8;
+	skip = (page - 1) * limit;
 
-	var theProgramTypeUrl = url.resolve(this.config.resourceAPI, '/api/showsbycategory?parent_id=%s');
-	theProgramTypeUrl = dvalue.sprintf(theProgramTypeUrl, options.ptid);
-	theProgramTypeUrl = url.parse(theProgramTypeUrl);
-	theProgramTypeUrl.datatype = 'json';
-	request(theProgramTypeUrl, function(e, res){
-		// error
-		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
-		// merge payment and playable fields
-		var programType = dvalue.search(self.programTypes, { ptid: options.ptid });
-		var programsByType = res.data.map(function(program){
-			program.programType = programType;
-			program.itemType = 'show';
-			return descProgram(program);
-		});
-		var opts = {uid: options.uid ,programs: programsByType};
-		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			if(err) { return cb(err); }
+	var self = this;
+	var collection = self.db.collection('Programs');
+	collection.find({"programType.ptid": options.ptid}, {_id: 0}).sort([["sid", 1]]).skip(skip).limit(limit).toArray(function (e, programs) {
+		if(e) { e.code = '01002'; return cb(e); }
+		var opts2 = {uid: options.uid ,programs: programs};
+		self.getBot('Payment').fillPaymentInformation(opts2, function (e2, d2) {
+			if(e2) { return cb(e2); }
 			// fill favorite data
-			var ffopts = {uid: options.uid, programs: programs};
-			self.getBot('Favorite').fillFavoriteData(ffopts, function (e1, d1) {
-				if(e1) { return cb(e1); }
-				else { cb(null, d1); }
+			var opts3 = {uid: options.uid, programs: d2};
+			self.getBot('Favorite').fillFavoriteData(opts3, function (e3, d3) {
+				if(e3) { return cb(e3); }
+				return cb(null, d3);
 			});
 		});
-	})
+	});
 };
 
 // searchPrograms
@@ -755,22 +822,21 @@ Bot.prototype.searchPrograms = function (options, cb) {
 		// error
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		// merge payment and playable fields
-		var programs = res.data.map(function(program){
-			program = descProgram(program);
-			program.programType = self.getProgramType(program.pid);
-			return program;
-		});
-		var opts = {uid: options.uid ,programs: programs};
-		self.getBot('Payment').fillPaymentInformation(opts, function(err, programs){
-			if(err) { return cb(err); }
-			// fill favorite data
-			var ffopts = {uid: options.uid, programs: programs};
-			self.getBot('Favorite').fillFavoriteData(ffopts, function (e1, d1) {
-				if(e1) { return cb(e1); }
-				else { cb(null, d1); }
+		var programs = res.data;
+		var pids = programs.map(function (v) { return descProgram(v).pid; });
+		self.mergeByPrograms({pids: pids}, function (e2, d2) {
+			// merge payment and playable fields
+			var opts = {uid: options.uid, programs: d2};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
+				// fill favorite data
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+					if(e) { return cb(e); }
+					else { cb(null, d); }
+				});
 			});
 		});
-
 	});
 };
 
@@ -869,6 +935,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 	var self = this;
 	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows?page=%s&limit=%s&token=TEST484863dbb3ce7ca4e080b15b18cd');
 	var limit = 20;
+	var total = 0;
 	var crawlByPage = function (page) {
 		page = page > 0? page: 1;
 		seriesUrl = url.parse(seriesUrl);
@@ -878,7 +945,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 			if(--todo == 0) {
 				// save programs of plan
 				self.savePlan({}, function () {});
-				cb(null, d1.length);
+				cb(null, d2.length);
 			}
 		};
 		request(seriesUrl, function (e1, d1) {
@@ -887,11 +954,15 @@ Bot.prototype.crawlSeries = function (options, cb) {
 			d1 = d1.data;
 			todo += d1.length;
 			d1.map(function (v) {
-				var options = {sid: v.id};
+				v.pid = 's' + v.id;
+				v.programType = self.getProgramType(v.pid);
+				var skipType = self.programTypes.some(function (vv) { return vv.ptid == v.id; });
+				var options = {sid: v.id, programType: v.programType, skipType: !!skipType};
 				self.crawlEpisodes(options, function (e3, d3) {
-					v.number_of_episodes = parseInt(d3) || 0;
+					v.number_of_episodes = parseInt(d3.length) || 0;
 					v.paymentPlans = self.getBot('Payment').findPlan(v.type);
-					if(self.programTypes.some(function (vv) { return vv.ptid == v.id; })) { return done(); }
+					v.programs = d3;
+					if(skipType) { return done(); }
 					v = descProgram(v, true);
 					// collect series of plan
 					v.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: v.pid}) });
@@ -899,11 +970,12 @@ Bot.prototype.crawlSeries = function (options, cb) {
 				});
 			});
 			if(d1.length == limit) {
-				todo++;
 				page++;
 				crawlByPage(page);
 			}
-			done();
+			else {
+				done();
+			}
 		});
 	};
 	crawlByPage(1);
@@ -912,10 +984,25 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 	if(!options.sid) { cb(null, 0); }
 	var self = this;
 	var tmpUrl = url.resolve(this.config.resourceAPI, '/api/episodes?show_id=%s&page=%s&limit=%s&token=TEST484863dbb3ce7ca4e080b15b18cd');
+	var todo = 1;
 	var total = 0;
 	var list = [];
 	options = options || {};
+	var done = function () {
+		todo--;
+		if(todo == 0) {
+			list.sort(function(a, b) { return parseInt(a.pid.substr(1)) > parseInt(b.pid.substr(1)); });
+			var pids = list.map(function (v, i) {
+				v.ep = i + 1;
+				var pid = v.pid;
+				self.saveProgram(v, function () {});
+				return pid;
+			});
+			cb(null, pids);
+		}
+	};
 	var crawlByPage = function (page) {
+		todo++;
 		var page = page || 1;
 		var limit = 50;
 		episodesUrl = dvalue.sprintf(tmpUrl, options.sid, page, limit);
@@ -929,22 +1016,27 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 				fulldataURL = dvalue.sprintf(fulldataURL, v.id);
 				fulldataURL = url.parse(fulldataURL);
 				fulldataURL.datatype = 'json';
+				todo++;
 				setTimeout(function () {
 					request(fulldataURL, function (e2, d2) {
 						var tmpData = d2.data;
+						if(!options.skipType) { tmpData.sid = 's' + options.sid; }
 						tmpData.paymentPlans = self.getBot('Payment').findPlan(tmpData.type);
+						tmpData.programType = options.programType;
 						tmpData = descProgram(tmpData, true);
 						// collect episode of plan
 						tmpData.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: tmpData.pid}); });
-						self.saveProgram(tmpData, function () {});
+						list.push(tmpData);
+						done();
 					});
 				}, Math.random() * 1000 * i);
 			});
 			if(d1.data.length == limit) { crawlByPage(++page); }
-			else { cb(null, total); }
+			done();
 		});
 	};
 	crawlByPage(1);
+	done();
 };
 Bot.prototype.saveProgram = function (program, cb) {
 	var condition = {pid: program.pid};
@@ -967,7 +1059,7 @@ Bot.prototype.saveProgram = function (program, cb) {
 Bot.prototype.mergeByPrograms = function(options, cb){
 	var self = this;
 	var collection = self.db.collection('Programs');
-	collection.find({ pid: { $in : options.pids }}).toArray(function(e, programs) {
+	collection.find({ pid: { $in : options.pids }}, {_id: 0}).sort([["ep", 1]]).toArray(function(e, programs) {
 		if(e) { e.code = '01002'; return cb(e); }
 		cb(null, programs);
 	});

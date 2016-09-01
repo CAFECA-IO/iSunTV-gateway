@@ -336,7 +336,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 		if(self.addMailHistory(data.email)) {
 			var content, template = self.getTemplate('mail_signup.html');
 			var tmp = url.parse(self.config.url);
-			var uri = dvalue.sprintf('/register/%s/%s', data.email, data.validcode);
+			var uri = dvalue.sprintf('/register/%s/%s/redirect', data.email, data.validcode);
 			tmp.pathname = path.join(tmp.pathname, uri);
 			data.comfirmURL = url.format(tmp);
 			content = dvalue.sprintf(template, data.email, data.comfirmURL, data.comfirmURL, data.validcode);

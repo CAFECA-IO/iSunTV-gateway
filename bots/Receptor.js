@@ -411,6 +411,22 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// user verification with url
+	this.router.get('/register/:account/:validcode/redirect', function (req, res, next) {
+		var user = {account: req.params.account, validcode: req.params.validcode};
+		var bot = self.getBot('User');
+		bot.emailVerification(user, function (e, d) {
+			res.result.setResult(302);
+			if(e) {
+				var vrsUrl = url.resolve(self.config.frontend, '/zh/validate?result=failed');
+			}
+			else {
+				var vrsUrl = url.resolve(self.config.frontend, '/zh/validate?result=success');
+			}
+			res.result.setData({Location: vrsUrl});
+			next();
+		});
+	});
 	// user login
 	this.router.post('/login', checkHashCash, function (req, res, next) {
 		var user = {account: req.body.account, password: req.body.password};
@@ -735,7 +751,7 @@ Bot.prototype.init = function(config) {
 	this.router.get(['/programtype/:ptid', '/programtype/:ptid/:page', '/programtype/:ptid/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
 		var options = {uid: req.session.uid, ptid: req.params.ptid, page: req.params.page, limit: req.params.limit};
-		bot.listPrgramByType(options, function (e, d) {
+		bot.listProgramByType(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -768,11 +784,8 @@ Bot.prototype.init = function(config) {
 	// GET Program
 	this.router.get('/program/:pid', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
-		var program = {
-			type: req.params.pid.substr(0, 1).toLowerCase(),
-			id: req.params.pid.substr(1)
-		};
-		var callbackFunction = function (e, d) {
+		var options = {pid: req.params.pid, uid: req.session.uid};
+		bot.getProgramFromDB(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
@@ -783,21 +796,24 @@ Bot.prototype.init = function(config) {
 				res.result.setData(d);
 			}
 			next();
-		}
-
-		switch(program.type) {
-			case 's':
-				var options = {sid: program.id, uid: req.session.uid};
-				bot.getSeriesProgram(options, callbackFunction);
-				break;
-			case 'e':
-				var options = {eid: program.id, uid: req.session.uid};
-				bot.getEpisodeProgram(options, callbackFunction);
-				break;
-			default:
-				var options = {eid: program.id, uid: req.session.uid};
-				bot.getEpisodeProgram(options, callbackFunction);
-		}
+		});
+	});
+	// GET Program Play Data
+	this.router.get('/program/:pid/playdata', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {pid: req.params.pid, uid: req.session.uid};
+		bot.getProgramPlayData(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Play Data:', req.params.pid);
+				res.result.setData(d);
+			}
+			next();
+		});
 	});
 
 	// GET Latest Programs
@@ -986,7 +1002,7 @@ Bot.prototype.init = function(config) {
 		var options = {
 			uid: req.session.uid,
 			pid: req.params.pid,
-			record: req.sessionID,
+			record: req.token || req.sessionID,
 			timing: req.body.timing,
 			is_finished: req.body.is_finished,
 		};
@@ -1175,7 +1191,10 @@ Bot.prototype.filter = function (req, res, next) {
 	var auth = req.headers.authorization;
 	var token = !!auth? auth.split(" ")[1]: '';
 	bot.checkToken(token, function (e, d) {
-		if(!!d) { req.session.uid = d.uid; }
+		if(!!d) {
+			req.session.uid = d.uid;
+			req.token = token;
+		}
 		next();
 	});
 };
