@@ -413,9 +413,14 @@ Bot.prototype.getProfile = function (options, cb) {
 Bot.prototype.getUserPhoto = function (options, cb) {
 	options = dvalue.default(options, {uid: 'default'});
 	var f = path.join(this.config.path.profiles, options.uid);
+	var defaultImg = fs.readFileSync('./resources/default_avatar.png');
 	fs.readFile(f, function (e, d) {
-		if(e) { cb(e); }
-		else { cb(null, {mimetype: 'image/png', binary: d}); }
+		if(e) {
+			cb(null, {mimetype: 'image/png', binary: defaultImg});
+		}
+		else {
+			cb(null, {mimetype: 'image/png', binary: d});
+		}
 	});
 };
 
