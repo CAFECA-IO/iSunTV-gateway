@@ -899,16 +899,29 @@ Bot.prototype.loadCustomData = function(query, cb){
 		is_favored : false,
 		playback_time_at : 0,
 	}
-
 	// Get is_favored from Favorite
 	self.db.collection('Favorites').findOne(query, {}, function(e, favorite){
 		data.is_favored = favorite ? true : false;
 
-		// Get playback_time_at from Favorite
-		self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
-			data.playback_time_at = program ? program.timing : 0;
-			cb(null, data);
-		});
+		//--
+		if(new RegExp('^s').test(query.pid)) {
+			self.db.collection('Programs').find({sid: query.pid, type: 'episode'}).toArray(function (e, d) {
+				d = d || [];
+				data.lastWatch = {
+					pid: d[0].pid,
+					timing: parseInt(Math.random() * 100)
+				};
+				cb(null, data);
+			});
+
+		}
+		else {
+			// Get playback_time_at from Favorite
+			self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
+				data.playback_time_at = program ? program.timing : 0;
+				cb(null, data);
+			});
+		}
 	});
 };
 
