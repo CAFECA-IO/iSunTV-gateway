@@ -678,6 +678,15 @@ Bot.prototype.autoRenew = function (options, cb) {
 };
 
 /* require: options.uid */
+Bot.prototype.cancelSubscribe = function (options, cb) {
+	var collection = this.db.collection('Tickets');
+	var condition = {uid: options.uid};
+	collection.find(condition).toArray(function (e, d) {
+		
+	});
+};
+
+/* require: options.uid */
 Bot.prototype.fetchUserTickets = function (options, cb) {
 	var collection = this.db.collection('Tickets');
 	var condition = {uid: options.uid, expire: {$gt: new Date().getTime()}};
@@ -743,6 +752,15 @@ Bot.prototype.checkPlayable = function (options, cb) {
 /* require: options.uid, options.pid */
 Bot.prototype.useTicketByProgram = function (options, cb) {
 	var e = new Error('resource access denied'); e.code = '69201'; return cb(e);
+};
+
+/* do not require any input */
+Bot.prototype.listPaymentPlans = function (options, cb) {
+	var collection = this.db.collection("PaymentPlans");
+	collection.find({type: 3, enable: true}, {_id: 0, programs: 0}).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		return cb(null, d);
+	});
 };
 
 module.exports = Bot;

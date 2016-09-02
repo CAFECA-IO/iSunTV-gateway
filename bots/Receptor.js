@@ -1124,6 +1124,22 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	
+	this.router.get('/paymentplans/', function (req, res, next) {
+		var options = {};
+		self.getBot('Payment').listPaymentPlans(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('list payment plans:', options.oid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {
