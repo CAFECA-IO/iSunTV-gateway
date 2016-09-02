@@ -596,8 +596,8 @@ Bot.prototype.getProgramPlayData = function (options, cb) {
 			var opts2 = {uid: options.uid, pid: d1.sid};
 			self.getProgramFromDB(opts2, function (e2, d2) {
 				if(e2) { return cb(e2); }
-				d2.selected = d1.ep - 1;
-				d2.stream = d2.programs[d2.selected].stream;
+				d1.selected = d1.ep - 1;
+				d1.programs = d2.programs;
 				return cb(null, d2);
 			});
 		}
