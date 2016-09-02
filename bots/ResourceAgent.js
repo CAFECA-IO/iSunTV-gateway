@@ -599,6 +599,7 @@ Bot.prototype.getProgramPlayData = function (options, cb) {
 				d1.selected = d1.ep - 1;
 				d1.programs = d2.programs;
 				d1.type = d2.type;
+				d1.number_of_episodes = d2.number_of_episodes;
 				return cb(null, d1);
 			});
 		}
