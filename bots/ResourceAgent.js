@@ -598,7 +598,8 @@ Bot.prototype.getProgramPlayData = function (options, cb) {
 				if(e2) { return cb(e2); }
 				d1.selected = d1.ep - 1;
 				d1.programs = d2.programs;
-				return cb(null, d2);
+				d1.type = d2.type;
+				return cb(null, d1);
 			});
 		}
 		else {
@@ -678,8 +679,10 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	var self = this;
 	var page = Number(options.page);
 	var limit = Number(options.limit);
+	var skip;
 	page = page >= 1 ? page: 1;
 	limit = limit > 0 ? limit: 12;
+	skip = (page - 1) * limit;
 	var latestUrl = url.parse(url.resolve(this.config.resourceAPI, '/api/latest'));
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res) {
@@ -687,6 +690,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		// merge db data
 		var programs = descProgram(res.data);
+		programs = programs.splice(skip, limit);
 		var pids = programs.map(function (v) { return v.pid; });
 		self.mergeByPrograms({pids: pids}, function (e2, d2) {
 			// merge payment and playable fields
@@ -895,16 +899,29 @@ Bot.prototype.loadCustomData = function(query, cb){
 		is_favored : false,
 		playback_time_at : 0,
 	}
-
 	// Get is_favored from Favorite
 	self.db.collection('Favorites').findOne(query, {}, function(e, favorite){
 		data.is_favored = favorite ? true : false;
 
-		// Get playback_time_at from Favorite
-		self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
-			data.playback_time_at = program ? program.timing : 0;
-			cb(null, data);
-		});
+		//--
+		if(new RegExp('^s').test(query.pid)) {
+			self.db.collection('Programs').find({sid: query.pid, type: 'episode'}).toArray(function (e, d) {
+				d = d || [];
+				data.lastWatch = {
+					pid: d[0].pid,
+					timing: parseInt(Math.random() * 100)
+				};
+				cb(null, data);
+			});
+
+		}
+		else {
+			// Get playback_time_at from Favorite
+			self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
+				data.playback_time_at = program ? program.timing : 0;
+				cb(null, data);
+			});
+		}
 	});
 };
 
@@ -1012,7 +1029,7 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 			if(!Array.isArray(d1.data)) { cb(null, total); }
 			total += d1.data.length;
 			d1.data.map(function (v, i) {
-				var fulldataURL = url.resolve(self.config.resourceAPI, '/api/episode?id=%s&token=TEST484863dbb3ce7ca4e080b15b18c');
+				var fulldataURL = url.resolve(self.config.resourceAPI, '/api/episode?id=%s&token=TEST484863dbb3ce7ca4e080b15b18cd');
 				fulldataURL = dvalue.sprintf(fulldataURL, v.id);
 				fulldataURL = url.parse(fulldataURL);
 				fulldataURL.datatype = 'json';
