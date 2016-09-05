@@ -75,7 +75,7 @@ var formatOrder = function (data) {
 };
 var descOrder = function (data) {
 	if(Array.isArray(data)) { return data.map(descOrder); }
-	data.oid = data._id.toString();
+	data.oid = data._id;
 	delete data._id;
 	return data;
 };
@@ -99,6 +99,21 @@ var formatTicket = function (data) {
 		atime: data.atime || now
 	};
 	return ticket;
+};
+
+var descBill = function (data) {
+	if(Array.isArray(data)) { return data.map(descBill); }
+	data.receipt = data.receipt || {};
+	var bill = {
+		oid: data._id.toString(),
+		ppid: data.ppid,
+		pid: data.pid,
+		gateway: data.receipt.gateway,
+		fee: data.fee,
+		ctime: data.ctime,
+		mtime: data.mtime
+	};
+	return bill;
 };
 
 var isPlayable = function (rule, pid) {
@@ -334,12 +349,14 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 /* require: options.uid */
 Bot.prototype.fillVIPInformation = function (options, cb) {
 	var self = this;
+	var status = ['subscribe', 'cancel', 're-subscribe'];
 	var subcribeOptions = {uids: [options.uid]};
 	this.fetchSubscribeTickets(subcribeOptions, function (e, d) {
 		if(e) { return cb(e); }
 		if(!Array.isArray(d) || d.length == 0) {
 			var pp = self.plans.find(function (v) { return v.type == 3; });
 			options.paymentstatus = {
+				status: status[0],
 				gateway: 'free',
 				ppid: pp.ppid,
 				fee: pp.fee,
@@ -353,6 +370,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
 			options.paymentstatus = {
+				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
 				ppid: ticket.ppid,
 				fee: pp.fee,
@@ -561,7 +579,9 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 					collection.findAndModify(condition, {}, updateQuery, {}, function (e2, d2) {
 						if(e2) { e2.code = '01003'; return cb(e2); }
 						else {
-							self.generateTicket(descOrder(dvalue.default(updateQuery.$set, d)), function () {});
+							d._id = options.oid;
+							var ticket = descOrder(dvalue.default(updateQuery.$set, d));
+							self.generateTicket(ticket, function () {});
 							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
 							return cb(null, checkoutResult);
 						}
@@ -615,7 +635,6 @@ Bot.prototype.generateTicket = function (options, cb) {
 		mtime: now,
 		atime: now
 	};
-
 	// ticket detail
 	switch(paymentPlan.type) {
 		case 1:
@@ -630,6 +649,7 @@ Bot.prototype.generateTicket = function (options, cb) {
 		case 3:
 			ticket.programs = paymentPlan.programs;
 			ticket.enable = true;
+			ticket.subscribe = true;
 			break;
 		case 4:
 		case 5:
@@ -675,6 +695,15 @@ Bot.prototype.subscribe = function (options, cb) {
 /* require: options.uid */
 Bot.prototype.autoRenew = function (options, cb) {
 
+};
+
+/* require: options.uid */
+Bot.prototype.cancelSubscribe = function (options, cb) {
+	var collection = this.db.collection('Tickets');
+	var condition = {uid: options.uid};
+	collection.find(condition).toArray(function (e, d) {
+		
+	});
 };
 
 /* require: options.uid */
@@ -743,6 +772,53 @@ Bot.prototype.checkPlayable = function (options, cb) {
 /* require: options.uid, options.pid */
 Bot.prototype.useTicketByProgram = function (options, cb) {
 	var e = new Error('resource access denied'); e.code = '69201'; return cb(e);
+};
+
+/* do not require any input */
+Bot.prototype.listPaymentPlans = function (options, cb) {
+	var collection = this.db.collection("PaymentPlans");
+	collection.find({type: 3, enable: true}, {_id: 0, programs: 0}).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		return cb(null, d);
+	});
+};
+
+/* list Billing */
+// require: uid
+Bot.prototype.billingList = function (options, cb) {
+	options = options || {};
+	var self = this;
+	var collection = this.db.collection("Orders");
+	var condition = {uid: options.uid, receipt: {$exists: true}};
+	collection.find(condition).toArray(function (e1, d1) {
+		if(e1) { e1.code = '01002'; return cb(e1); }
+		var pids = [];
+		var bills = d1.map(function (v) {
+			var bill = descBill(v);
+			if(!!bill.pid) { pids.push(bill.pid); }
+			var plan = self.plans.find(function(vv) { return vv.ppid == v.ppid; });
+			if(plan) {
+				bill.plan = {
+					ppid: plan.ppid,
+					title: plan.title
+				};
+			}
+			return bill;
+		});
+		self.getBot('ResourceAgent').mergeByPrograms({pids: pids}, function (e2, d2) {
+			if(e2) { return cb(e2); }
+			bills.map(function (v, i) {
+				var program = d2.find(function (vv) { return v.pid == vv.pid; });
+				if(program) {
+					bills[i].program = {
+						pid: program.pid,
+						title: program.title
+					};
+				}
+			});
+			cb(null, bills);
+		});
+	});
 };
 
 module.exports = Bot;
