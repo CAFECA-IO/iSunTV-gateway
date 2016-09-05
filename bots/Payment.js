@@ -349,12 +349,14 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 /* require: options.uid */
 Bot.prototype.fillVIPInformation = function (options, cb) {
 	var self = this;
+	var status = ['subscribe', 'cancel', 're-subscribe'];
 	var subcribeOptions = {uids: [options.uid]};
 	this.fetchSubscribeTickets(subcribeOptions, function (e, d) {
 		if(e) { return cb(e); }
 		if(!Array.isArray(d) || d.length == 0) {
 			var pp = self.plans.find(function (v) { return v.type == 3; });
 			options.paymentstatus = {
+				status: status[0],
 				gateway: 'free',
 				ppid: pp.ppid,
 				fee: pp.fee,
@@ -368,6 +370,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
 			options.paymentstatus = {
+				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
 				ppid: ticket.ppid,
 				fee: pp.fee,
@@ -645,6 +648,7 @@ Bot.prototype.generateTicket = function (options, cb) {
 		case 3:
 			ticket.programs = paymentPlan.programs;
 			ticket.enable = true;
+			ticket.subscribe = true;
 			break;
 		case 4:
 		case 5:
@@ -780,7 +784,7 @@ Bot.prototype.listPaymentPlans = function (options, cb) {
 
 /* list Billing */
 // require: uid
-Bot.prototype.listBill = function (options, cb) {
+Bot.prototype.billingList = function (options, cb) {
 	options = options || {};
 	var self = this;
 	var collection = this.db.collection("Orders");

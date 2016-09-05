@@ -1135,23 +1135,23 @@ Bot.prototype.init = function(config) {
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('list payment plans:', options.oid);
+				res.result.setMessage('payment plans list');
 				res.result.setData(d);
 			}
 			next();
 		});
 	});
 	// list bill
-	this.router.get('/payment/bill', checkLogin, function (req, res, next) {
+	this.router.get('/billing/', checkLogin, function (req, res, next) {
 		var options = {uid: req.session.uid};
-		self.getBot('Payment').listBill(options, function (e, d) {
+		self.getBot('Payment').billingList(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('list bill');
+				res.result.setMessage('billing list');
 				res.result.setData(d);
 			}
 			next();
