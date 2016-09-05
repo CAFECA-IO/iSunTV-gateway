@@ -75,7 +75,7 @@ var formatOrder = function (data) {
 };
 var descOrder = function (data) {
 	if(Array.isArray(data)) { return data.map(descOrder); }
-	data.oid = data._id.toString();
+	data.oid = data._id;
 	delete data._id;
 	return data;
 };
@@ -579,7 +579,9 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 					collection.findAndModify(condition, {}, updateQuery, {}, function (e2, d2) {
 						if(e2) { e2.code = '01003'; return cb(e2); }
 						else {
-							self.generateTicket(descOrder(dvalue.default(updateQuery.$set, d)), function () {});
+							d._id = options.oid;
+							var ticket = descOrder(dvalue.default(updateQuery.$set, d));
+							self.generateTicket(ticket, function () {});
 							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
 							return cb(null, checkoutResult);
 						}
@@ -633,7 +635,6 @@ Bot.prototype.generateTicket = function (options, cb) {
 		mtime: now,
 		atime: now
 	};
-
 	// ticket detail
 	switch(paymentPlan.type) {
 		case 1:
