@@ -1125,6 +1125,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	
+	// list payment plan
 	this.router.get('/paymentplans/', function (req, res, next) {
 		var options = {};
 		self.getBot('Payment').listPaymentPlans(options, function (e, d) {
@@ -1135,6 +1136,22 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('list payment plans:', options.oid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// list bill
+	this.router.get('/payment/bill', checkLogin, function (req, res, next) {
+		var options = {uid: req.session.uid};
+		self.getBot('Payment').listBill(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('list bill');
 				res.result.setData(d);
 			}
 			next();

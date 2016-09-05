@@ -101,6 +101,21 @@ var formatTicket = function (data) {
 	return ticket;
 };
 
+var descBill = function (data) {
+	if(Array.isArray(data)) { return data.map(descBill); }
+	data.receipt = data.receipt || {};
+	var bill = {
+		oid: data._id.toString(),
+		ppid: data.ppid,
+		pid: data.pid,
+		gateway: data.receipt.gateway,
+		fee: data.fee,
+		ctime: data.ctime,
+		mtime: data.mtime
+	};
+	return bill;
+};
+
 var isPlayable = function (rule, pid) {
 	if(Array.isArray(rule)) {
 		return rule.some(function (v) { return new RegExp('^' + v + '$').test(pid); });
@@ -760,6 +775,44 @@ Bot.prototype.listPaymentPlans = function (options, cb) {
 	collection.find({type: 3, enable: true}, {_id: 0, programs: 0}).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
 		return cb(null, d);
+	});
+};
+
+/* list Billing */
+// require: uid
+Bot.prototype.listBill = function (options, cb) {
+	options = options || {};
+	var self = this;
+	var collection = this.db.collection("Orders");
+	var condition = {uid: options.uid, receipt: {$exists: true}};
+	collection.find(condition).toArray(function (e1, d1) {
+		if(e1) { e1.code = '01002'; return cb(e1); }
+		var pids = [];
+		var bills = d1.map(function (v) {
+			var bill = descBill(v);
+			if(!!bill.pid) { pids.push(bill.pid); }
+			var plan = self.plans.find(function(vv) { return vv.ppid == v.ppid; });
+			if(plan) {
+				bill.plan = {
+					ppid: plan.ppid,
+					title: plan.title
+				};
+			}
+			return bill;
+		});
+		self.getBot('ResourceAgent').mergeByPrograms({pids: pids}, function (e2, d2) {
+			if(e2) { return cb(e2); }
+			bills.map(function (v, i) {
+				var program = d2.find(function (vv) { return v.pid == vv.pid; });
+				if(program) {
+					bills[i].program = {
+						pid: program.pid,
+						title: program.title
+					};
+				}
+			});
+			cb(null, bills);
+		});
 	});
 };
 
