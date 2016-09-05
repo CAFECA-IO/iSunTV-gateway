@@ -25,5 +25,14 @@ module.exports = {
 		merchantId: '',
 		publicKey: '',
 		privateKey: ''
-	}
+	},
+	ios: {
+		sandBoxUrl: 'https://sandbox.itunes.apple.com/verifyReceipt',
+		productionUrl: 'https://buy.itunes.apple.com/verifyReceipt',
+		password: '',
+		dummyReceptData: '',
+		bundleId: '',
+		productionIds: []
+	},
+	production: false
 };
