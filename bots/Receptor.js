@@ -1124,9 +1124,23 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
-	
+	// cancel subscribe
+	this.router.delete('/subscribe', function (req, res, next) {
+		var options = {uid: req.session.uid};
+		self.getBot('Payment').cancelSubscribe(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('cancel subscribe');
+			}
+			next();
+		});
+	});
 	// list payment plan
-	this.router.get('/paymentplans/', function (req, res, next) {
+	this.router.get('/paymentplans', function (req, res, next) {
 		var options = {};
 		self.getBot('Payment').listPaymentPlans(options, function (e, d) {
 			if(e) {
@@ -1142,7 +1156,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// list bill
-	this.router.get('/billing/', checkLogin, function (req, res, next) {
+	this.router.get('/billing', checkLogin, function (req, res, next) {
 		var options = {uid: req.session.uid};
 		self.getBot('Payment').billingList(options, function (e, d) {
 			if(e) {
