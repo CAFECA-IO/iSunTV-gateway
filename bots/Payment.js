@@ -700,9 +700,11 @@ Bot.prototype.autoRenew = function (options, cb) {
 /* require: options.uid */
 Bot.prototype.cancelSubscribe = function (options, cb) {
 	var collection = this.db.collection('Tickets');
-	var condition = {uid: options.uid};
-	collection.find(condition).toArray(function (e, d) {
-		
+	var condition = {uid: options.uid, type: 3};
+	var updateQuery = {$set: {subscribe: false}};
+	collection.update(condition, updateQuery, {multi: true}, function (e, d) {
+		if(e) { e.code = '01003'; return cb(e); }
+		cb(null, true);
 	});
 };
 
