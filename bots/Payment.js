@@ -779,8 +779,9 @@ Bot.prototype.useTicketByProgram = function (options, cb) {
 /* do not require any input */
 Bot.prototype.listPaymentPlans = function (options, cb) {
 	var collection = this.db.collection("PaymentPlans");
-	collection.find({type: 3, enable: true}, {_id: 0, programs: 0}).toArray(function (e, d) {
+	collection.find({type: 3, enable: true}, {programs: 0}).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
+		d = descPaymentPlan(d);
 		return cb(null, d);
 	});
 };
