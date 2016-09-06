@@ -1171,6 +1171,21 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// survey
+	this.router.post('/survey/:topic', checkLogin, function (req, res, next) {
+		var options = {uid: req.session.uid, topic: req.params.topic, data: req.body};
+		self.getBot('Survey').add(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Thank you for sharing your opinion');
+			}
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {
