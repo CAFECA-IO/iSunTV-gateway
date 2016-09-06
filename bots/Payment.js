@@ -168,8 +168,8 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					duration: 86400 * 1000 * 2
 				},
 				gpid: {
-					braintree: 'SingleRent',
-					iosiap: 'SingleRent'
+					braintree: 'Rent1',
+					iosiap: 'Rent1'
 				}
 			},
 			{
