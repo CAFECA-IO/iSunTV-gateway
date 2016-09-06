@@ -1,14 +1,13 @@
 # iSunTV #
 
 * [API Doc](https://bitbucket.org/tidenet/isuntv-gateway/wiki/browse/API_Doc)
-    * [User API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/User_API(no.0XX))
-    * [Streaming API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Stream_API(no.1XX))
-    * [Comment API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Comment_API(no.2XX))
-    * [Favorite API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Favorite_API(no.3XX))
-    * [Watching API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Watching_API(No.4xx))
-    * [Payment API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Payment_API(no.5XX))
-    * [Receipt API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/Receipt_API(no.6XX))
-    * [TMP API](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/TMP_API(no.1XXX))
+* [User](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_000_User)
+* [Program](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_100_Program)
+* [Comment](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_200_Comment)
+* [Favorite](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_300_Favorite)
+* [Watching](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_400_Watching)
+* [Payment](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_500_Payment)
+* [Survey](https://bitbucket.org/tidenet/isuntv-gateway/wiki/API_Doc/API_600_Survey)
 * [Error Code](https://bitbucket.org/tidenet/isuntv-gateway/wiki/Error)
 
 Web install requires
