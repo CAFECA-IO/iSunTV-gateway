@@ -919,26 +919,46 @@ Bot.prototype.loadCustomData = function(query, cb){
 	var data = {
 		is_favored : false,
 		playback_time_at : 0,
-	}
+	};
+	var findLastWatch = function (record, programs) {
+		var currEP = record? programs.find(function (v) { return v.pid == record.pid; }): programs[0];
+		var lw = {ep: currEP.ep, pid: currEP.pid, timing: 0};
+		if(record) {
+			if(!record.is_finished) {
+				lw.timing = record.timing;
+			}
+			else {
+				var nextEP = programs.find(function (v) { return v.ep == currEP.ep + 1; });
+				if(nextEP) {
+					lw.ep = nextEP.ep;
+					lw.pid = nextEP.pid;
+					lw.timing = 0;
+				}
+				else {
+					lw.timing = record.timing;
+				}
+			}
+		}
+		return lw;
+	};
 	// Get is_favored from Favorite
 	self.db.collection('Favorites').findOne(query, {}, function(e, favorite){
 		data.is_favored = favorite ? true : false;
-
-		//--
 		if(new RegExp('^s').test(query.pid)) {
-			self.db.collection('Programs').find({sid: query.pid, type: 'episode'}).toArray(function (e, d) {
-				d = d || [];
-				data.lastWatch = {
-					pid: d[0].pid,
-					timing: parseInt(Math.random() * 100)
-				};
-				cb(null, data);
+			self.db.collection('Programs').find({sid: query.pid, type: 'episode'}).sort([['ep', 1]]).toArray(function (e1, d1) {
+				if(e1) { e1.code = '01002'; return cb(e1); }
+				var pids = d1.map(function (v) { return v.pid; });
+				var watchingCond = {pid: {$in: pids}};
+				self.db.collection('Watching_programs').find(watchingCond).sort([['atime', -1]]).limit(1).toArray(function (e2, d2) {
+					if(e2) { e2.code = '01002'; return cb(e2); }
+					data.lastWatch = findLastWatch(d2[0], d1);
+					return cb(null, data);
+				});
 			});
-
 		}
 		else {
 			// Get playback_time_at from Favorite
-			self.db.collection('Watching_programs').findOne(query, {}, function(e, program){
+			self.db.collection('Watching_programs').findOne(query, {}, function (e, program) {
 				data.playback_time_at = program ? program.timing : 0;
 				cb(null, data);
 			});
