@@ -343,4 +343,31 @@ Bot.prototype.listUserComments = function (options, cb) {
 	});
 };
 
+// fill rating data
+// require: programs
+Bot.prototype.fillRatingData = function (options, cb) {
+	var self = this;
+	var collection = this.db.collection('Comments');
+	var index = {};
+	var pids = options.programs.map(function (v, i) {
+		options.programs[i].rating = {average: 0, count: [0, 0, 0, 0, 0], total: 0};
+		index[v.pid] = i;
+		return v.pid;
+	});
+	var condition = {pid: {$in: pids}};
+	collection.find(condition, {uid: 1, pid: 1, rating: 1}).toArray(function(e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		d.map(function (v) {
+			var i = index[v.pid];
+			var r = (v.rating > 0 && v.rating <= 5)? parseInt(v.rating): 1;
+			options.programs[i].rating.count[r - 1]++;
+			options.programs[i].rating.total++;
+		});
+		options.programs.map(function (v, i) {
+			options.programs[i].rating.average = v.rating.count.reduce(function (pre, curr, i) { return pre + (curr * i); }, 0);
+		});
+		return cb(null, options.programs);
+	});
+}
+
 module.exports = Bot;
