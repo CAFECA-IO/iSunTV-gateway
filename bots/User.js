@@ -17,6 +17,7 @@ var ResetLife = 86400000;
 var historyPeriod = 1800000;
 
 var logger;
+var APIURL;
 
 var CRCTable = (function() {
 	var c = 0, table = new Array(256);
@@ -92,6 +93,7 @@ var descUser = function (user) {
 	if(user.username.length == 0) { user.username = user.email; }
 	if(user.email.length == 0 && user.emails.length > 0) { user.email = user.emails[0]; }
 	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
+	if(user.photo.length == 0) { user.photo = url.resolve(APIURL, '/profile/' + user.uid + '/photo'); }
 	user.password = user.password && user.password.length > 0;
 	delete user._id;
 	delete user.emails;
