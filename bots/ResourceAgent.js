@@ -859,7 +859,8 @@ Bot.prototype.fetchRelativePrograms = function (options, cb) {
 			d2.map(function (v) {
 				if(v.pid != options.pid && v.sid != options.pid) { rs.push(v); }
 			});
-			cb(null, rs);
+			var opts = {uid: options.uid, programs: rs};
+			self.getBot('Comment').fillRatingData(opts, cb);
 		});
 	});
 };
