@@ -119,9 +119,8 @@ Bot.prototype.listFavorite = function (options, cb) {
 	// page and limit
 	var pageOpt = Number(options.page);
 	var limitOpt = Number(options.limit);
-	var skip = pageOpt ? (pageOpt - 1) * limit : 0;
 	var limit = limitOpt ? limitOpt : 0;
-
+	var skip = pageOpt ? (pageOpt - 1) * limit : 0;
 	collection.find(query).skip(skip).limit(limit).sort(sort).toArray(function (e, favorites) {
 		if(e) { e.code = '01002'; return cb(e); }
 
