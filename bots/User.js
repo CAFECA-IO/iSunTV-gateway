@@ -133,6 +133,7 @@ util.inherits(Bot, ParentBot);
 Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
 	logger = config.logger;
+	APIURL = config.url;
 	this.mailHistory = {};
 	this.loginHistory = {};
 	this.verifyHistory = {};

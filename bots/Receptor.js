@@ -781,6 +781,23 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// Relative Program
+	this.router.get(['/relative/:pid'], checkHashCash, function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {pid: req.params.pid, uid: req.session.uid};
+		bot.fetchRelativePrograms(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('relative programs');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 	// GET Program
 	this.router.get('/program/:pid', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
