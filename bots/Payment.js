@@ -563,7 +563,8 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 	var condition = {_id: new mongodb.ObjectID(options.oid)};
 	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!d) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
+		else if(!d) { e = new Error('order not found'); e.code = '39701'; return cb(e); }
+		else if(!!d.receipt) { e = new Error('duplicate payment'); e.code = '97001'; return cb(e); }
 		else {
 			options.fee = d.fee;
 			self.fetchTransactionDetail(options, function (e1, d1) {
@@ -608,7 +609,7 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 				  submitForSettlement: true
 				}
 			}, function (e, result) {
-				if(e || !result.success) { e = new Error('payment failed'); e.code = '17201'; cb(e); }
+				if(e || !result.success) { e = new Error('payment failed'); e.code = '87201'; cb(e); }
 				else {
 					self.createBrainTreeID(options, function () {});
 					cb(null, result);

@@ -845,6 +845,25 @@ Bot.prototype.searchPrograms = function (options, cb) {
 	});
 };
 
+// get relative programs
+// require: pid
+// optional: uid
+Bot.prototype.fetchRelativePrograms = function (options, cb) {
+	var self = this;
+	this.getProgramFromDB(options, function (e1, d1) {
+		if(e1) { return cb(e1); }
+		options.keyword = d1.title.substr(0, 2);
+		self.searchPrograms(options, function (e2, d2) {
+			if(e2) { return cb(e2); }
+			var rs = [];
+			d2.map(function (v) {
+				if(v.pid != options.pid && v.sid != options.pid) { rs.push(v); }
+			});
+			cb(null, rs);
+		});
+	});
+};
+
 //listRentPrograms
 // require: uid
 // optional: page, limit
