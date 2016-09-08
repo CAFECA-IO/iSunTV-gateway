@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const raid2x = require('raid2x');
 const dvalue = require('dvalue');
 const textype = require('textype');
+const request = require('../utils/Crawler.js').request;
 
 var tokenLife = 86400000;
 var renewLife = 8640000000;
@@ -384,6 +385,12 @@ Bot.prototype.emailVerification = function (user, cb) {
 		if(e) { e.code = '01003'; cb(e); }
 		else if(!d.value) { e = new Error('incorrect code'); e.code = '10301'; cb(e); }
 		else {
+			var notice = {
+				uid: d.value._id.toString(),
+				event: 'verify',
+				data: {result: 1}
+			};
+			self.notice(notice, function () {});
 			self.cleanVerifyHistory(user.account);
 			self.cleanInvalidAccount(condition, function () {});
 			self.createToken(d.value, cb);
@@ -992,6 +999,19 @@ Bot.prototype.encryptPassword = function (password) {
 	var md5sum = crypto.createHash('md5');
 	md5sum.update(password).update(salt);
 	return md5sum.digest('hex');
+};
+
+// require: uid, event, data
+Bot.prototype.notice = function (options, cb) {
+	var reqopts;
+	var noticeURL = url.resolve(this.config.notice, '/notice/%s/%s');
+	noticeURL = dvalue.sprintf(noticeURL, options.uid, options.event);
+	reqopts = url.parse(noticeURL);
+	reqopts.method = 'POST';
+	reqopts.datatype = 'json';
+	reqopts.post = options.data;
+	reqopts.headers = {'Content-Type': 'application/json'};
+	request(reqopts, cb);
 };
 
 module.exports = Bot;
