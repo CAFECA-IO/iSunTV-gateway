@@ -860,7 +860,14 @@ Bot.prototype.fetchRelativePrograms = function (options, cb) {
 				if(v.pid != options.pid && v.sid != options.pid) { rs.push(v); }
 			});
 			var opts = {uid: options.uid, programs: rs};
-			self.getBot('Comment').fillRatingData(opts, cb);
+			self.getBot('Comment').fillRatingData(opts, function (e3, d3) {
+				if(e3) { return cb(e3); }
+				var opts2 = {uid: options.uid, programs: d3};
+				self.getBot('Payment').fillPaymentInformation(opts2, function (e4, d4) {
+					if(e4) { return cb(e4); }
+					else { return cb(null, d4); }
+				});
+			});
 		});
 	});
 };
