@@ -133,7 +133,8 @@ Bot.prototype.listFavorite = function (options, cb) {
 					var fav = dvalue.search(favorites, {pid: v.pid});
 					if(fav) { programs[i].add_to_favorite = fav.ctime; }
 				});
-				return cb(null, programs);
+				var FPIoptions = {uid: options.uid, programs: programs};
+				self.getBot('Payment').fillPaymentInformation(FPIoptions, cb);
 			}
 		});
 	});
