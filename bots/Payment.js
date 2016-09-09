@@ -361,6 +361,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				ppid: pp.ppid,
 				fee: pp.fee,
 				expire: 0,
+				trial: 0,
 				next_charge: 0
 			};
 			return cb(null, options);
@@ -375,8 +376,10 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				ppid: ticket.ppid,
 				fee: pp.fee,
 				expire: ticket.expire,
+				trial: 0,
 				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: ticket.expire
 			};
+			if(ticket.trial > now) { options.paymentstatus.trial = ticket.trial; }
 			return cb(null, options);
 		}
 	});
