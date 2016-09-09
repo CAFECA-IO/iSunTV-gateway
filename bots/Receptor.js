@@ -1158,7 +1158,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// cancel subscribe
-	this.router.delete('/subscribe', function (req, res, next) {
+	this.router.delete('/subscribe', checkLogin, function (req, res, next) {
 		var options = {uid: req.session.uid};
 		self.getBot('Payment').cancelSubscribe(options, function (e, d) {
 			if(e) {

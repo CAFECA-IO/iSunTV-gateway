@@ -928,7 +928,7 @@ Bot.prototype.loadCustomData = function(query, cb){
 		playback_time_at : 0,
 	};
 	var findLastWatch = function (record, programs) {
-		var currEP = record? programs.find(function (v) { return v.pid == record.pid; }): programs[0];
+		var currEP = record? (programs.find(function (v) { return v.pid == record.pid; }) || programs[0]): programs[0];
 		var lw = {ep: currEP.ep, pid: currEP.pid, timing: 0};
 		if(record) {
 			if(!record.is_finished) {
