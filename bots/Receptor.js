@@ -645,6 +645,22 @@ Bot.prototype.init = function(config) {
 	});
 
 	/* program */
+	// list PIDs
+	this.router.get('/program/', checkHashCash, function (req, res, next) {
+		self.getBot('ResourceAgent').listPID({}, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Program List');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+
 	// Banner programs
 	this.router.get(['/banner', '/banner/:page', '/banner/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
