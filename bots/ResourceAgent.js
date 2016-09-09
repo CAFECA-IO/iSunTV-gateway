@@ -1114,6 +1114,14 @@ Bot.prototype.saveProgram = function (program, cb) {
 	});
 };
 
+Bot.prototype.listPID = function (options, cb) {
+	var collection = this.db.collection('Programs');
+	collection.distinct('pid', function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		cb(null, d);
+	});
+};
+
 
 
 /**
