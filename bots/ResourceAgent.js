@@ -1118,7 +1118,11 @@ Bot.prototype.listPID = function (options, cb) {
 	var collection = this.db.collection('Programs');
 	collection.distinct('pid', function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		cb(null, d);
+		var programs = {
+			episode: d.filter(function (v) { return /^e/.test(v); }),
+			series: d.filter(function (v) { return /^s/.test(v); })
+		};
+		cb(null, programs);
 	});
 };
 
