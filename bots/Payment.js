@@ -90,8 +90,9 @@ var formatTicket = function (data) {
 		uid: data.uid,
 		ppid: data.ppid,
 		programs: data.programs,
-		enable: false,
+		enable: !!data.enable,
 		expire: data.expire,
+		trial: data.trial || 0,
 		duration: data.duration,
 		subscribe: !!data.subscribe,
 		ctime: data.ctime || now,
@@ -377,7 +378,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				fee: pp.fee,
 				expire: ticket.expire,
 				trial: 0,
-				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: ticket.expire
+				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: (ticket.trial > now? ticket.trial: ticket.expire)
 			};
 			if(ticket.trial > now) { options.paymentstatus.trial = ticket.trial; }
 			return cb(null, options);
@@ -570,6 +571,8 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 		else if(!!d.receipt) { e = new Error('duplicate payment'); e.code = '97001'; return cb(e); }
 		else {
 			options.fee = d.fee;
+			options.type = d.type;
+			options.clientToken = d.clientToken;
 			self.fetchTransactionDetail(options, function (e1, d1) {
 				if(e1) { return cb(e1); }
 				else {
@@ -584,6 +587,7 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 						if(e2) { e2.code = '01003'; return cb(e2); }
 						else {
 							d._id = options.oid;
+							d.trial = d1.trial;
 							var ticket = descOrder(dvalue.default(updateQuery.$set, d));
 							self.generateTicket(ticket, function () {});
 							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
@@ -595,29 +599,34 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 		}
 	});
 };
-/* require: options.gateway, options.nonce, options.fee */
+/* require: options.gateway, options.nonce, options.fee, options.clientToken, options.type, options.uid */
 /* gateway: braintree, iosiap */
 Bot.prototype.fetchTransactionDetail = function (options, cb) {
 	var self = this;
 	switch(options.gateway) {
-		case 'ios':
+		case 'iosiap':
 			cb(null, {detail: "ok, cool"});
 			break;
 		case 'braintree':
 		default:
-			this.gateway.transaction.sale({
-				amount: options.fee.price,
-				paymentMethodNonce: options.nonce,
-				options: {
-				  submitForSettlement: true
-				}
-			}, function (e, result) {
-				if(e || !result.success) { e = new Error('payment failed'); e.code = '87201'; cb(e); }
-				else {
-					self.createBrainTreeID(options, function () {});
-					cb(null, result);
-				}
-			});
+			if(options.type = 3) {
+				self.subscribe(options, cb)
+			}
+			else {
+				this.gateway.transaction.sale({
+					amount: options.fee.price,
+					paymentMethodNonce: options.nonce,
+					options: {
+					  submitForSettlement: true
+					}
+				}, function (e, result) {
+					if(e || !result.success) { e = new Error('payment failed'); e.code = '87201'; cb(e); }
+					else {
+						self.createBrainTreeID(options, function () {});
+						cb(null, result);
+					}
+				});
+			}
 	}
 };
 
@@ -651,6 +660,10 @@ Bot.prototype.generateTicket = function (options, cb) {
 			ticket.programs = paymentPlan.programs;
 			break;
 		case 3:
+			if(options.trial > now) {
+				ticket.expire = options.trial + paymentPlan.ticket.expire;
+				ticket.trial = options.trial;
+			}
 			ticket.programs = paymentPlan.programs;
 			ticket.enable = true;
 			ticket.subscribe = true;
@@ -693,6 +706,78 @@ Bot.prototype.renewVIP = function (options, cb) {
 
 /* require: options.uid */
 Bot.prototype.subscribe = function (options, cb) {
+	var self = this;
+
+	// check if already subscribe
+	if(!textype.isObjectID(options.uid)) { var e = new Error('user not found'); e.code = '39102'; return cb(e); }
+	var Tickets = this.db.collection('Tickets');
+	var condition = {uid: options.uid, type: 3};
+	Tickets.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(d.some(function (v) { return v.subscribe; })) { e = new Error('duplicate subscribe'); e.code = '97002'; return cb(e); }
+
+		// caculate remain VIP duration
+		var now = new Date().getTime();
+		var plus = d.reduce(function (pre, curr) { return (curr.expire - now) > pre? (curr.expire - now): pre; }, 0);
+		if(d.length > 0 && plus == 0) {
+			options.trial = {
+				trialPeriod: false,
+				trialDuration: 0
+			};
+		}
+		else if(plus > 0) {
+			options.trial = {
+				trialPeriod: true,
+				trialDuration: plus
+			};
+		}
+
+		switch(options.gateway) {
+			case 'iosiap':
+				self.subscribeIOSIAP(options, cb);
+				break;
+
+			case 'braintree':
+			default:
+				self.subscribeBraintree(options, cb);
+		}
+	});
+};
+
+Bot.prototype.subscribeBraintree = function (options, cb) {
+	var self = this;
+	self.createBrainTreeID(options, function (e1, d1) {
+		if(e1) { e.code = '87201'; return cb(e1); }
+		self.gateway.customer.find(d1, function(e2, customer) {
+			if(e2) { e.code = '87201'; return cb(e2); }
+			else if(!customer.paymentMethods || !customer.paymentMethods[0]) { e2 = new Error('payment failed'); e2.code = '87201'; return cb(e2) }
+			var subscribeOptions = {
+				paymentMethodToken: customer.paymentMethods[0].token,
+				planId: "MonthVIP"
+			};
+			if(options.trial) {
+				var trialDuration = parseInt(options.trial.trialDuration / 86400000);
+				subscribeOptions.trialPeriod = !!options.trial.trialPeriod;
+				if(options.trial.trialDuration) {
+					subscribeOptions.trialDuration = trialDuration < 0? 0: trialDuration;
+				}
+			}
+
+			self.gateway.subscription.create(subscribeOptions, function (e3, d3) {
+				if(e3) { e3.code = '87201'; return cb(e3); }
+				else if(!d3.success) { e3 = new Error('payment failed'); e3.code = '87201'; return cb(e3); }
+				else {
+					try {
+						d3.trial = new Date(d3.subscription.firstBillingDate).getTime();
+					}
+					catch(e) {}
+					return cb(null, d3);
+				}
+			});
+		});
+	});
+};
+Bot.prototype.subscribeIOSIAP = function (options, cb) {
 
 };
 
@@ -703,11 +788,17 @@ Bot.prototype.autoRenew = function (options, cb) {
 
 /* require: options.uid */
 Bot.prototype.cancelSubscribe = function (options, cb) {
+	var now = new Date().getTime();
 	var collection = this.db.collection('Tickets');
-	var condition = {uid: options.uid, type: 3};
-	var updateQuery = {$set: {subscribe: false}};
-	collection.update(condition, updateQuery, {multi: true}, function (e, d) {
-		if(e) { e.code = '01003'; return cb(e); }
+	var condition = {uid: options.uid, type: 3, subscribe: true};
+	collection.find(condition).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		d.map(function (v) {
+			var cond = {_id: v._id};
+			var updateQuery = {$set: {subscribe: false}};
+			if(v.trial > now) { updateQuery.$set.expire = v.trial; }
+			collection.findAndModify(cond, {}, updateQuery, {}, function () {});
+		});
 		cb(null, true);
 	});
 };
