@@ -1184,7 +1184,7 @@ Bot.prototype.init = function(config) {
 	// checkout
 	this.router.post(['/checkout', '/checkout/:gateway'], checkLogin, function (req, res, next) {
 		var bot = self.getBot('Payment');
-		var options = {uid: req.session.uid, oid: req.body.oid, ppid: req.body.ppid, pid: req.body.pid, nonce: req.body.nonce || req.body.payment_method_nonce, gateway: req.params.gateway};
+		var options = {uid: req.session.uid, oid: req.body.oid, ppid: req.body.ppid, pid: req.body.pid, nonce: req.body.nonce || req.body.payment_method_nonce, gateway: req.params.gateway, receipt: req.body.receipt, transaction: req.body.transaction};
 		bot.checkoutTransaction(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);
@@ -1211,6 +1211,22 @@ Bot.prototype.init = function(config) {
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('cancel subscribe');
+			}
+			next();
+		});
+	});
+	// subscribe manual renew
+	this.router.post(['/subscribe/renew', '/subscribe/renew/:gateway'], checkLogin, function (req, res, next) {
+		var options = {uid: req.session.uid, gateway: req.params.gateway, receipt: req.body.receipt, transaction: req.body.transaction};
+		self.getBot('Payment').manualRenew(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('renew subscribe');
 			}
 			next();
 		});
