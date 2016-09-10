@@ -1,9 +1,12 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
+const url = require('url');
 const mongodb = require('mongodb');
 const braintree = require('braintree');
 const dvalue = require('dvalue');
 const textype = require('textype');
+
+const request = require('../utils/Crawler.js').request;
 
 const defaultPeriod = 86400 * 1000 * 30;
 const trialPeriod = 86400  * 1000 * 7;
@@ -556,6 +559,7 @@ Bot.prototype.order = function (options, cb) {
 };
 
 /* require: options.nonce, options.oid, options.uid, options.gateway */
+/* optional: options.transaction */
 /* gateway: braintree, iosiap */
 Bot.prototype.checkoutTransaction = function (options, cb) {
 	var self = this;
@@ -564,7 +568,33 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 	// for iOS IAP
 	if(options.gateway == 'iosiap') {
 		self.fetchTransactionDetail(options, function (e1, d1) {
+			if(e1) { return cb(e1); }
+			else {
+				var now = new Date().getTime();
+				var receipt = {
+					nonce: options.nonce,
+					gateway: options.gateway,
+					detail: d1
+				};
+				var condition = {_id: d1.order.oid};
+				var updateQuery = {$set: {receipt: receipt, mtime: now, atime: now}};
+				self.db.collection('Orders').findAndModify(condition, {}, updateQuery, {}, function (e2, d2) {
+					if(e2) { e2.code = '01003'; return cb(e2); }
+					else if(!d2.value) { e2 = new Error('Order not found'); e2.code = '39701'; return cb(e2); }
+					else {
+						d2.value._id = options.oid;
+						d2.value.trial = d1._trial;
+						d2.value.charge = d1._charge
+						d2.value.subscribe = d1._subscribe;
+						var ticket = descOrder(dvalue.default(updateQuery.$set, d2.value));
+						self.generateTicket(ticket, function () {});
+						var checkoutResult = {gateway: receipt.gateway, fee: d2.value.fee};
+						return cb(null, checkoutResult);
+					}
+				});
+			}
 		});
+		return;
 	}
 
 	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
@@ -591,6 +621,7 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 					var updateQuery = {$set: {receipt: receipt, mtime: now, atime: now}};
 					collection.findAndModify(condition, {}, updateQuery, {}, function (e2, d2) {
 						if(e2) { e2.code = '01003'; return cb(e2); }
+						else if(!d2.value) { e2 = new Error('Order not found'); e2.code = '39701'; return cb(e2); }
 						else {
 							d._id = options.oid;
 							d.trial = d1._trial;
@@ -613,12 +644,68 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 	var self = this;
 	switch(options.gateway) {
 		case 'iosiap':
-			cb(null, {detail: "ok, cool"});
+			var verifiedUrl = this.config.production? this.config.ios.productionUrl: this.config.ios.sandBoxUrl;
+			var requestOptions = url.parse(verifiedUrl);
+			requestOptions.method = 'POST';
+			requestOptions.post = {'password': this.config.ios.password, 'receipt-data': options.nonce};
+			requestOptions.datatype = 'json';
+			requestOptions.headers = {'Content-Type': 'application/json', 'Content-Length': JSON.stringify(requestOptions.post).length};
+			request(requestOptions, function (e, d) {
+				var rs = d.data, gpid, ppid;
+				if(e) { e.code = '54001'; return cb(e); }
+				else if(rs.status != 0) { e = new Error('payment failed'); e.code = '87201'; return cb(e); }
+				else {
+					// find current receipt
+					var receipt;
+					rs.receipt.in_app.map(function (v) {
+						if(v.original_transaction_id == options.transaction) {
+							if(receipt && receipt.purchase_date_ms > v.purchase_date_ms) { return; }
+							receipt = v;
+						}
+					});
+					rs.latest_receipt_info.map(function (v) {
+						if(v.original_transaction_id == options.transaction) {
+							if(receipt && receipt.purchase_date_ms > v.purchase_date_ms) { return; }
+							receipt = v;
+						}
+					});
+					if(!receipt) { e = new Error('payment failed'); e.code = '87201'; return cb(e); }
+					gpid = receipt.product_id;
+					// find payment plan
+					var condition = {'gpid.iosiap': gpid, enable: true};
+					self.db.collection('PaymentPlans').findOne(condition, {}, function (e1, d1) {
+						if(e1) { e1.code = '01002'; return cb(e1); }
+						else if(!d1) { e1 = new Error('Payment Plan not found'); e1.code = '39801'; return cb(e1); }
+						else {
+							ppid = d1._id.toString();
+							type = d1.type;
+							// make order
+							var orderOptions = {
+								uid: options.uid,
+								ppid: ppid
+							};
+							if(!!options.pid) { orderOptions.pid = optoins.pid; }
+							self.order(orderOptions, function (e2, d2) {
+								if(e2) { cb(e2); }
+								receipt.order = d2;
+								if(type == 3) {
+									var subscribeOPTS = {uid: options.uid, gateway: options.gateway, receipt: receipt};
+									self.subscribe(subscribeOPTS, cb);
+								}
+								else {
+									cb(null, receipt);
+								}
+							});
+						}
+					});
+				}
+			});
+
 			break;
 		case 'braintree':
 		default:
-			if(options.type = 3) {
-				self.subscribe(options, cb)
+			if(options.type == 3) {
+				this.subscribe(options, cb);
 			}
 			else {
 				this.gateway.transaction.sale({
@@ -711,7 +798,7 @@ Bot.prototype.renewVIP = function (options, cb) {
 	});
 };
 
-/* require: options.uid */
+/* require: options.uid, options.gateway */
 Bot.prototype.subscribe = function (options, cb) {
 	var self = this;
 
@@ -806,13 +893,21 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 	});
 };
 Bot.prototype.subscribeIOSIAP = function (options, cb) {
-
+	var now = new Date().getTime();
+	var receipt = options.receipt;
+	receipt._subscribe = receipt.original_transaction_id;
+	receipt._charge = options.trial.charge > now? options.trial.charge: now;
+	receipt._trial = options.trial.trialDuration > 0? (now + options.trial.trialDuration): options.trial.keep > 0? options.trial.keep: 0;
+	cb(null, receipt);
 };
 
 /* require: options.uid */
 Bot.prototype.autoRenew = function (options, cb) {
 
 };
+Bot.prototype.manualRenew = function (options, cb) {
+	cb(null, true);
+}
 
 /* require: options.uid */
 Bot.prototype.cancelSubscribe = function (options, cb) {
