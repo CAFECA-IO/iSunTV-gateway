@@ -297,6 +297,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -336,6 +337,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -354,6 +356,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -370,6 +373,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -385,6 +389,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -401,6 +406,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -436,6 +442,7 @@ Bot.prototype.init = function(config) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
 				res.result.setData({uid: e.uid});
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -470,6 +477,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -487,6 +495,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -507,6 +516,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -527,6 +537,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -548,6 +559,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -571,14 +583,14 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
-				next();
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('Live Channel List');
 				res.result.setData(d);
-				next();
 			}
+			next();
 		});
 	});
 	// channel information
@@ -589,14 +601,14 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
-				next();
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
 				res.result.setMessage('Channel Information:', d.title);
 				res.result.setData(d);
-				next();
 			}
+			next();
 		});
 	});
 	// channel stream data
@@ -612,13 +624,13 @@ Bot.prototype.init = function(config) {
 				if(e) {
 					res.result.setErrorCode(e.code);
 					res.result.setMessage(e.message);
-					next();
+					logger.exception.warn(e);
 				}
 				else {
 					res.result.setResult(1);
 					res.result.setMessage(d);
-					next();
 				}
+				next();
 			});
 		}
 		else {
@@ -626,6 +638,7 @@ Bot.prototype.init = function(config) {
 				if(e) {
 					res.result.setErrorCode(e.code);
 					res.result.setMessage(e.message);
+					logger.exception.warn(e);
 				}
 				else {
 					res.result.setResult(1);
@@ -651,6 +664,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -669,6 +683,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -686,6 +701,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -703,6 +719,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -720,6 +737,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -737,6 +755,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -754,6 +773,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -771,6 +791,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -788,6 +809,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -805,6 +827,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -822,6 +845,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -839,6 +863,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -857,6 +882,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -876,6 +902,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -893,6 +920,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -911,6 +939,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -929,6 +958,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -948,6 +978,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -967,6 +998,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -986,6 +1018,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1003,6 +1036,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1020,6 +1054,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1043,6 +1078,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1060,6 +1096,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1077,6 +1114,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1094,6 +1132,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1112,6 +1151,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1131,6 +1171,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1148,6 +1189,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1164,6 +1206,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1179,6 +1222,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1195,6 +1239,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
@@ -1211,6 +1256,7 @@ Bot.prototype.init = function(config) {
 			if(e) {
 				res.result.setErrorCode(e.code);
 				res.result.setMessage(e.message);
+				logger.exception.warn(e);
 			}
 			else {
 				res.result.setResult(1);
