@@ -6,6 +6,7 @@ const dvalue = require('dvalue');
 const textype = require('textype');
 
 const defaultPeriod = 86400 * 1000 * 30;
+const trialPeriod = 86400  * 1000 * 7;
 
 var logger;
 
@@ -93,8 +94,9 @@ var formatTicket = function (data) {
 		enable: !!data.enable,
 		expire: data.expire,
 		trial: data.trial || 0,
+		charge: data.charge || now,
 		duration: data.duration,
-		subscribe: !!data.subscribe,
+		subscribe: data.subscribe,
 		ctime: data.ctime || now,
 		mtime: data.mtime || now,
 		atime: data.atime || now
@@ -378,7 +380,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				fee: pp.fee,
 				expire: ticket.expire,
 				trial: 0,
-				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: (ticket.trial > now? ticket.trial: ticket.expire)
+				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: (ticket.charge > now? ticket.charge: ticket.expire)
 			};
 			if(ticket.trial > now) { options.paymentstatus.trial = ticket.trial; }
 			return cb(null, options);
@@ -559,7 +561,11 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 	var self = this;
 	options.gateway = dvalue.default(options.gateway, 'BrainTree').toLowerCase();
 
-	if(options.gateway == 'iosiap') { return cb(null, true); } //-- for iOS IAP
+	// for iOS IAP
+	if(options.gateway == 'iosiap') {
+		self.fetchTransactionDetail(options, function (e1, d1) {
+		});
+	}
 
 	if(!textype.isObjectID(options.oid)) { var e = new Error('order not found'); e.code = '39701'; return cb(e); }
 	// load order detail
@@ -587,7 +593,9 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 						if(e2) { e2.code = '01003'; return cb(e2); }
 						else {
 							d._id = options.oid;
-							d.trial = d1.trial;
+							d.trial = d1._trial;
+							d.charge = d1._charge
+							d.subscribe = d1._subscribe;
 							var ticket = descOrder(dvalue.default(updateQuery.$set, d));
 							self.generateTicket(ticket, function () {});
 							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
@@ -660,13 +668,12 @@ Bot.prototype.generateTicket = function (options, cb) {
 			ticket.programs = paymentPlan.programs;
 			break;
 		case 3:
-			if(options.trial > now) {
-				ticket.expire = options.trial + paymentPlan.ticket.expire;
-				ticket.trial = options.trial;
-			}
-			ticket.programs = paymentPlan.programs;
 			ticket.enable = true;
-			ticket.subscribe = true;
+			ticket.trial = options.trial;
+			ticket.charge = options.charge;
+			ticket.expire = options.charge + paymentPlan.ticket.expire;
+			ticket.programs = paymentPlan.programs;
+			ticket.subscribe = options.subscribe;
 			break;
 		case 4:
 		case 5:
@@ -718,7 +725,12 @@ Bot.prototype.subscribe = function (options, cb) {
 
 		// caculate remain VIP duration
 		var now = new Date().getTime();
-		var plus = d.reduce(function (pre, curr) { return (curr.expire - now) > pre? (curr.expire - now): pre; }, 0);
+		var trial = 0, expire = 0;
+		var plus = d.reduce(function (pre, curr) {
+			if(curr.trial > now && curr.trial > trial) { trial = curr.trial; }
+			if(curr.expire > now && curr.expire > expire) { expire = curr.expire; }
+			return (curr.expire - now) > pre? (curr.expire - now): pre;
+		}, 0);
 		if(d.length > 0 && plus == 0) {
 			options.trial = {
 				trialPeriod: false,
@@ -727,8 +739,15 @@ Bot.prototype.subscribe = function (options, cb) {
 		}
 		else if(plus > 0) {
 			options.trial = {
+				trialPeriod: false,
+				charge: expire
+			};
+			if(trial > 0) { options.trial.keep = trial; }
+		}
+		else {
+			options.trial = {
 				trialPeriod: true,
-				trialDuration: plus
+				trialDuration: trialPeriod
 			};
 		}
 
@@ -755,20 +774,29 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 				paymentMethodToken: customer.paymentMethods[0].token,
 				planId: "MonthVIP"
 			};
-			if(options.trial) {
-				var trialDuration = parseInt(options.trial.trialDuration / 86400000);
-				subscribeOptions.trialPeriod = !!options.trial.trialPeriod;
-				if(options.trial.trialDuration) {
-					subscribeOptions.trialDuration = trialDuration < 0? 0: trialDuration;
-				}
-			}
 
+			options.trial = options.trial || {};
+			if(options.trial.trialPeriod) {
+				var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
+				duration = (duration > 0)? duration: 0;
+				subscribeOptions.trialPeriod = true;
+				subscribeOptions.trialDuration = duration;
+			}
+			else if(options.trial.charge > 0) {
+				subscribeOptions.trialPeriod = false;
+				subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
+			}
+			else {
+				subscribeOptions.trialPeriod = false;
+			}
 			self.gateway.subscription.create(subscribeOptions, function (e3, d3) {
 				if(e3) { e3.code = '87201'; return cb(e3); }
 				else if(!d3.success) { e3 = new Error('payment failed'); e3.code = '87201'; return cb(e3); }
 				else {
 					try {
-						d3.trial = new Date(d3.subscription.firstBillingDate).getTime();
+						d3._subscribe = d3.subscription.id;
+						d3._charge = new Date(d3.subscription.firstBillingDate).getTime();
+						d3._trial = options.trial.trialDuration > 0? d3._charge: options.trial.keep > 0? options.trial.keep: 0;
 					}
 					catch(e) {}
 					return cb(null, d3);
@@ -788,16 +816,26 @@ Bot.prototype.autoRenew = function (options, cb) {
 
 /* require: options.uid */
 Bot.prototype.cancelSubscribe = function (options, cb) {
+	var self = this;
 	var now = new Date().getTime();
 	var collection = this.db.collection('Tickets');
-	var condition = {uid: options.uid, type: 3, subscribe: true};
+	var condition = {uid: options.uid, type: 3, subscribe: {$ne: false}};
 	collection.find(condition).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
 		d.map(function (v) {
 			var cond = {_id: v._id};
 			var updateQuery = {$set: {subscribe: false}};
 			if(v.trial > now) { updateQuery.$set.expire = v.trial; }
+			else if(v.charge > now) { updateQuery.$set.expire = v.charge; }
 			collection.findAndModify(cond, {}, updateQuery, {}, function () {});
+
+			switch(v.gateway) {
+				case 'iosiap':
+					break;
+				case 'braintree':
+				default:
+					self.gateway.subscription.cancel(v.subscribe, function (e2, d2) {});
+			}
 		});
 		cb(null, true);
 	});

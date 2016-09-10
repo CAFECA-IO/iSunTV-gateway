@@ -1074,7 +1074,7 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 		episodesUrl = url.parse(episodesUrl);
 		episodesUrl.datatype = 'json';
 		request(episodesUrl, function (e1, d1) {
-			if(!Array.isArray(d1.data)) { cb(null, total); }
+			if(!Array.isArray(d1.data)) { return done(); }
 			total += d1.data.length;
 			d1.data.map(function (v, i) {
 				var fulldataURL = url.resolve(self.config.resourceAPI, '/api/episode?id=%s&token=TEST484863dbb3ce7ca4e080b15b18cd');
