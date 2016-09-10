@@ -73,6 +73,7 @@ Bot.prototype.writeComment = function (options, cb) {
 	}
 	if (options.title.length > 30) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
 	if (options.comment.length > 500) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
+	if (/^[sp][0-9]+/.test(options.pid)) { var e = new Error("Program not found"); e.code = "39201"; return cb(e); }
 	options.rating = Math.floor(options.rating);
 
 	var self = this;
@@ -329,7 +330,7 @@ Bot.prototype.listUserComments = function (options, cb) {
 		var pageOpt = Number(options.page);
 		var limitOpt = Number(options.limit);
 		var skip = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 7 : 0;
-		var limit = (limitOpt && (limitOpt <= 7 || limitOpt > 0) ) ? limitOpt : 7;
+		var limit = (limitOpt && (limitOpt <= 7 || limitOpt >= 0) ) ? limitOpt : 7;
 		commentsCollection.find(commentsCond).skip(skip).limit(limit)
 			.sort([['atime', -1]]).toArray(function (e, comments) {
 			if(e) { e.code = '01002'; return cb(e); }
