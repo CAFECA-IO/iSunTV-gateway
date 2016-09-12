@@ -50,25 +50,12 @@ Bot.prototype.start = function () {
 Bot.prototype.addFavorite = function (options, cb) {
 	var self = this;
 
-	// async
-	let prefix = options.pid.slice(0, 1);
-	let programId = options.pid.slice(1);
-	bot = self.getBot('ResourceAgent');
-	switch(prefix) {
-		case 'e':
-			bot.getEpisodeProgram({uid: options.uid, eid: programId}, function(err, data){})
-			break;
-		case 's':
-			bot.getSeriesProgram({uid: options.uid, sid: programId}, function(err, data){})
-			break;
-	}
-
-	// Check user
-	var collection = self.db.collection('Users');
-	var cond = { _id: new mongodb.ObjectID(options.uid), enable: true };
-	collection.findOne(cond, {}, function (e, user) {
+	// Check Program
+	var collection = self.db.collection('Programs');
+	var cond = { pid: options.pid };
+	collection.findOne(cond, {}, function (e, program) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!user) { e = new Error('User not found'); e.code = '39102'; return cb(e); }
+		else if(!program) { e = new Error('Program not found'); e.code = '39201'; return cb(e); }
 		else {
 			// Update Favorites
 			var criteria = { uid: options.uid, pid: options.pid };
