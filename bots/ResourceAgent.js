@@ -40,6 +40,7 @@ Bot.prototype.start = function () {
 	var crawlerConfig = this.config.crawler || {};
 	var period = crawlerConfig.period || 86400000;
 
+	this.initialBannerProgram({}, function () {});
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
 		timer = period - (now % period);
@@ -172,6 +173,27 @@ Bot.prototype.channelResource = function (resource, cb) {
 	]
  */
 
+Bot.prototype.initialBannerProgram = function (options, cb) {
+	var banner = [
+		{pid: '', title: '王大賓', description: '造反派才是文革最大的受害者', banner: 'https://api.isuntv.com/resources/banner_01.jpg'},
+		{pid: '', title: '兄弟', description: '中阿友好萬里行之旅，接觸神秘的阿拉伯世界', banner: 'https://api.isuntv.com/resources/banner_02.jpg'},
+		{pid: '', title: '江山代人才出', description: '李杜詩篇萬口傳，至今已覺不新鮮。江山代有才人出，各領風騷數百年﻿。', banner: 'https://api.isuntv.com/resources/banner_03.jpg'},
+		{pid: '', title: '往事歲月', description: '往事歲月並不如煙，讓親歷者親口述說過往人生，感受他們的人生魅力。', banner: 'https://api.isuntv.com/resources/banner_04.jpg'},
+		{pid: '', title: '港漂', description: '用多少代價才能交換到，觸得到摸得著的「自由」', banner: 'https://api.isuntv.com/resources/banner_05.jpg'},
+		{pid: '', title: '零點戲院', description: '天下熙熙，為何而來？天下壤壤，為何而往？零點戲院每天為您深入解析華人世界的社會現象', banner: 'https://api.isuntv.com/resources/banner_06.jpg'}
+	];
+	var collection = this.db.collection('Banners');
+	collection.find({}).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else if(d.length == 0) {
+			collection.insertMany(banner, {}, cb);
+		}
+		else {
+			cb(null, true);
+		}
+	});
+}
+
 // banner program
 /* optional: options.page, options.limit */
 /*
@@ -188,38 +210,12 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 		page: 1,
 		limit: 6,
 	});
-
-	var pics = [
-		'http://img08.deviantart.net/e30d/i/2013/210/b/1/batman_superman_movie_promo_banner_by_paulrom-d6fr4kl.png',
-		'http://www.forgetthebox.net/wp-content/uploads/2013/06/Man-of-Steel-movie-banner-image.jpg',
-		'https://ae01.alicdn.com/kf/HTB13.twLXXXXXbOXpXXq6xXFXXXI/Walking-Dead-Cast-font-b-Vinyl-b-font-Banner-Hi-Res-font-b-Movie-b-font.jpg',
-		'http://legionofleia.com/wp-content/uploads/2015/10/assassins-creed-movie-banner.jpg',
-		'https://getfuturistic.files.wordpress.com/2013/12/get-futuristic-jupiter-ascending-2014-mila-kunis-and-channing-tatum-official-movie-trailer-poster-2.jpg',
-		'http://www.kiwiidigital.com/public/pan_2015_movie-3840x2160.jpg'
-	]
-
-	// crawl the tv program api
-	var bannerUrl = url.resolve(this.config.resourceAPI, '/api/shows?page=%s&limit=%s')
-	bannerUrl = dvalue.sprintf(bannerUrl, options.page, options.limit);
-	bannerUrl = url.parse(bannerUrl);
-	bannerUrl.datatype = 'json';
-	request(bannerUrl, function(e, res){
-		// error
-		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-
-		// mapping data
-		var result = [];
-		var programs = res.data;
-		for (var i = 0, len = programs.length; i < len; i++){
-			programs[i].itemType = 'show';
-			var program = descProgram(programs[i]);
-			program.banner = pics[(i % pics.length)];
-			result.push(program);
-		}
-
-		// return data when correct
-		cb(null, result);
-	})
+	var limit = options.limit;
+	var skip = (options.page - 1) * limit;
+	this.db.collection("Banners").find({}).skip(skip).limit(limit).toArray(function (e, d) {
+		if(e) { e.code = '01002'; return cb(e); }
+		else { cb(null, d); }
+	});
 };
 
 // list featured (精選節目)
