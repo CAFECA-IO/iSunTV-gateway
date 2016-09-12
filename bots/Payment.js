@@ -568,7 +568,7 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 	// for iOS IAP
 	if(options.gateway == 'iosiap') {
 		self.fetchTransactionDetail(options, function (e1, d1) {
-			if(e1) { return cb(e1); }
+			if(e1) { return (e1.code == '97002')? cb(null, {}): cb(e1); }
 			else {
 				var now = new Date().getTime();
 				var receipt = {
@@ -806,15 +806,9 @@ Bot.prototype.subscribe = function (options, cb) {
 	Tickets.find(condition).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
 		else if(d.some(function (v) { return v.subscribe; })) {
-			e = new Error('duplicate subscribe'); e.code = '97002';
-			switch(options.gateway) {
-				case 'iosiap':
-					return cb(null, {});
-					break;
-				case 'braintree':
-				default:
-					return cb(e);
-			}
+			e = new Error('duplicate subscribe');
+			e.code = '97002';
+			return cb(e);
 		}
 
 		// caculate remain VIP duration
