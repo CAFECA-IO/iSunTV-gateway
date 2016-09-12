@@ -210,8 +210,8 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 		page: 1,
 		limit: 6,
 	});
-	var limit = options.limit;
-	var skip = (options.page - 1) * limit;
+	var limit = parseInt(options.limit);
+	var skip = (parseInt(options.page) - 1) * limit;
 	this.db.collection("Banners").find({}).skip(skip).limit(limit).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
 		else { cb(null, d); }
