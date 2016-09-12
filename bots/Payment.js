@@ -376,8 +376,6 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var now = new Date().getTime();
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
-
-//console.log(pp);
 			options.paymentstatus = {
 				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
@@ -589,7 +587,6 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 						d2.value.charge = d1._charge
 						d2.value.subscribe = d1._subscribe;
 						var ticket = descOrder(dvalue.default(updateQuery.$set, d2.value));
-//console.log(ticket);
 						self.generateTicket(ticket, function () {});
 						var checkoutResult = {gateway: receipt.gateway, fee: d2.value.fee};
 						return cb(null, checkoutResult);
@@ -612,6 +609,7 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 			options.fee = d.fee;
 			options.type = d.type;
 			options.clientToken = d.clientToken;
+			options.ppid = d.ppid;
 			self.fetchTransactionDetail(options, function (e1, d1) {
 				if(e1) { return cb(e1); }
 				else {
@@ -631,7 +629,6 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 							d.charge = d1._charge
 							d.subscribe = d1._subscribe;
 							var ticket = descOrder(dvalue.default(updateQuery.$set, d));
-//console.log(ticket);
 							self.generateTicket(ticket, function () {});
 							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
 							return cb(null, checkoutResult);
@@ -702,7 +699,9 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 			break;
 		case 'braintree':
 		default:
-			if(options.type == 3) {
+			if(!options.ppid) { e = new Error('invalid order'); e.code = '19701'; return cb(e); }
+			var pp = this.plans.find(function (v) {return v.ppid == options.ppid});
+			if(pp.type == 3) {
 				this.subscribe(options, cb);
 			}
 			else {
@@ -806,7 +805,17 @@ Bot.prototype.subscribe = function (options, cb) {
 	var condition = {uid: options.uid, type: 3};
 	Tickets.find(condition).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(d.some(function (v) { return v.subscribe; })) { e = new Error('duplicate subscribe'); e.code = '97002'; return cb(e); }
+		else if(d.some(function (v) { return v.subscribe; })) {
+			e = new Error('duplicate subscribe'); e.code = '97002';
+			switch(options.gateway) {
+				case 'iosiap':
+					return cb(null, {});
+					break;
+				case 'braintree':
+				default:
+					return cb(e);
+			}
+		}
 
 		// caculate remain VIP duration
 		var now = new Date().getTime();
@@ -835,7 +844,6 @@ Bot.prototype.subscribe = function (options, cb) {
 				trialDuration: trialPeriod
 			};
 		}
-
 		switch(options.gateway) {
 			case 'iosiap':
 				self.subscribeIOSIAP(options, cb);
