@@ -376,6 +376,8 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var now = new Date().getTime();
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
+
+//console.log(pp);
 			options.paymentstatus = {
 				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
@@ -587,6 +589,7 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 						d2.value.charge = d1._charge
 						d2.value.subscribe = d1._subscribe;
 						var ticket = descOrder(dvalue.default(updateQuery.$set, d2.value));
+//console.log(ticket);
 						self.generateTicket(ticket, function () {});
 						var checkoutResult = {gateway: receipt.gateway, fee: d2.value.fee};
 						return cb(null, checkoutResult);
@@ -628,6 +631,7 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 							d.charge = d1._charge
 							d.subscribe = d1._subscribe;
 							var ticket = descOrder(dvalue.default(updateQuery.$set, d));
+//console.log(ticket);
 							self.generateTicket(ticket, function () {});
 							var checkoutResult = {gateway: receipt.gateway, fee: options.fee};
 							return cb(null, checkoutResult);
@@ -658,13 +662,7 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 					// find current receipt
 					var receipt;
 					rs.receipt.in_app.map(function (v) {
-						if(v.original_transaction_id == options.transaction) {
-							if(receipt && receipt.purchase_date_ms > v.purchase_date_ms) { return; }
-							receipt = v;
-						}
-					});
-					rs.latest_receipt_info.map(function (v) {
-						if(v.original_transaction_id == options.transaction) {
+						if(v.transaction_id == options.transaction) {
 							if(receipt && receipt.purchase_date_ms > v.purchase_date_ms) { return; }
 							receipt = v;
 						}
