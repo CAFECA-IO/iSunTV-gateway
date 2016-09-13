@@ -175,12 +175,12 @@ Bot.prototype.channelResource = function (resource, cb) {
 
 Bot.prototype.initialBannerProgram = function (options, cb) {
 	var banner = [
-		{pid: '', title: '王大賓', description: '造反派才是文革最大的受害者', banner: 'https://api.isuntv.com/resources/banner_01.jpg'},
-		{pid: '', title: '兄弟', description: '中阿友好萬里行之旅，接觸神秘的阿拉伯世界', banner: 'https://api.isuntv.com/resources/banner_02.jpg'},
-		{pid: '', title: '江山代人才出', description: '李杜詩篇萬口傳，至今已覺不新鮮。江山代有才人出，各領風騷數百年﻿。', banner: 'https://api.isuntv.com/resources/banner_03.jpg'},
-		{pid: '', title: '往事歲月', description: '往事歲月並不如煙，讓親歷者親口述說過往人生，感受他們的人生魅力。', banner: 'https://api.isuntv.com/resources/banner_04.jpg'},
-		{pid: '', title: '港漂', description: '用多少代價才能交換到，觸得到摸得著的「自由」', banner: 'https://api.isuntv.com/resources/banner_05.jpg'},
-		{pid: '', title: '零點戲院', description: '天下熙熙，為何而來？天下壤壤，為何而往？零點戲院每天為您深入解析華人世界的社會現象', banner: 'https://api.isuntv.com/resources/banner_06.jpg'}
+		{pid: '', title: '王大賓', description: '造反派才是文革最大的受害者', banner: 'http://api.isuntv.com/resources/banner_01.jpg'},
+		{pid: '', title: '兄弟', description: '中阿友好萬里行之旅，接觸神秘的阿拉伯世界', banner: 'http://api.isuntv.com/resources/banner_02.jpg'},
+		{pid: '', title: '江山代人才出', description: '李杜詩篇萬口傳，至今已覺不新鮮。江山代有才人出，各領風騷數百年﻿。', banner: 'http://api.isuntv.com/resources/banner_03.jpg'},
+		{pid: '', title: '往事歲月', description: '往事歲月並不如煙，讓親歷者親口述說過往人生，感受他們的人生魅力。', banner: 'http://api.isuntv.com/resources/banner_04.jpg'},
+		{pid: '', title: '港漂', description: '用多少代價才能交換到，觸得到摸得著的「自由」', banner: 'http://api.isuntv.com/resources/banner_05.jpg'},
+		{pid: '', title: '零點戲院', description: '天下熙熙，為何而來？天下壤壤，為何而往？零點戲院每天為您深入解析華人世界的社會現象', banner: 'http://api.isuntv.com/resources/banner_06.jpg'}
 	];
 	var collection = this.db.collection('Banners');
 	collection.find({}).toArray(function (e, d) {
@@ -1080,6 +1080,7 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 				todo++;
 				setTimeout(function () {
 					request(fulldataURL, function (e2, d2) {
+						if(e2 || !d2) { return done(); }
 						var tmpData = d2.data;
 						if(!options.skipType) { tmpData.sid = 's' + options.sid; }
 						tmpData.paymentPlans = self.getBot('Payment').findPlan(tmpData.type);
