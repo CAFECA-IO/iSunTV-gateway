@@ -337,9 +337,10 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 						return new RegExp(v3).test(v.pid);
 					});
 				});
+				if(!v.playable) { v.stream = ''; }
 				return v;
 			});
-			cb(null, programs);
+			cb(null, rs);
 		});
 	}
 	else {
@@ -347,6 +348,7 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 		var options = {uid: options.uid, pid: programs.pid};
 		this.checkPlayable(options, function (e, d) {
 			programs.playable = !!d;
+			if(!programs.playable) { programs.stream = ''; }
 			cb(null, programs);
 		});
 	}
