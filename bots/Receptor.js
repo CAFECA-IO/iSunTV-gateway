@@ -150,6 +150,16 @@ returnData = function(req, res, next) {
 		json = res.result.response();
 		res.result.resetResponse();
 	}
+	if(json.errorcode) {
+		logger.exception.warn('----- request -----');
+		logger.exception.warn(req.method, req.url);
+		logger.exception.warn('session:', req.headers);
+		logger.exception.warn('session:', req.session);
+		logger.exception.warn('params:', req.params);
+		logger.exception.warn('query:', req.query);
+		logger.exception.warn('body:', req.body);
+		logger.exception.warn('-------------------');
+	}
 
 	var rs = json.errorcode? [json.result, json.errorcode].join(':'): json.result;
 	logger.info.info(req.method, req.url, rs, req.session.ip, json.cost);
