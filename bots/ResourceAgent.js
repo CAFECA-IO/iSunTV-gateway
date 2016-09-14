@@ -726,11 +726,11 @@ Bot.prototype.listPrgramType = function (options, cb) {
 		var todo = res.data.length + 1;
 		var done = function () {
 			if(--todo == 0) {
+				prgramTypes.sort(function (a, b) { return parseInt(a.ptid) > parseInt(b.ptid); })
 				self.programTypes = prgramTypes;
 				cb(null, prgramTypes);
 			}
 		};
-
 		res.data.map(function (programType, i) {
 			var rs = {
 				ptid: programType.id,
