@@ -34,7 +34,7 @@ Bot.prototype.send = function (email, subject, content, cb) {
 	var mailTransport = nodemailer.createTransport(smtpTransport(self.config.mail));
 
 	var mailOptions = {
-		from: 'noreply@isuncloud.com',
+		from: 'hello@isuntv.com',
 		to: email,
 		subject: subject,
 		html: content
