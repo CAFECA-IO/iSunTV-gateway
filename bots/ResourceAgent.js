@@ -192,7 +192,7 @@ Bot.prototype.initialBannerProgram = function (options, cb) {
 			cb(null, true);
 		}
 	});
-}
+};
 
 // banner program
 /* optional: options.page, options.limit */
@@ -636,7 +636,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		var result = {
 			title: '中國文化專題',
 			description: '',
-			cover: '',
+			cover: 'http://api.isuntv.com/resources/feature_v2.jpg',
 			programs: []
 		};
 		var pids = res.data.map(function (program) {
