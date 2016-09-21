@@ -446,7 +446,7 @@ Bot.prototype.init = function(config) {
 	});
 	// user login
 	this.router.post('/login', checkHashCash, function (req, res, next) {
-		var user = {account: req.body.account, password: req.body.password};
+		var user = {account: req.body.account || req.body.email, password: req.body.password};
 		var bot = self.getBot('User');
 		bot.login(user, function (e, d) {
 			if(e) {
