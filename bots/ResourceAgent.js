@@ -634,7 +634,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 		var programs = res.data;
 		// mapping data
 		var result = {
-			title: '中國文化專題',
+			title: '',
 			description: '',
 			cover: 'http://api.isuntv.com/resources/feature_v2.jpg',
 			programs: []

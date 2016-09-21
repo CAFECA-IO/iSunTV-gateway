@@ -70,7 +70,9 @@ var formatUser = function (user) {
 		allowmail: false,
 		status: 1
 	});
-	if(user.username.length == 0) { user.username = user.account; }
+	if(user.username.length == 0) {
+		user.username = user.account.split('@')[0];
+	}
 	return user;
 };
 var descUser = function (user) {
