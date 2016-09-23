@@ -984,7 +984,7 @@ Bot.prototype.init = function(config) {
 	// /program/{$pid}/comment/{$page}/{$limit}
 	this.router.get(['/program/:pid/comment', '/program/:pid/comment/:page', '/program/:pid/comment/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('Comment');
-		var options = {pid: req.params.pid, page: req.params.page, limit: req.params.limit};
+		var options = {uid: req.session.uid, pid: req.params.pid, page: req.params.page, limit: req.params.limit};
 		bot.listProgramComments(options, function (e, d) {
 			if(e) {
 				res.result.setErrorCode(e.code);

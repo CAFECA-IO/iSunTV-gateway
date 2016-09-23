@@ -15,11 +15,18 @@ const descProgram = function (data, detail) {
 		description: data.description,
 		shortdesc: data.shortdesc || '',
 		cover: img.cover,
+		banner: data.imgtf_web,
+		bannerList: {
+			web: data.imgtf_web,
+			iphone: data.imgtf_iphone,
+			ipad: data.imgtf_ipad,
+			android: data.imgtf_android
+		},
 		images: img.images,
 		updated: data.updated_at || '',
-		createYear: 2099, //-- fake data
-		publish: '2099-12-31', //-- fake data
-		grading: "16+", //-- fake data
+		createYear: undefined,
+		publish: '',
+		grading: '',
 		programType: data.programType
 	};
 	if(data.paymentPlans) { program.paymentPlans = data.paymentPlans; }
@@ -64,14 +71,8 @@ const descProgram = function (data, detail) {
 		program.source = Array.isArray(data.source)? data.source: data.source? data.source.split(','): [];
 		program.subtitle = Array.isArray(data.subtitles)? data.subtitles: data.subtitles? data.subtitles.split(','): [];
 		program.soundtrack = Array.isArray(data.tracks)? data.tracks: data.tracks? data.tracks.split(','): [];
-		program.trailers = [{
-			title: "預告 1",
-			cover: "https://app2.isuntv.com/uploads/episodes/.tmb/thumb_1094_image_thumb_adaptiveResize_70_70.jpg",
-			stream: "http://vodcdn.newsun.tv/vodnew/CCULT/CCULT_102B.mp4"
-		}]; //-- fakedata
-		program.scenarist = [
-			"路平"
-		]; //-- fakedata
+		program.trailers = [];
+		program.scenarist = [];
 	}
 	return program;
 };
