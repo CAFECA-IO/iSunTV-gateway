@@ -641,10 +641,11 @@ Bot.prototype.checkoutTransaction = function (options, cb) {
 		}
 	});
 };
-/* require: options.gateway, options.nonce, options.fee, options.clientToken, options.type, options.uid */
+/* require: options.gateway, options.nonce, options.fee, options.clientToken, options.type, options.uid, options.transaction */
 /* gateway: braintree, iosiap */
 Bot.prototype.fetchTransactionDetail = function (options, cb) {
 	var self = this;
+	options.transaction = options.transaction? options.transaction.toString(): '';
 	switch(options.gateway) {
 		case 'iosiap':
 			var verifiedUrl = this.config.production? this.config.ios.productionUrl: this.config.ios.sandBoxUrl;
@@ -666,7 +667,7 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 							receipt = v;
 						}
 					});
-					if(!receipt) { e = new Error('payment failed'); e.code = '87201'; return cb(e); }
+					if(!receipt) { e = new Error('receipt failed'); e.code = '87202'; return cb(e); }
 					gpid = receipt.product_id;
 					// find payment plan
 					var condition = {'gpid.iosiap': gpid, enable: true};
@@ -855,42 +856,48 @@ Bot.prototype.subscribe = function (options, cb) {
 Bot.prototype.subscribeBraintree = function (options, cb) {
 	var self = this;
 	self.createBrainTreeID(options, function (e1, d1) {
-		if(e1) { e.code = '87201'; return cb(e1); }
+		if(e1) { e1.code = '87201'; return cb(e1); }
 		self.gateway.customer.find(d1, function(e2, customer) {
-			if(e2) { e.code = '87201'; return cb(e2); }
-			else if(!customer.paymentMethods || !customer.paymentMethods[0]) { e2 = new Error('payment failed'); e2.code = '87201'; return cb(e2) }
-			var subscribeOptions = {
-				paymentMethodToken: customer.paymentMethods[0].token,
-				planId: "MonthVIP"
-			};
-
-			options.trial = options.trial || {};
-			if(options.trial.trialPeriod) {
-				var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
-				duration = (duration > 0)? duration: 0;
-				subscribeOptions.trialPeriod = true;
-				subscribeOptions.trialDuration = duration;
-			}
-			else if(options.trial.charge > 0) {
-				subscribeOptions.trialPeriod = false;
-				subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
-			}
+			if(e2) { e2.code = '87201'; return cb(e2); }
 			else {
-				subscribeOptions.trialPeriod = false;
-			}
-			self.gateway.subscription.create(subscribeOptions, function (e3, d3) {
-				if(e3) { e3.code = '87201'; return cb(e3); }
-				else if(!d3.success) { e3 = new Error('payment failed'); e3.code = '87201'; return cb(e3); }
-				else {
-					try {
-						d3._subscribe = d3.subscription.id;
-						d3._charge = new Date(d3.subscription.firstBillingDate).getTime();
-						d3._trial = options.trial.trialDuration > 0? d3._charge: options.trial.keep > 0? options.trial.keep: 0;
+				self.gateway.paymentMethod.create({customerId: customer.id, paymentMethodNonce: options.nonce}, function (e3, d3) {
+					if(e3) { e3.code = '87201'; return cb(e2); }
+					else {
+						var subscribeOptions = {
+							paymentMethodToken: d3.paymentMethod.token,
+							planId: "MonthVIP"
+						};
+
+						options.trial = options.trial || {};
+						if(options.trial.trialPeriod) {
+							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
+							duration = (duration > 0)? duration: 0;
+							subscribeOptions.trialPeriod = true;
+							subscribeOptions.trialDuration = duration;
+						}
+						else if(options.trial.charge > 0) {
+							subscribeOptions.trialPeriod = false;
+							subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
+						}
+						else {
+							subscribeOptions.trialPeriod = false;
+						}
+						self.gateway.subscription.create(subscribeOptions, function (e3, d3) {
+							if(e3) { e3.code = '87201'; return cb(e3); }
+							else if(!d3.success) { e3 = new Error('payment failed'); e3.code = '87201'; return cb(e3); }
+							else {
+								try {
+									d3._subscribe = d3.subscription.id;
+									d3._charge = new Date(d3.subscription.firstBillingDate).getTime();
+									d3._trial = options.trial.trialDuration > 0? d3._charge: options.trial.keep > 0? options.trial.keep: 0;
+								}
+								catch(e) {}
+								return cb(null, d3);
+							}
+						});
 					}
-					catch(e) {}
-					return cb(null, d3);
-				}
-			});
+				});
+			}
 		});
 	});
 };
