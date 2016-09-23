@@ -73,7 +73,7 @@ Bot.prototype.writeComment = function (options, cb) {
 	}
 	if (options.title.length > 30) { var e = new Error("Incorrect title"); e.code = "19502"; return cb(e); }
 	if (options.comment.length > 500) { var e = new Error("Incorrect comment"); e.code = "19503"; return cb(e); }
-	if (/^[sp][0-9]+/.test(options.pid)) { var e = new Error("Program not found"); e.code = "39201"; return cb(e); }
+	if (!(/^[se][0-9]+/.test(options.pid))) { var e = new Error("Program not found"); e.code = "39201"; return cb(e); }
 	options.rating = Math.floor(options.rating);
 
 	var self = this;

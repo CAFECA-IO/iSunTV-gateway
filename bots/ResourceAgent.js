@@ -40,10 +40,10 @@ Bot.prototype.start = function () {
 	var crawlerConfig = this.config.crawler || {};
 	var period = crawlerConfig.period || 86400000;
 
-	this.initialBannerProgram({}, function () {});
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
 		timer = period - (now % period);
+		// self.crawl({}, console.log);
 		// crawl the program at the start of the day
 		setTimeout(function () {
 			self.crawl({}, function () {
@@ -173,27 +173,6 @@ Bot.prototype.channelResource = function (resource, cb) {
 	]
  */
 
-Bot.prototype.initialBannerProgram = function (options, cb) {
-	var banner = [
-		{pid: '', title: '王大賓', description: '造反派才是文革最大的受害者', banner: 'http://api.isuntv.com/resources/banner_01.jpg'},
-		{pid: '', title: '兄弟', description: '中阿友好萬里行之旅，接觸神秘的阿拉伯世界', banner: 'http://api.isuntv.com/resources/banner_02.jpg'},
-		{pid: '', title: '江山代人才出', description: '李杜詩篇萬口傳，至今已覺不新鮮。江山代有才人出，各領風騷數百年﻿。', banner: 'http://api.isuntv.com/resources/banner_03.jpg'},
-		{pid: '', title: '往事歲月', description: '往事歲月並不如煙，讓親歷者親口述說過往人生，感受他們的人生魅力。', banner: 'http://api.isuntv.com/resources/banner_04.jpg'},
-		{pid: '', title: '港漂', description: '用多少代價才能交換到，觸得到摸得著的「自由」', banner: 'http://api.isuntv.com/resources/banner_05.jpg'},
-		{pid: '', title: '零點戲院', description: '天下熙熙，為何而來？天下壤壤，為何而往？零點戲院每天為您深入解析華人世界的社會現象', banner: 'http://api.isuntv.com/resources/banner_06.jpg'}
-	];
-	var collection = this.db.collection('Banners');
-	collection.find({}).toArray(function (e, d) {
-		if(e) { e.code = '01002'; return cb(e); }
-		else if(d.length == 0) {
-			collection.insertMany(banner, {}, cb);
-		}
-		else {
-			cb(null, true);
-		}
-	});
-};
-
 // banner program
 /* optional: options.page, options.limit */
 /*
@@ -206,30 +185,49 @@ Bot.prototype.initialBannerProgram = function (options, cb) {
  */
 Bot.prototype.listBannerProgram = function (options, cb) {
 	var self = this;
+	var todo = 3, list = [];
 	// default value
 	options = dvalue.default(options, { page: 1, limit: 10 });
+	var limit = parseInt(options.limit) > 0? parseInt(options.limit): 10;
+	var skip = parseInt(options.page) > 1? (parseInt(options.page) - 1) * limit: 0;
 
 	// crawl the tv program api
-	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/topfeatured?page=%s&limit=%s');
-	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
-	featuredUrl = url.parse(featuredUrl);
-	featuredUrl.datatype = 'json';
-	request(featuredUrl, function (e, res) {
+	var featuredUrlepisode = url.resolve(this.config.resourceAPI, '/api/topfeatured?page=%s&limit=%s');
+	featuredUrlepisode = dvalue.sprintf(featuredUrlepisode, options.page, options.limit);
+	featuredUrlepisode = url.parse(featuredUrlepisode);
+	featuredUrlepisode.datatype = 'json';
+	var featuredUrlshow = url.resolve(this.config.resourceAPI, '/api/topfeaturedshow?page=%s&limit=%s');
+	featuredUrlshow = dvalue.sprintf(featuredUrlshow, options.page, options.limit);
+	featuredUrlshow = url.parse(featuredUrlshow);
+	featuredUrlshow.datatype = 'json';
+
+	request(featuredUrlshow, function (e1, res1) {
 		// error
-		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		// merge db data
-		var programs = descProgram(res.data);
-		var pids = programs.map(function (v) { return v.pid; });
-		self.mergeByPrograms({pids: pids}, function (e2, d2) {
-			// merge payment and playable fields
-			var opts = {uid: options.uid, programs: d2};
-			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-				if(err) { return cb(err); }
-				// fill favorite data
-				var ffopts = {uid: options.uid, programs: programs};
-				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
-					if(e) { return cb(e); }
-					else { cb(null, d); }
+		if(e1) { e1 = new Error('remote api error'); e1.code = '54001' ; return cb(e1); }
+		if(Array.isArray(res1.data)) {
+			res1.data.map(function (v) {
+				list.push(v);
+			});
+		}
+		request(featuredUrlepisode, function (e2, res2) {
+			// error
+			if(e2) { e2 = new Error('remote api error'); e2.code = '54001' ; return cb(e2); }
+			res2.data.map(function (v) {
+				list.push(v);
+			});
+			var programs = descProgram(list.splice(skip, limit));
+			var pids = programs.map(function (v) { return v.pid; });
+			self.mergeByPrograms({pids: pids}, function (e2, d2) {
+				// merge payment and playable fields
+				var opts = {uid: options.uid, programs: d2};
+				self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+					if(err) { return cb(err); }
+					// fill favorite data
+					var ffopts = {uid: options.uid, programs: programs};
+					self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+						if(e) { return cb(e); }
+						else { cb(null, d); }
+					});
 				});
 			});
 		});
@@ -1088,7 +1086,7 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 		episodesUrl = url.parse(episodesUrl);
 		episodesUrl.datatype = 'json';
 		request(episodesUrl, function (e1, d1) {
-			if(!Array.isArray(d1.data)) { return done(); }
+			if(e1 || !Array.isArray(d1.data)) { return done(); }
 			total += d1.data.length;
 			d1.data.map(function (v, i) {
 				var fulldataURL = url.resolve(self.config.resourceAPI, '/api/episode?id=%s&token=TEST484863dbb3ce7ca4e080b15b18cd');

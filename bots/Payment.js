@@ -682,7 +682,7 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 								uid: options.uid,
 								ppid: ppid
 							};
-							if(!!options.pid) { orderOptions.pid = optoins.pid; }
+							if(!!options.pid) { orderOptions.pid = options.pid; }
 							self.order(orderOptions, function (e2, d2) {
 								if(e2) { cb(e2); }
 								receipt.order = d2;
