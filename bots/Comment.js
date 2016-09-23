@@ -271,7 +271,7 @@ Bot.prototype.listProgramComments = function (options, cb) {
 	var self = this;
 	// List comments which user publish
 	var commentsCollection = self.db.collection('Comments');
-	var commentsCond = { pid: options.pid };
+	var commentsCond = { pid: options.pid, uid: {$ne: options.uid} };
 	var pageOpt = Number(options.page);
 	var limitOpt = Number(options.limit);
 	var limit = (limitOpt && (limitOpt <= 7 || limitOpt > 0) ) ? limitOpt : 7;
