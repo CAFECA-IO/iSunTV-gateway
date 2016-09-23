@@ -3,6 +3,7 @@ module.exports = {
 	notice: '',
 	frontend: '',
 	resourceAPI: '',
+	cdn: '',
 	db: {
 		type: '',
 		path: '',
