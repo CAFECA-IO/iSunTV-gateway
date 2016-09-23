@@ -638,8 +638,8 @@ Bot.prototype.init = function(config) {
 					logger.exception.warn(e);
 				}
 				else {
-					res.result.setResult(1);
-					res.result.setMessage(d);
+					res.result.setResult(302);
+					res.result.setData({Location: d});
 				}
 				next();
 			});

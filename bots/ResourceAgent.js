@@ -123,30 +123,7 @@ Bot.prototype.descChannel = function (options, cb) {
 };
 
 Bot.prototype.parseChannel = function (resource, cb) {
-	var self = this;
-	var channel = dvalue.search({id: resource.channel}, this.channels);
-	if(channel === undefined) {
-		var options = url.parse(this.config.resourceAPI + '/api/getLiveStreamUrl');
-		options.datatype = 'json';
-		request(options, function (e, d) {
-			if(e) { cb(e); }
-			else if(!d || !d.data || !d.data.live_stream) {
-				e = new Error('channel not found');
-				e.code = '39301';
-				cb(e);
-			}
-			else {
-				var channel = {id: resource.channel, url: d.data.live_stream};
-				var link = channel.url;
-				channel.path = path.parse(channel.url).dir;
-				self.channels.push(channel);
-				cb(null, link);
-			}
-		});
-	}
-	else {
-		cb(null, channel.url);
-	}
+	cb(null, 'https://stream.isuntv.com/streamHD.m3u8');
 };
 
 // resource.path, resource.channel
@@ -635,7 +612,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 	var limitOpt = Number(options.limit);
 	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
 	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
+	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/chosen?page=%s&limit=%s');
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
@@ -1097,6 +1074,11 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 						if(!options.skipType) { tmpData.sid = 's' + options.sid; }
 						tmpData.paymentPlans = self.getBot('Payment').findPlan(tmpData.type);
 						tmpData.programType = options.programType;
+
+						// fetch streaming
+						if(!textype.isURL(tmpData.ipad_stream_url)) { tmpData.ipad_stream_url = url.resolve(self.config.cdn, tmpData.ipad_stream_url) + '.m3u8'; }
+						if(!textype.isURL(tmpData.stream_url)) { tmpData.stream_url = url.resolve(self.config.cdn, tmpData.stream_url) + '.m3u8'; }
+
 						tmpData = descProgram(tmpData, true);
 						// collect episode of plan
 						tmpData.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: tmpData.pid}); });
