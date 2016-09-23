@@ -43,7 +43,7 @@ Bot.prototype.start = function () {
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
 		timer = period - (now % period);
-		self.crawl({}, console.log);
+		// self.crawl({}, console.log);
 		// crawl the program at the start of the day
 		setTimeout(function () {
 			self.crawl({}, function () {
@@ -574,7 +574,7 @@ Bot.prototype.getProgramPlayData = function (options, cb) {
 	this.getProgramFromDB(options, function (e1, d1) {
 		if(e1) { return cb(e1); }
 		else if(d1.type == 'series') {
-			d1.stream = d1.programs[0].stream;
+			d1.stream = d1.programs.length > 0? d1.programs[0].stream: '';
 			return cb(null, d1);
 		}
 		else if(!!d1.sid) {
@@ -1076,8 +1076,8 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 						tmpData.programType = options.programType;
 
 						// fetch streaming
-						if(!textype.isURL(tmpData.ipad_stream_url)) { tmpData.ipad_stream_url = url.resolve(self.config.cdn, tmpData.ipad_stream_url) + '.m3u8'; }
-						if(!textype.isURL(tmpData.stream_url)) { tmpData.stream_url = url.resolve(self.config.cdn, tmpData.stream_url) + '.m3u8'; }
+						if(tmpData.ipad_stream_url && tmpData.ipad_stream_url.length > 0 && !textype.isURL(tmpData.ipad_stream_url)) { tmpData.ipad_stream_url = url.resolve(self.config.cdn, tmpData.ipad_stream_url) + '.m3u8'; }
+						if(tmpData.stream_url && tmpData.stream_url.length > 0 && !textype.isURL(tmpData.stream_url)) { tmpData.stream_url = url.resolve(self.config.cdn, tmpData.stream_url) + '.m3u8'; }
 
 						tmpData = descProgram(tmpData, true);
 						// collect episode of plan
