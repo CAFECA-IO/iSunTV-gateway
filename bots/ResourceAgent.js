@@ -43,7 +43,7 @@ Bot.prototype.start = function () {
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
 		timer = period - (now % period);
-		// self.crawl({}, console.log);
+		self.crawl({}, console.log);
 		// crawl the program at the start of the day
 		setTimeout(function () {
 			self.crawl({}, function () {
@@ -216,18 +216,14 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 				list.push(v);
 			});
 			var programs = descProgram(list.splice(skip, limit));
-			var pids = programs.map(function (v) { return v.pid; });
-			self.mergeByPrograms({pids: pids}, function (e2, d2) {
-				// merge payment and playable fields
-				var opts = {uid: options.uid, programs: d2};
-				self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-					if(err) { return cb(err); }
-					// fill favorite data
-					var ffopts = {uid: options.uid, programs: programs};
-					self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
-						if(e) { return cb(e); }
-						else { cb(null, d); }
-					});
+			var opts = {uid: options.uid, programs: programs};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
+				// fill favorite data
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+					if(e) { return cb(e); }
+					else { cb(null, d); }
 				});
 			});
 		});
