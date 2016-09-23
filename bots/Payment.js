@@ -667,7 +667,7 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 							receipt = v;
 						}
 					});
-					if(!receipt) { e = new Error('receipt failed'); e.code = '87202'; return cb(e); }
+					if(!receipt) { e = new Error('receipt not found'); e.code = '87202'; return cb(e); }
 					gpid = receipt.product_id;
 					// find payment plan
 					var condition = {'gpid.iosiap': gpid, enable: true};

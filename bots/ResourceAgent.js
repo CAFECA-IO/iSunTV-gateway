@@ -205,16 +205,34 @@ Bot.prototype.initialBannerProgram = function (options, cb) {
 }]
  */
 Bot.prototype.listBannerProgram = function (options, cb) {
+	var self = this;
 	// default value
-	options = dvalue.default(options, {
-		page: 1,
-		limit: 6,
-	});
-	var limit = parseInt(options.limit);
-	var skip = (parseInt(options.page) - 1) * limit;
-	this.db.collection("Banners").find({}).skip(skip).limit(limit).toArray(function (e, d) {
-		if(e) { e.code = '01002'; return cb(e); }
-		else { cb(null, d); }
+	options = dvalue.default(options, { page: 1, limit: 10 });
+
+	// crawl the tv program api
+	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/topfeatured?page=%s&limit=%s');
+	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
+	featuredUrl = url.parse(featuredUrl);
+	featuredUrl.datatype = 'json';
+	request(featuredUrl, function (e, res) {
+		// error
+		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+		// merge db data
+		var programs = descProgram(res.data);
+		var pids = programs.map(function (v) { return v.pid; });
+		self.mergeByPrograms({pids: pids}, function (e2, d2) {
+			// merge payment and playable fields
+			var opts = {uid: options.uid, programs: d2};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
+				// fill favorite data
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+					if(e) { return cb(e); }
+					else { cb(null, d); }
+				});
+			});
+		});
 	});
 };
 
@@ -243,8 +261,8 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 
 	// crawl the tv program api
 	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
-    featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
-    featuredUrl = url.parse(featuredUrl);
+	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
+	featuredUrl = url.parse(featuredUrl);
 	featuredUrl.datatype = 'json';
 	request(featuredUrl, function (e, res) {
 		// error
