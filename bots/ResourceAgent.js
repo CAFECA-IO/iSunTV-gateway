@@ -635,7 +635,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 	var limitOpt = Number(options.limit);
 	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
 	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
+	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/chosen?page=%s&limit=%s');
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
