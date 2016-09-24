@@ -14,8 +14,8 @@ const descProgram = function (data, detail) {
 		title: data.title,
 		description: data.description,
 		shortdesc: data.shortdesc || '',
-		cover: img.cover,
-		banner: data.imgtf_web,
+		cover: toHttps(img.cover),
+		banner: toHttps(data.imgtf_web),
 		bannerList: {
 			web: data.imgtf_web,
 			iphone: data.imgtf_iphone,
@@ -83,6 +83,10 @@ const fetchStream = function (data) {
 	if(textype.isURL(data.ipad_stream_url)) { result.stream = data.ipad_stream_url; }
 	else if(textype.isURL(data.stream_url)) { result.stream = data.stream_url; }
 	return result;
+};
+const toHttps = function (data) {
+	if(textype.isURL(data)) { data.replace(/^http:/, 'https:/'); }
+	return data;
 };
 
 
