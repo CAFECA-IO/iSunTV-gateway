@@ -331,13 +331,12 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 		var futOptions = {uid: options.uid};
 		this.fetchUserTickets(futOptions, function (e, d) {
 			rs = programs.map(function (v) {
+				var now = new Date().getTime();
 				v = fillPlan(v);
 				v.playable = self.isFree({uid: options.uid, pid: v.pid}) || d.some(function (v2) {
-					return v2.programs.some(function (v3) {
-						return new RegExp(v3).test(v.pid);
-					});
-				});
-				if(!v.playable) { v.stream = ''; }
+					return v2.enable && v2.expire > now && 
+					(v2.programs.some(function (v3) { return new RegExp(v3).test(v.pid); }) || (v2.type == 3 && self.isVIPProgram(v.pid)));
+				})
 				return v;
 			});
 			cb(null, rs);
@@ -405,9 +404,10 @@ Bot.prototype.fetchSubscribeTickets = function (options, cb) {
 		if(!Array.isArray(d)) { d = []; }
 		d = d.map(function (v) {
 			var pp = self.plans.find(function (v1) { return v1.ppid == v.ppid; });
+			if(!pp) { return undefined; }
 			v.fee = pp.fee;
 			return v;
-		});
+		}).filter(function (v) { return v != undefined; });
 		cb(null, d);
 	});
 };
@@ -759,7 +759,7 @@ Bot.prototype.generateTicket = function (options, cb) {
 			ticket.trial = options.trial;
 			ticket.charge = options.charge;
 			ticket.expire = options.charge + paymentPlan.ticket.expire;
-			ticket.programs = paymentPlan.programs;
+			ticket.programs = [];
 			ticket.subscribe = options.subscribe;
 			break;
 		case 4:
@@ -963,6 +963,20 @@ Bot.prototype.isFree = function (options) {
 	});
 };
 
+Bot.prototype.isVIPProgram = function (pid) {
+	return this.plans.some(function (v) {
+		return (v.type == 3) && isPlayable(v.programs, pid);
+	});
+};
+
+Bot.prototype.isVIPUser = function (uid, cb) {
+	this.fetchSubscribeTickets({uids: [uid]}, function (e, d) {
+		d = d || [{}];
+		var now = new Date().getTime();
+		cb(null, d.some(function (v) { return v.expire > now; }));
+	})
+};
+
 /* require: options */
 Bot.prototype.findPlan = function (keyword) {
 	var plans = [];
@@ -994,6 +1008,8 @@ Bot.prototype.findPlan = function (keyword) {
 /* require: options.uid, options.pid */
 /* do not support multiple data */
 Bot.prototype.checkPlayable = function (options, cb) {
+	var self = this;
+
 	// free program
 	if(this.isFree(options)) { return cb(null, true); }
 	else if(!textype.isObjectID(options.uid)) { return cb(null, false); }
@@ -1003,7 +1019,14 @@ Bot.prototype.checkPlayable = function (options, cb) {
 	var collection = this.db.collection('Tickets');
 	var condition = {uid: options.uid, expire: {$gt: now}, programs: {$in: [options.pid]}};
 	collection.findOne(condition, {}, function (e, d) {
-		if(!d) { return cb(null, false); }
+		if(!d) {
+			if(self.isVIPProgram(options.pid)) {
+				self.isVIPUser(options.uid, cb);
+			}
+			else {
+				return cb(null, false);
+			}
+		}
 		else { return cb(null, true); }
 	});
 };
