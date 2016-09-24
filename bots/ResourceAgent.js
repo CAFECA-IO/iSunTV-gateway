@@ -542,7 +542,7 @@ Bot.prototype.getProgramFromDB = function (options, cb) {
 				d3 = dvalue.default(d3, d2);
 				// fill playback_time_at and is_favored
 				var opts4 = {pid: pid, uid: options.uid};
-				self.loadCustomData(opts4, function (e4, d4){
+				self.loadCustomData(opts4, function (e4, d4) {
 					d4 = dvalue.default(d4, d3);
 					if(d4.type == 'series') {
 						// fetch episodes data
