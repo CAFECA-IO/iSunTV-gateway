@@ -231,7 +231,7 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 	options = dvalue.default(options, { page: 1, limit: 10 });
 
 	// crawl the tv program api
-	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
+	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/chosen?page=%s&limit=%s');
 	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
 	featuredUrl = url.parse(featuredUrl);
 	featuredUrl.datatype = 'json';
@@ -612,7 +612,7 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 	var limitOpt = Number(options.limit);
 	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
 	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/chosen?page=%s&limit=%s');
+	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
 	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
 	specialSeriesUrl = url.parse(specialSeriesUrl);
 	specialSeriesUrl.datatype = 'json';
