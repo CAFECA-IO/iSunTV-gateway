@@ -24,7 +24,7 @@ const descProgram = function (data, detail) {
 		},
 		images: img.images,
 		updated: data.updated_at || '',
-		createYear: data.releaseyear,
+		createYear: data.releaseyear || '',
 		publish: '',
 		grading: '',
 		programType: data.programType
