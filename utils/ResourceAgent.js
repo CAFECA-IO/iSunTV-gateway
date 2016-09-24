@@ -85,7 +85,7 @@ const fetchStream = function (data) {
 	return result;
 };
 const toHttps = function (data) {
-	if(textype.isURL(data)) { data.replace(/^http:/, 'https:/'); }
+	if(textype.isURL(data)) { data = data.replace(/^http:/, 'https:/'); }
 	return data;
 };
 

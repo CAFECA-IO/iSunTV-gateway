@@ -372,7 +372,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 				options.validcode = d.validcode;
 				options.username = d.username;
 				send(options);
-				self.cleanVerifyHistory(user.account);
+				self.cleanVerifyHistory(options.email);
 			}
 		});
 	}
