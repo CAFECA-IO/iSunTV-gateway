@@ -54,10 +54,10 @@ const descProgram = function (data, detail) {
 				var lengthArr = data.length.split(/\D/).filter(function(v) { return v.length > 0 }).map(function (v) { return parseInt(v) || 0; });
 				if (lengthArr.length == 3) {
 					program.duration = lengthArr[0] * 60 + lengthArr[1] * 1 + lengthArr[2] / 60.0;
-					program.duration = parseFloat(program.duration.toFixed(2));
+					program.duration = parseInt(program.duration);
 				} else if (lengthArr.length == 2) {
 					program.duration = lengthArr[0] * 1 + lengthArr[1] / 60.0;
-					program.duration = parseFloat(program.duration.toFixed(2));
+					program.duration = parseInt(program.duration);
 				}
 			}
 			else {
