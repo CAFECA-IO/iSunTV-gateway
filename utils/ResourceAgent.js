@@ -24,7 +24,7 @@ const descProgram = function (data, detail) {
 		},
 		images: img.images,
 		updated: data.updated_at || '',
-		createYear: '',
+		createYear: data.releaseyear,
 		publish: '',
 		grading: '',
 		programType: data.programType
@@ -51,14 +51,17 @@ const descProgram = function (data, detail) {
 				program.ep = data.ep || 1;
 			}
 			if (data.length && typeof data.length === 'string') {
-				var lengthArr = data.length.split(':');
-				if (lengthArr.length == 3){
+				var lengthArr = data.length.split(/\D/).filter(function(v) { return v.length > 0 }).map(function (v) { return parseInt(v) || 0; });
+				if (lengthArr.length == 3) {
 					program.duration = lengthArr[0] * 60 + lengthArr[1] * 1 + lengthArr[2] / 60.0;
 					program.duration = program.duration.toFixed(2);
 				} else if (lengthArr.length == 2){
 					program.duration = lengthArr[0] * 1 + lengthArr[1] / 60.0;
 					program.duration = program.duration.toFixed(2);
 				}
+			}
+			else {
+				program.duration = 0;
 			}
 
 			if(data.show_id && data.show_id.length > 0) { data.sid = data.show_id; }
@@ -85,7 +88,7 @@ const fetchStream = function (data) {
 	return result;
 };
 const toHttps = function (data) {
-	if(textype.isURL(data)) { data = data.replace(/^http:/, 'https:/'); }
+	if(textype.isURL(data)) { data = data.replace(/^http:/, 'https:'); }
 	return data;
 };
 
