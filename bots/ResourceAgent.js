@@ -986,6 +986,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 	var seriesUrl = url.resolve(this.config.resourceAPI, '/api/shows?page=%s&limit=%s&token=TEST484863dbb3ce7ca4e080b15b18cd');
 	var limit = 20;
 	var total = 0;
+	var pids = [];
 	var crawlByPage = function (page) {
 		page = page > 0? page: 1;
 		seriesUrl = url.parse(seriesUrl);
@@ -995,6 +996,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 			if(--todo == 0) {
 				// save programs of plan
 				self.savePlan({}, function () {});
+				self.db.collection('Programs').remove({pid: {$nin: pids}});
 				cb(null, d2.length);
 			}
 		};
@@ -1016,6 +1018,8 @@ Bot.prototype.crawlSeries = function (options, cb) {
 					v = descProgram(v, true);
 					// collect series of plan
 					v.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: v.pid}) });
+					pids.push(v.pid);
+					if(Array.isArray(d3)) { d3.map(function (v2) { pids.push(v2); }); }
 					self.saveProgram(v, done);
 				});
 			});
