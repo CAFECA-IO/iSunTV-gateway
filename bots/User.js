@@ -16,6 +16,7 @@ var renewLife = 8640000000;
 var maxUser = 10;
 var ResetLife = 86400000;
 var historyPeriod = 1800000;
+var requireEmailVerification = false;
 
 var logger;
 var APIURL;
@@ -93,6 +94,7 @@ var descUser = function (user) {
 		allowmail: false,
 		status: 1
 	});
+	if(!requireEmailVerification) { user.verified = true; }
 	if(user.username.length == 0) { user.username = user.email; }
 	if(user.email.length == 0 && user.emails.length > 0) { user.email = user.emails[0]; }
 	if(user.photo.length == 0 && user.photos.length > 0) { user.photo = user.photos[0]; }
