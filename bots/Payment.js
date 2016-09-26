@@ -12,6 +12,7 @@ const defaultPeriod = 86400 * 1000 * 30;
 const trialPeriod = 86400  * 1000 * 7;
 
 var logger;
+var requireEmailVerification = false;
 
 // PaymentPlan.type: 1 = 單租, 2 = 套餐, 3 = subscribe, 4 = free, 5 = login to free
 var formatPaymentPlan = function (data) {
@@ -457,7 +458,7 @@ Bot.prototype.fetchBrainTreeID = function (options, cb) {
 	var collection = this.db.collection('Users');
 	collection.findOne(condition, {}, function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(!d.verified) {
+		else if(requireEmailVerification && !d.verified) {
 			e = new Error('Account not verified');
 			e.code = '69101';
 			return cb(e);
