@@ -111,12 +111,13 @@ Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
 		if(e) { e.code = '01002'; return cb(e); }
 		// merge programs
 		var pids = watchingPrograms.map(function(program){ return program.pid });
-		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs) {
-			cb(null, watchingPrograms.map(function (watchingProgram){
+		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function (err, programs) {
+			var rs = watchingPrograms.map(function (watchingProgram) {
 				var program = dvalue.search(programs, { pid : watchingProgram.pid });
-				if(program) { return undefined; }
+				if(!program) { return undefined; }
 				else { return dvalue.default(program, watchingProgram); }
-			}).filter(function (v) { return v != undefined; }))
+			}).filter(function (v) { return v != undefined; });
+			cb(null, rs);
 		});
 	});
 }
