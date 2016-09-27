@@ -114,8 +114,9 @@ Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
 		self.getBot('ResourceAgent').mergeByPrograms({ pids: pids }, function(err, programs) {
 			cb(null, watchingPrograms.map(function (watchingProgram){
 				var program = dvalue.search(programs, { pid : watchingProgram.pid });
-				return dvalue.default(program, watchingProgram);
-			}))
+				if(program) { return undefined; }
+				else { return dvalue.default(program, watchingProgram); }
+			}).filter(function (v) { return v != undefined; }))
 		});
 	});
 }
