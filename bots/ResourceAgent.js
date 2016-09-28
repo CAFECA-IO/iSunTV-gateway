@@ -771,7 +771,7 @@ Bot.prototype.listProgramByType = function (options, cb) {
 
 	var self = this;
 	var collection = self.db.collection('Programs');
-	collection.find({"programType.ptid": options.ptid}, {_id: 0}).sort([["sid", 1]]).skip(skip).limit(limit).toArray(function (e, programs) {
+	collection.find({$or: [{'programType.ptid': options.ptid, type: 'series'}, {'programType.ptid': options.ptid, type: 'episode', sid: {$exists: false}}]}, {_id: 0}).sort([["sid", 1]]).skip(skip).limit(limit).toArray(function (e, programs) {
 		if(e) { e.code = '01002'; return cb(e); }
 		var opts2 = {uid: options.uid ,programs: programs};
 		self.getBot('Payment').fillPaymentInformation(opts2, function (e2, d2) {
