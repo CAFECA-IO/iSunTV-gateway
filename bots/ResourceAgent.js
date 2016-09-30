@@ -440,15 +440,15 @@ Bot.prototype.getSeriesProgram = function (options, cb) {
 
 					// merge comments
 					var bot = self.getBot('Comment');
-					bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e1, d1) {
-						show = dvalue.default(d1, show);
+					//++ bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e1, d1) {
+						//++ show = dvalue.default(d1, show);
 
 						// fill playback_time_at and is_favored
 						self.loadCustomData({pid: pid, uid: options.uid}, function (e2, d2){
 							show = dvalue.default(d2, show);
 							cb(null, show);
 						});
-					});
+					//++ });
 				});
 			});
 		})
@@ -508,14 +508,14 @@ Bot.prototype.getEpisodeProgram = function (options, cb) {
 
 			// fill comments
 			var bot = self.getBot('Comment');
-			bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e1, d1) {
-				episode = dvalue.default(d1, episode);
+			//++ bot.summaryProgramComments({pid: pid, uid: options.uid, page: 1, limit: 7}, function (e1, d1) {
+				//++ episode = dvalue.default(d1, episode);
 				// fill playback_time_at and is_favored
 				self.loadCustomData({pid: pid, uid: options.uid}, function (e2, d2){
 					episode = dvalue.default(d2, episode);
 					cb(null, episode);
 				});
-			});
+			//++ });
 		});
 	});
 };
@@ -538,8 +538,8 @@ Bot.prototype.getProgramFromDB = function (options, cb) {
 
 			// fill comments
 			var opts3 = {pid: pid, uid: options.uid, page: 1, limit: 7};
-			self.getBot('Comment').summaryProgramComments(opts3, function (e3, d3) {
-				d3 = dvalue.default(d3, d2);
+			//++ self.getBot('Comment').summaryProgramComments(opts3, function (e3, d3) {
+				var d3 = d2;//++ d3 = dvalue.default(d3, d2);
 				// fill playback_time_at and is_favored
 				var opts4 = {pid: pid, uid: options.uid};
 				self.loadCustomData(opts4, function (e4, d4) {
@@ -549,11 +549,20 @@ Bot.prototype.getProgramFromDB = function (options, cb) {
 						var opts5 = {pids: d4.programs};
 						self.mergeByPrograms(opts5, function (e5, d5) {
 							if(e5) { return cb(e5); }
+
+							// fill payment data
 							var opts6 = {uid: options.uid ,programs: d5};
 							self.getBot('Payment').fillPaymentInformation(opts6, function (e6, d6) {
 								if(e6) { return cb(e6); }
 								d4.programs = d6;
-								cb(null, d4);
+
+								// fill favorite data
+								opts6.programs = d6;
+								self.getBot('Favorite').fillFavoriteData(opts6, function (e7, d7) {
+									if(e7) { return cb(e7); }
+									d4.programs = d7;
+									cb(null, d4);
+								});
 							});
 						});
 					}
@@ -561,7 +570,7 @@ Bot.prototype.getProgramFromDB = function (options, cb) {
 						cb(null, d4);
 					}
 				});
-			});
+			//++ });
 		});
 	});
 };
