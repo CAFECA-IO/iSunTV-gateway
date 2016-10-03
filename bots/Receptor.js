@@ -266,6 +266,28 @@ Bot.prototype.init = function(config) {
 		res.result.setData(self.config.package);
 		next();
 	});
+	//++ get android app version
+	this.router.get('/version/android', function (req, res, next) {
+		res.result.setResult(1);
+		res.result.setMessage('Application Information');
+		res.result.setData({
+			"is_allow": true,
+			"is_latest": true,
+			"latest": "0.13.2",
+			"allow": ["0.13.2", "0.13.1", "0.13.0"]
+		});
+	});
+	//++ get ios app version
+	this.router.get('/version/ios', function (req, res, next) {
+		res.result.setResult(1);
+		res.result.setMessage('Application Information');
+		res.result.setData({
+			"is_allow": true,
+			"is_latest": true,
+			"latest": "0.13.2",
+			"allow": ["0.13.2", "0.13.1", "0.13.0"]
+		});
+	});
 
 	// get command Result
 	this.router.get('/command/:id', checkHashCash, function (req, res, next) {
