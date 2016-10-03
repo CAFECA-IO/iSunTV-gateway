@@ -276,6 +276,7 @@ Bot.prototype.init = function(config) {
 			"latest": "0.13.2",
 			"allow": ["0.13.2", "0.13.1", "0.13.0"]
 		});
+		next();
 	});
 	//++ get ios app version
 	this.router.get('/version/ios', function (req, res, next) {
@@ -287,6 +288,7 @@ Bot.prototype.init = function(config) {
 			"latest": "0.13.2",
 			"allow": ["0.13.2", "0.13.1", "0.13.0"]
 		});
+		next();
 	});
 
 	// get command Result
