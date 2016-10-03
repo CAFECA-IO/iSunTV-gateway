@@ -675,9 +675,29 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 	var page = Number(options.page);
 	var limit = Number(options.limit);
 	var skip;
+	var Programs = this.db.collection('Programs');
 	page = page >= 1 ? page: 1;
 	limit = limit > 0 ? limit: 12;
 	skip = (page - 1) * limit;
+
+	Programs.aggregate([{$match: {type: 'episode'}}, {$sort: {updated: -1}}, {$group:{_id: '$sid'}}, {$skip: skip}, {$limit: limit}]).toArray(function (e1, d1) {
+		if(e1) { e1.code = '01002'; return cb(e1); }
+		var pids = d1.map(function (v) { return v._id; });
+		self.mergeByPrograms({pids: pids}, function (e2, d2) {
+			// merge payment and playable fields
+			var opts = {uid: options.uid, programs: d2};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
+				// fill favorite data
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e3, d3) {
+					if(e3) { return cb(e3); }
+					else { cb(null, d3); }
+				});
+			});
+		});
+	});
+	/*
 	var latestUrl = url.parse(url.resolve(this.config.resourceAPI, '/api/latest'));
 	latestUrl.datatype = 'json';
 	request(latestUrl, function(e, res) {
@@ -701,6 +721,7 @@ Bot.prototype.getLatestProgram = function (options, cb) {
 			});
 		});
 	});
+	*/
 };
 
 // listPrgramType
