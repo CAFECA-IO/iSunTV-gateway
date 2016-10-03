@@ -240,7 +240,7 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
 		// merge db data
 		var programs = descProgram(res.data);
-		var pids = programs.map(function (v) { return v.pid; });
+		var pids = programs.map(function (v) { return v.sid; });
 		self.mergeByPrograms({pids: pids}, function (e2, d2) {
 			// merge payment and playable fields
 			var opts = {uid: options.uid, programs: d2};
