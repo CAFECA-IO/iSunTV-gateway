@@ -50,6 +50,9 @@ const descProgram = function (data, detail) {
 				program.sid = data.sid;
 				program.ep = data.ep || 1;
 			}
+			else if(data.show_id) {
+				program.sid = 's' + data.show_id;
+			}
 			if (data.length && typeof data.length === 'string') {
 				var lengthArr = data.length.split(/\D/).filter(function(v) { return v.length > 0 }).map(function (v) { return parseInt(v) || 0; });
 				if (lengthArr.length == 3) {
