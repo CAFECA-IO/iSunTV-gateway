@@ -227,23 +227,40 @@ Bot.prototype.listBannerProgram = function (options, cb) {
  */
 Bot.prototype.listFeaturedProgram = function (options, cb) {
 	var self = this;
+	var todo = 3, list = [];
 	// default value
 	options = dvalue.default(options, { page: 1, limit: 10 });
+	var limit = parseInt(options.limit) > 0? parseInt(options.limit): 10;
+	var skip = parseInt(options.page) > 1? (parseInt(options.page) - 1) * limit: 0;
 
 	// crawl the tv program api
-	var featuredUrl = url.resolve(this.config.resourceAPI, '/api/chosen?page=%s&limit=%s');
-	featuredUrl = dvalue.sprintf(featuredUrl, options.page, options.limit);
-	featuredUrl = url.parse(featuredUrl);
-	featuredUrl.datatype = 'json';
-	request(featuredUrl, function (e, res) {
+	var featuredUrlepisode = url.resolve(this.config.resourceAPI, '/api/chosen?page=%s&limit=%s');
+	featuredUrlepisode = dvalue.sprintf(featuredUrlepisode, options.page, options.limit);
+	featuredUrlepisode = url.parse(featuredUrlepisode);
+	featuredUrlepisode.datatype = 'json';
+	var featuredUrlshow = url.resolve(this.config.resourceAPI, '/api/chosenshow?page=%s&limit=%s');
+	featuredUrlshow = dvalue.sprintf(featuredUrlshow, options.page, options.limit);
+	featuredUrlshow = url.parse(featuredUrlshow);
+	featuredUrlshow.datatype = 'json';
+
+	request(featuredUrlshow, function (e1, res1) {
 		// error
-		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
-		// merge db data
-		var programs = descProgram(res.data);
-		var pids = programs.map(function (v) { return v.sid; });
-		self.mergeByPrograms({pids: pids}, function (e2, d2) {
-			// merge payment and playable fields
-			var opts = {uid: options.uid, programs: d2};
+		if(e1) { e1 = new Error('remote api error'); e1.code = '54001' ; return cb(e1); }
+		if(Array.isArray(res1.data)) {
+			res1.data.map(function (v) {
+				list.push(v);
+			});
+		}
+		/* no show episode videos
+		request(featuredUrlepisode, function (e2, res2) {
+			// error
+			if(e2) { e2 = new Error('remote api error'); e2.code = '54001' ; return cb(e2); }
+			res2.data.map(function (v) {
+				list.push(v);
+			});
+		*/
+			var programs = descProgram(list.splice(skip, limit));
+			var opts = {uid: options.uid, programs: programs};
 			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
 				if(err) { return cb(err); }
 				// fill favorite data
@@ -253,7 +270,9 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 					else { cb(null, d); }
 				});
 			});
+		/*
 		});
+		*/
 	});
 };
 
@@ -617,48 +636,55 @@ Bot.prototype.getProgramPlayData = function (options, cb) {
  */
 Bot.prototype.getSpecialSeries = function (options, cb) {
 	var self = this;
-	var pageOpt = Number(options.page);
-	var limitOpt = Number(options.limit);
-	var page = (pageOpt && pageOpt >= 1 ) ? (pageOpt - 1) * 8 : 0;
-	var limit = (limitOpt && (limitOpt <= 8 || limitOpt > 0) ) ? limitOpt : 8;
-	var specialSeriesUrl = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
-	specialSeriesUrl = dvalue.sprintf(specialSeriesUrl, page, limit);
-	specialSeriesUrl = url.parse(specialSeriesUrl);
-	specialSeriesUrl.datatype = 'json';
-	request(specialSeriesUrl, function(e, res){
-		// error
-		if(e) { e = new Error('remote api error'); e.code = '54001' ; return cb(e); }
+	var todo = 3, list = [];
+	// default value
+	options = dvalue.default(options, { page: 1, limit: 10 });
+	var limit = parseInt(options.limit) > 0? parseInt(options.limit): 10;
+	var skip = parseInt(options.page) > 1? (parseInt(options.page) - 1) * limit: 0;
+	var result = {
+		title: '',
+		description: '',
+		cover: 'http://api.isuntv.com/resources/feature_v2.jpg',
+		programs: []
+	};
 
-		var programs = res.data;
-		// mapping data
-		var result = {
-			title: '',
-			description: '',
-			cover: 'http://api.isuntv.com/resources/feature_v2.jpg',
-			programs: []
-		};
-		var pids = res.data.map(function (program) {
-			program = descProgram(program);
-			return program.pid;
-		});
-		var opts1 = {uid: options.uid, pids: pids};
-		self.mergeByPrograms(opts1, function (e1, d1) {
-			if(e1) { return cb(e1); }
-			var opts2 = {uid: options.uid ,programs: d1};
-			self.getBot('Payment').fillPaymentInformation(opts2, function (e2, d2) {
-				if(e2) { return cb(e2); }
+	// crawl the tv program api
+	var featuredUrlepisode = url.resolve(this.config.resourceAPI, '/api/featured?page=%s&limit=%s');
+	featuredUrlepisode = dvalue.sprintf(featuredUrlepisode, options.page, options.limit);
+	featuredUrlepisode = url.parse(featuredUrlepisode);
+	featuredUrlepisode.datatype = 'json';
+	var featuredUrlshow = url.resolve(this.config.resourceAPI, '/api/featuredshow?page=%s&limit=%s');
+	featuredUrlshow = dvalue.sprintf(featuredUrlshow, options.page, options.limit);
+	featuredUrlshow = url.parse(featuredUrlshow);
+	featuredUrlshow.datatype = 'json';
+
+	request(featuredUrlshow, function (e1, res1) {
+		// error
+		if(e1) { e1 = new Error('remote api error'); e1.code = '54001' ; return cb(e1); }
+		if(Array.isArray(res1.data)) {
+			res1.data.map(function (v) {
+				list.push(v);
+			});
+		}
+		request(featuredUrlepisode, function (e2, res2) {
+			// error
+			if(e2) { e2 = new Error('remote api error'); e2.code = '54001' ; return cb(e2); }
+			res2.data.map(function (v) {
+				list.push(v);
+			});
+			var programs = descProgram(list.splice(skip, limit));
+			var opts = {uid: options.uid, programs: programs};
+			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+				if(err) { return cb(err); }
 				// fill favorite data
-				var opts3 = {uid: options.uid, programs: d2};
-				self.getBot('Favorite').fillFavoriteData(opts3, function (e3, d3) {
-					if(e3) { return cb(e3); }
-					else {
-						result.programs = d3;
-						cb(null, result);
-					}
+				var ffopts = {uid: options.uid, programs: programs};
+				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+					if(e) { return cb(e); }
+					else { result.programs = d; cb(null, result); }
 				});
 			});
 		});
-	})
+	});
 };
 
 // latest program
