@@ -259,15 +259,18 @@ Bot.prototype.listFeaturedProgram = function (options, cb) {
 				list.push(v);
 			});
 		*/
-			var programs = descProgram(list.splice(skip, limit));
-			var opts = {uid: options.uid, programs: programs};
-			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-				if(err) { return cb(err); }
-				// fill favorite data
-				var ffopts = {uid: options.uid, programs: programs};
-				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
-					if(e) { return cb(e); }
-					else { cb(null, d); }
+			var tmpPrograms = descProgram(list.splice(skip, limit));
+			var pids = tmpPrograms.map(function (v) { return v.pid; });
+			self.mergeByPrograms({pids: pids}, function (e2, programs) {
+				var opts = {uid: options.uid, programs: programs};
+				self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+					if(err) { return cb(err); }
+					// fill favorite data
+					var ffopts = {uid: options.uid, programs: programs};
+					self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+						if(e) { return cb(e); }
+						else { cb(null, d); }
+					});
 				});
 			});
 		/*
@@ -672,15 +675,18 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 			res2.data.map(function (v) {
 				list.push(v);
 			});
-			var programs = descProgram(list.splice(skip, limit));
-			var opts = {uid: options.uid, programs: programs};
-			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
-				if(err) { return cb(err); }
-				// fill favorite data
-				var ffopts = {uid: options.uid, programs: programs};
-				self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
-					if(e) { return cb(e); }
-					else { result.programs = d; cb(null, result); }
+			var tmpPrograms = descProgram(list.splice(skip, limit));
+			var pids = tmpPrograms.map(function (v) { return v.pid; });
+			self.mergeByPrograms({pids: pids}, function (e2, programs) {
+				var opts = {uid: options.uid, programs: programs};
+				self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
+					if(err) { return cb(err); }
+					// fill favorite data
+					var ffopts = {uid: options.uid, programs: programs};
+					self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
+						if(e) { return cb(e); }
+						else { cb(null, d); }
+					});
 				});
 			});
 		});
