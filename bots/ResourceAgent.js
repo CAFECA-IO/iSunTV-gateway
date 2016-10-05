@@ -685,7 +685,10 @@ Bot.prototype.getSpecialSeries = function (options, cb) {
 					var ffopts = {uid: options.uid, programs: programs};
 					self.getBot('Favorite').fillFavoriteData(ffopts, function (e, d) {
 						if(e) { return cb(e); }
-						else { cb(null, d); }
+						else {
+							result.programs = d;
+							cb(null, result);
+						}
 					});
 				});
 			});
