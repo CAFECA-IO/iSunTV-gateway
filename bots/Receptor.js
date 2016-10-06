@@ -920,7 +920,7 @@ Bot.prototype.init = function(config) {
 			}
 			else {
 				res.result.setResult(1);
-				res.result.setMessage('last playtime:', req.params.pid);
+				res.result.setMessage('custom data:', req.params.pid);
 				res.result.setData(d);
 			}
 			next();
