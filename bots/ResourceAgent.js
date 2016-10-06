@@ -974,8 +974,8 @@ Bot.prototype.listRentPrograms = function (options, cb) {
 Bot.prototype.loadCustomData = function(query, cb){
 	var self = this;
 	var data = {
-		is_favored : false,
-		playback_time_at : 0,
+		is_favored: false,
+		playback_time_at: 0
 	};
 	var findLastWatch = function (record, programs) {
 		var currEP = (record? (programs.find(function (v) { return v.pid == record.pid; }) || programs[0]): programs[0]) || {};

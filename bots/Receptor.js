@@ -919,6 +919,7 @@ Bot.prototype.init = function(config) {
 				logger.exception.warn(e);
 			}
 			else {
+				d.last_play_position_in_second = d.playback_time_at;
 				res.result.setResult(1);
 				res.result.setMessage('custom data:', req.params.pid);
 				res.result.setData(d);
