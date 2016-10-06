@@ -908,6 +908,24 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// GET Program Playtime
+	this.router.get('/programCustom/:pid', function (req, res, next) {
+		var bot = self.getBot('ResourceAgent');
+		var options = {pid: req.params.pid, uid: req.session.uid};
+		bot.loadCustomData(options, function (e, d) {
+			if(e) {
+				res.result.setErrorCode(e.code);
+				res.result.setMessage(e.message);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('last playtime:', req.params.pid);
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 
 	// GET Latest Programs
 	this.router.get(['/latest/program/', '/latest/program/:page', '/latest/program/:page/:limit'], function (req, res, next) {
