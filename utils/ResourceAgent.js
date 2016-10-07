@@ -8,12 +8,13 @@ const descProgram = function (data, detail) {
 	if(Array.isArray(data)) { return data.map(function (v) { return descProgram(v, detail); }); }
 	var img = fetchImage(data);
 	var stream = fetchStream(data);
+	var desc = (data.description || '').split('###'); //++ for now
 	var program = {
 		pid: data.pid,
 		type: '',
 		title: data.title,
-		description: data.description,
-		shortdesc: data.shortdesc || '',
+		description: desc.length > 1? desc[1]: desc[0],
+		shortdesc: data.shortdesc || desc.length > 1? desc[0]: '',
 		cover: toHttps(img.cover),
 		banner: toHttps(data.imgtf_web),
 		bannerList: {
