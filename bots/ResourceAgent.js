@@ -192,7 +192,7 @@ Bot.prototype.listBannerProgram = function (options, cb) {
 			res2.data.map(function (v) {
 				list.push(v);
 			});
-			var programs = descProgram(list.splice(skip, limit));
+			var programs = descProgram(list.splice(skip, limit)).map(function (v) { v.description = v.shortdesc; return v; });
 			var opts = {uid: options.uid, programs: programs};
 			self.getBot('Payment').fillPaymentInformation(opts, function (err, programs) {
 				if(err) { return cb(err); }

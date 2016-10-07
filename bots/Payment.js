@@ -883,17 +883,17 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 						else {
 							subscribeOptions.trialPeriod = false;
 						}
-						self.gateway.subscription.create(subscribeOptions, function (e3, d3) {
-							if(e3) { e3.code = '87201'; return cb(e3); }
-							else if(!d3.success) { e3 = new Error('payment failed'); e3.code = '87201'; return cb(e3); }
+						self.gateway.subscription.create(subscribeOptions, function (e4, d4) {
+							if(e4) { e4.code = '87201'; return cb(e4); }
+							else if(!d4.success) { e4 = new Error('payment failed'); e4.code = '87201'; return cb(e4); }
 							else {
 								try {
-									d3._subscribe = d3.subscription.id;
-									d3._charge = new Date(d3.subscription.firstBillingDate).getTime();
-									d3._trial = options.trial.trialDuration > 0? d3._charge: options.trial.keep > 0? options.trial.keep: 0;
+									d4._subscribe = d4.subscription.id;
+									d4._charge = new Date(d4.subscription.firstBillingDate).getTime();
+									d4._trial = options.trial.trialDuration > 0? d4._charge: options.trial.keep > 0? options.trial.keep: 0;
 								}
-								catch(e) {}
-								return cb(null, d3);
+								catch(e5) {}
+								return cb(null, d4);
 							}
 						});
 					}
