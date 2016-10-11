@@ -868,9 +868,6 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 						logger.exception.warn('--- subscribe failed ---');
 						logger.exception.warn(d3);
 						var nextCharge = 0, trialPeriod = 0;
-						
-						nextCharge = trialPeriod > 0? trialPeriod
-
 						var subscribeOptions = {
 							paymentMethodToken: d3.paymentMethod.token,
 							planId: "MonthVIP"
