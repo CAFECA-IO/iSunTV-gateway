@@ -902,6 +902,18 @@ Bot.prototype.fetchRelativePrograms = function (options, cb) {
 	var self = this;
 	this.getProgramFromDB(options, function (e1, d1) {
 		if(e1) { return cb(e1); }
+
+		//-- 暫時修改為各集介紹
+		var pids = d1.programs || [];
+		self.mergeByPrograms(pids, function (e2, d2) {
+			var opts2 = {uid: options.uid, programs: d2};
+			self.getBot('Payment').fillPaymentInformation(opts2, function (e4, d4) {
+				if(e4) { return cb(e4); }
+				else { return cb(null, d4); }
+			});
+		});
+
+		/*
 		options.keyword = d1.title.substr(0, 2);
 		self.searchPrograms(options, function (e2, d2) {
 			if(e2) { return cb(e2); }
@@ -919,6 +931,7 @@ Bot.prototype.fetchRelativePrograms = function (options, cb) {
 				});
 			});
 		});
+		*/
 	});
 };
 
