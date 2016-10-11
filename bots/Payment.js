@@ -884,8 +884,17 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 							subscribeOptions.trialPeriod = false;
 						}
 						self.gateway.subscription.create(subscribeOptions, function (e4, d4) {
-							if(e4) { e4.code = '87201'; return cb(e4); }
-							else if(!d4.success) { e4 = new Error('payment failed'); e4.code = '87201'; return cb(e4); }
+							if(e4) {
+								e4.code = '87201';
+								logger.exception.warn(e4);
+								return cb(e4);
+							}
+							else if(!d4.success) {
+								logger.exception.warn(d4);
+								e4 = new Error('payment failed');
+								e4.code = '87201';
+								return cb(e4);
+							}
 							else {
 								try {
 									d4._subscribe = d4.subscription.id;
