@@ -24,9 +24,16 @@ module.exports = {
 		}
 	},
 	BrainTree: {
-		merchantId: '',
-		publicKey: '',
-		privateKey: ''
+		sandbox: {
+			merchantId: '',
+			publicKey: '',
+			privateKey: ''
+		},
+		production: {
+			merchantId: '',
+			publicKey: '',
+			privateKey: ''
+		}
 	},
 	ios: {
 		sandBoxUrl: 'https://sandbox.itunes.apple.com/verifyReceipt',

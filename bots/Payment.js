@@ -144,7 +144,7 @@ Bot.prototype.init = function (config) {
 	logger = config.logger;
 	if(!config || !config.BrainTree) { return false; }
 
-	var btcfg = config.BrainTree;
+	var btcfg = config.production? config.BrainTree.production: config.BrainTree.sandbox;
 	btcfg.environment = braintree.Environment.Sandbox;
 	this.gateway = braintree.connect(btcfg);
 	this.plans = [];
@@ -862,13 +862,60 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 			if(e2) { e2.code = '87201'; return cb(e2); }
 			else {
 				self.gateway.paymentMethod.create({customerId: customer.id, paymentMethodNonce: options.nonce}, function (e3, d3) {
-					if(e3) { e3.code = '87201'; return cb(e2); }
+					if(e3) {e3.code = '87201'; return cb(e2); }
+					else if(!d3.success) {
+					//++ create payment method failed
+						logger.exception.warn('--- subscribe failed ---');
+						logger.exception.warn(d3);
+						var nextCharge = 0, trialPeriod = 0;
+						
+						nextCharge = trialPeriod > 0? trialPeriod
+
+						var subscribeOptions = {
+							paymentMethodToken: d3.paymentMethod.token,
+							planId: "MonthVIP"
+						};
+						options.trial = options.trial || {};
+						if(options.trial.trialPeriod) {
+							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
+							duration = (duration > 0)? duration: 0;
+							subscribeOptions.trialPeriod = true;
+							subscribeOptions.trialDuration = duration;
+
+							nextCharge = new Date().getTime() + options.trial.trialDuration;
+						}
+						else if(options.trial.charge > 0) {
+							subscribeOptions.trialPeriod = false;
+							subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
+
+							nextCharge = options.trial.charge;
+						}
+						else {
+							subscribeOptions.trialPeriod = false;
+
+							nextCharge = new Date().getTime();
+						}
+						self.gateway.transaction.sale({
+							amount: options.fee.price,
+							paymentMethodNonce: options.nonce,
+							options: {
+							  submitForSettlement: true
+							}
+						}, function (e, result) {
+							if(e || !result.success) { e = new Error('payment failed'); e.code = '87201'; cb(e); }
+							else {
+								result._subscribe = '#once';
+								result._charge = nextCharge;
+								result._trial = options.trial.trialDuration > 0? nextCharge: options.trial.keep > 0? options.trial.keep: 0;
+								cb(null, result);
+							}
+						});
+					}
 					else {
 						var subscribeOptions = {
 							paymentMethodToken: d3.paymentMethod.token,
 							planId: "MonthVIP"
 						};
-
 						options.trial = options.trial || {};
 						if(options.trial.trialPeriod) {
 							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
