@@ -211,7 +211,7 @@ Bot.prototype.init = function(config) {
 		this.pfx = fs.readFileSync(pathCert);
 		this.pfxpw = fs.readFileSync(pathPw);
 
-		this.https = require('https').createServer({
+		this.https = require('spdy').createServer({
 			pfx: this.pfx,
 			passphrase: this.pfxpw
 		}, this.app);
