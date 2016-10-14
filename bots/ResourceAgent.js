@@ -1146,7 +1146,6 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 		todo--;
 		if(todo == 0) {
 			list.sort(function(a, b) { return parseInt(a.pid.substr(1)) > parseInt(b.pid.substr(1))? 1: -1 });
-			console.log(list.map(function(v) { return v.pid; }));
 			var pids = list.map(function (v, i) {
 				v.ep = i + 1;
 				var pid = v.pid;
