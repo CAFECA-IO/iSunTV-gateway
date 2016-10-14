@@ -43,7 +43,7 @@ Bot.prototype.start = function () {
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
 		timer = period - (now % period);
-		// self.crawl({}, console.log);
+		self.crawl({}, console.log);
 		// crawl the program at the start of the day
 		setTimeout(function () {
 			self.crawl({}, function () {
@@ -780,7 +780,7 @@ Bot.prototype.listPrgramType = function (options, cb) {
 		var todo = res.data.length + 1;
 		var done = function () {
 			if(--todo == 0) {
-				prgramTypes.sort(function (a, b) { return parseInt(a.ptid) > parseInt(b.ptid); })
+				prgramTypes.sort(function (a, b) { return parseInt(a.ptid) > parseInt(b.ptid)? 1: -1; })
 				self.programTypes = prgramTypes;
 				cb(null, prgramTypes);
 			}
@@ -1145,7 +1145,8 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 	var done = function () {
 		todo--;
 		if(todo == 0) {
-			list.sort(function(a, b) { return parseInt(a.pid.substr(1)) > parseInt(b.pid.substr(1)); });
+			list.sort(function(a, b) { return parseInt(a.pid.substr(1)) > parseInt(b.pid.substr(1))? 1: -1 });
+			console.log(list.map(function(v) { return v.pid; }));
 			var pids = list.map(function (v, i) {
 				v.ep = i + 1;
 				var pid = v.pid;
