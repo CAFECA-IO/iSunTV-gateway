@@ -1095,6 +1095,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 		var done = function (e2, d2) {
 			if(--todo == 0) {
 				// save programs of plan
+				self.reportErrorProgram();
 				self.savePlan({}, function () {});
 				self.db.collection('Programs').remove({pid: {$nin: pids}});
 				cb(null, d2.length);
@@ -1116,11 +1117,19 @@ Bot.prototype.crawlSeries = function (options, cb) {
 					v.programs = d3;
 					if(skipType) { return done(); }
 					v = descProgram(v, true);
-					// collect series of plan
-					v.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: v.pid}) });
-					pids.push(v.pid);
-					if(Array.isArray(d3)) { d3.map(function (v2) { pids.push(v2); }); }
-					self.saveProgram(v, done);
+					// check program correction
+					self.checkErrorProgram(v, function (e) {
+						if(!e) {
+							// collect series of plan
+							v.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: v.pid}) });
+							pids.push(v.pid);
+							if(Array.isArray(d3)) { d3.map(function (v2) { pids.push(v2); }); }
+							self.saveProgram(v, done);
+						}
+						else {
+							done();
+						}
+					});
 				});
 			});
 			if(d1.length == limit) {
@@ -1133,6 +1142,72 @@ Bot.prototype.crawlSeries = function (options, cb) {
 		});
 	};
 	crawlByPage(1);
+};
+Bot.prototype.checkErrorProgram = function (program, cb) {
+	var self = this;
+	program._error = [];
+	if(!textype.isURL(program.cover)) { program._error.push('no_image');  }
+	switch(program.type) {
+		case 'episode':
+			var https = require('https');
+			if(!textype.isURL(program.stream)) {
+				program._error.push('no_stream');
+				self.addErrorProgram(program);
+				return cb(true);
+			}
+			var tmp = url.parse(program.stream);
+			var options = {
+				hostname: tmp.hostname,
+				path: tmp.path,
+				rejectUnauthorized: false
+			};
+
+			https.request(options, function (res) {
+				if(res.statusCode > 400) {
+					program._error.push('404_stream');
+				}
+				if(program._error.length > 0) {
+					self.addErrorProgram(program);
+					return cb(true);
+				}
+				else {
+					return cb();
+				}
+			}).end();
+			break;
+		case 'series':
+			if(!Array.isArray(program.programs) || program.programs.length == 0) {
+				program._error.push('no_episode');
+			}
+			if(program._error.length > 0) {
+				self.addErrorProgram(program);
+				return cb(true);
+			}
+			else {
+				return cb();
+			}
+			break;
+	}
+};
+Bot.prototype.addErrorProgram = function (program) {
+	if(!Array.isArray(this.errorProgram)) { this.errorProgram = []; }
+	this.errorProgram.push(program);
+};
+Bot.prototype.reportErrorProgram = function () {
+	if(this.errorProgram.length > 0) {
+		var template = this.getTemplate('mail_check_program.html');
+		var content, info = '';
+		this.errorProgram.map(function (v) {
+			info += dvalue.sprintf('<div><div>%s</div><div>%s</div><div>%s</div></div>', v.pid, v.title, v._error.join(','));
+		});
+		var dateString = new Date().toLocaleString().split(" ")[0];
+		var title = '資料不完整的節目清單 ' + dateString;
+		var content = dvalue.sprintf(template, info);
+		var email = this.config.admin.resource.join(', ');
+		this.getBot('Mailer').send(email, title, content, function () {});
+	}
+
+	this.errorProgram = [];
 };
 Bot.prototype.crawlEpisodes = function (options, cb) {
 	if(!options.sid) { cb(null, 0); }
@@ -1184,10 +1259,15 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 						if(tmpData.stream_url && tmpData.stream_url.length > 0 && !textype.isURL(tmpData.stream_url)) { tmpData.stream_url = url.resolve(self.config.cdn, tmpData.stream_url) + '.m3u8'; }
 
 						tmpData = descProgram(tmpData, true);
-						// collect episode of plan
-						tmpData.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: tmpData.pid}); });
-						list.push(tmpData);
-						done();
+						// check program correction
+						self.checkErrorProgram(tmpData, function (e) {
+							if(!e) {
+								// collect episode of plan
+								tmpData.paymentPlans.map(function (v2) { self.addToPlan({ppid: v2.ppid, pid: tmpData.pid}); });
+								list.push(tmpData);
+							}
+							done();
+						});
 					});
 				}, Math.random() * 1000 * i);
 			});
