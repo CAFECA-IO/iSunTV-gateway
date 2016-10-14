@@ -43,7 +43,7 @@ Bot.prototype.start = function () {
 	this.listPrgramType({}, function () {
 		var now = new Date().getTime();
 		timer = period - (now % period);
-		self.crawl({}, console.log);
+		// self.crawl({}, console.log);
 		// crawl the program at the start of the day
 		setTimeout(function () {
 			self.crawl({}, function () {
