@@ -1203,7 +1203,7 @@ Bot.prototype.reportErrorProgram = function () {
 		var dateString = new Date().toLocaleString().split(" ")[0];
 		var title = '資料不完整的節目清單 ' + dateString;
 		var content = dvalue.sprintf(template, info);
-		var email = this.config.admin.resource.join(', ');
+		var email = this.config.admin.resource;
 		this.getBot('Mailer').send(email, title, content, function () {});
 	}
 

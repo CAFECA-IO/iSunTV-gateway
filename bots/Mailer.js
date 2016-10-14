@@ -35,10 +35,15 @@ Bot.prototype.send = function (email, subject, content, cb) {
 
 	var mailOptions = {
 		from: 'noreply@isuncloud.com',
-		to: email,
 		subject: subject,
 		html: content
 	};
+	if(Array.isArray(email)) {
+		mailOptions.bcc = email;
+	}
+	else {
+		mailOptions.to = email;
+	}
 	mailTransport.sendMail(mailOptions, cb);
 };
 
