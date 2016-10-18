@@ -1303,7 +1303,7 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// question
-	this.router.get('/question/:email/:name', hashcash, function (req, res, next) {
+	this.router.get('/question/:email/:name', function (req, res, next) {
 
 	});
 };
