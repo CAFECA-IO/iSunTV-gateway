@@ -11,8 +11,8 @@ const dvalue = require('dvalue');
 const textype = require('textype');
 const request = require('../utils/Crawler.js').request;
 
-var tokenLife = 86400000;
-var renewLife = 8640000000;
+var tokenLife = 86400 * 1000;
+var renewLife = 86400 * 100 * 1000;
 var maxUser = 10;
 var ResetLife = 86400000;
 var historyPeriod = 1800000;
