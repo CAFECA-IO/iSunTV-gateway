@@ -330,8 +330,7 @@ Bot.prototype.init = function(config) {
 		var condition = {uid: req.session.uid};
 		bot.getProfile(condition, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -370,8 +369,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.addUser(user, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -389,8 +387,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.accountRegistable(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -406,8 +403,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.sendVericicationMail(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -422,8 +418,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.sendVericicationMail(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -439,8 +434,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.emailVerification(user, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -474,8 +468,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.login(user, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				res.result.setData({uid: e.uid});
 				logger.exception.warn(e);
 			}
@@ -505,13 +498,12 @@ Bot.prototype.init = function(config) {
 		next();
 	});
 	// renew token
-	this.router.get('/renew/:token/:renew', function (req, res, next) {
+	this.router.get(['/', '/renew/:token/:renew'], function (req, res, next) {
 		var token = {token: req.params.token, renew: req.params.renew};
 		var bot = self.getBot('User');
 		bot.renew(token, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -528,8 +520,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.forgetPassword(user, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -549,8 +540,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.checkResetPassword(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -570,8 +560,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.resetPassword(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -592,8 +581,7 @@ Bot.prototype.init = function(config) {
 		var bot = self.getBot('User');
 		bot.changePassword(user, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -616,8 +604,7 @@ Bot.prototype.init = function(config) {
 		var options = {};
 		bot.listChannel(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -634,8 +621,7 @@ Bot.prototype.init = function(config) {
 		var options = {cid: req.params.channel, time: req.query.time, days: req.query.days, period: req.query.period};
 		bot.descChannel(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -657,8 +643,7 @@ Bot.prototype.init = function(config) {
 		if(resource.path == '/streaming.m3u8') {
 			bot.parseChannel(resource, function (e, d) {
 				if(e) {
-					res.result.setErrorCode(e.code);
-					res.result.setMessage(e.message);
+					res.result.setError(e);
 					logger.exception.warn(e);
 				}
 				else {
@@ -671,8 +656,7 @@ Bot.prototype.init = function(config) {
 		else {
 			bot.channelResource(resource, function (e, d) {
 				if(e) {
-					res.result.setErrorCode(e.code);
-					res.result.setMessage(e.message);
+					res.result.setError(e);
 					logger.exception.warn(e);
 				}
 				else {
@@ -697,8 +681,8 @@ Bot.prototype.init = function(config) {
 	this.router.get('/program/', checkHashCash, function (req, res, next) {
 		self.getBot('ResourceAgent').listPID({}, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e.code);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -716,8 +700,8 @@ Bot.prototype.init = function(config) {
 		var options = {page: req.params.page, limit: req.params.limit};
 		bot.listBannerProgram(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -734,8 +718,8 @@ Bot.prototype.init = function(config) {
 		var options = {page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.listFeaturedProgram(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -752,8 +736,8 @@ Bot.prototype.init = function(config) {
 		var options = {page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.listSeries(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -770,8 +754,8 @@ Bot.prototype.init = function(config) {
 		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.getSeriesProgram(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -788,8 +772,8 @@ Bot.prototype.init = function(config) {
 		var options = {sid: req.params.sid, page: req.params.page, limit: req.params.limit, uid: req.session.uid};
 		bot.getSpecialSeries(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -806,8 +790,8 @@ Bot.prototype.init = function(config) {
 		var options = {};
 		bot.listPrgramType(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -824,8 +808,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, ptid: req.params.ptid, page: req.params.page, limit: req.params.limit};
 		bot.listProgramByType(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -842,8 +826,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, keyword: req.params.keyword, page: req.params.page, limit: req.params.limit};
 		bot.searchPrograms(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -860,8 +844,8 @@ Bot.prototype.init = function(config) {
 		var options = {pid: req.params.pid, uid: req.session.uid};
 		bot.fetchRelativePrograms(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -878,8 +862,7 @@ Bot.prototype.init = function(config) {
 		var options = {pid: req.params.pid, uid: req.session.uid};
 		bot.getProgramFromDB(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -896,8 +879,7 @@ Bot.prototype.init = function(config) {
 		var options = {pid: req.params.pid, uid: req.session.uid};
 		bot.getProgramPlayData(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -914,8 +896,7 @@ Bot.prototype.init = function(config) {
 		var options = {pid: req.params.pid, uid: req.session.uid};
 		bot.loadCustomData(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -934,8 +915,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.getLatestProgram(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -954,8 +935,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, pid: req.params.pid, rating: req.body.rating, title: req.body.title, comment: req.body.comment};
 		bot.writeComment(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -972,8 +952,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, pid: req.params.pid};
 		bot.deleteCommentByPID(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -991,8 +970,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, cmid: req.params.cmid};
 		bot.deleteComment(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1010,8 +988,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, cmid: req.params.cmid};
 		bot.verifyComment(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1030,8 +1007,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, pid: req.params.pid, page: req.params.page, limit: req.params.limit};
 		bot.listProgramComments(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1050,8 +1027,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listUserComments(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1070,8 +1047,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, pid: req.params.pid};
 		bot.addFavorite(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1088,8 +1064,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, pid: req.params.pid};
 		bot.removeFavorite(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1101,13 +1076,13 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List my favorite
-	this.router.get(['/favorite', '/favorite/:page', '/favorite/:page/:limit'], checkLogin, function (req, res, next) {
+	this.router.get(['/favorite', '/favorite/:page', '/favorite/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('Favorite');
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listFavorite(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1130,8 +1105,7 @@ Bot.prototype.init = function(config) {
 		};
 		bot.recordWatchingProgram(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1143,13 +1117,13 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// List watched history
-	this.router.get(['/watched', '/watched/:page', '/watched/:page/:limit'], checkLogin, function (req, res, next) {
+	this.router.get(['/watched', '/watched/:page', '/watched/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('Watching');
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listWatchedHistory(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1161,13 +1135,12 @@ Bot.prototype.init = function(config) {
 		});
 	});
 	// list Continue Watching
-	this.router.get(['/watching', '/watching/:page', '/watching/:page/:limit'], checkLogin, function (req, res, next) {
+	this.router.get(['/watching', '/watching/:page', '/watching/:page/:limit'], function (req, res, next) {
 		var bot = self.getBot('Watching');
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listContinueWatching(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1184,8 +1157,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, page: req.params.page, limit: req.params.limit};
 		bot.listRentPrograms(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1203,8 +1176,7 @@ Bot.prototype.init = function(config) {
 		if (req.files) options.photo = req.files[0];
 		bot.updateProfile(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1223,8 +1195,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, ppid: req.body.ppid, pid: req.body.pid};
 		bot.order(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1241,8 +1212,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, oid: req.body.oid, ppid: req.body.ppid, pid: req.body.pid, nonce: req.body.nonce || req.body.payment_method_nonce, gateway: req.params.gateway, receipt: req.body.receipt, transaction: req.body.transaction};
 		bot.checkoutTransaction(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1258,8 +1228,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid};
 		self.getBot('Payment').cancelSubscribe(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1274,8 +1243,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, gateway: req.params.gateway, receipt: req.body.receipt, transaction: req.body.transaction};
 		self.getBot('Payment').manualRenew(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1290,8 +1258,8 @@ Bot.prototype.init = function(config) {
 		var options = {};
 		self.getBot('Payment').listPaymentPlans(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1307,8 +1275,8 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid};
 		self.getBot('Payment').billingList(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
+				res.result.setData([]);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1324,8 +1292,7 @@ Bot.prototype.init = function(config) {
 		var options = {uid: req.session.uid, topic: req.params.topic, data: req.body};
 		self.getBot('Survey').add(options, function (e, d) {
 			if(e) {
-				res.result.setErrorCode(e.code);
-				res.result.setMessage(e.message);
+				res.result.setError(e);
 				logger.exception.warn(e);
 			}
 			else {
@@ -1334,6 +1301,10 @@ Bot.prototype.init = function(config) {
 			}
 			next();
 		});
+	});
+	// question
+	this.router.get('/question/:email/:name', hashcash, function (req, res, next) {
+
 	});
 };
 
