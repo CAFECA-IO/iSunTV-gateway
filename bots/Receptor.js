@@ -1310,7 +1310,7 @@ Bot.prototype.init = function(config) {
 	this.router.post('/examination', function (req, res, next) {
 		var options = {
 			email: req.body.email,
-			name: req.body.name
+			username: req.body.username
 		};
 		self.getBot('Exam').getExamination(options, function (e, d) {
 			if(e) {
