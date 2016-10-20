@@ -21,7 +21,7 @@ var formatExam = function (data) {
 };
 var descQuestion = function (data) {
 	var rs = dvalue.clone(data);
-	rs.exid = rs._id.toString
+	rs.exid = rs._id.toString();
 	dvalue.shuffle(rs.selection);
 	delete rs._id;
 	return rs;
@@ -113,7 +113,7 @@ Bot.prototype.generateExamination = function (options, cb) {
 		else {
 			var q = formatExam({
 				email: options.email,
-				questions: dvalue.randomPick(d1, 3)
+				questions: JSON.parse(JSON.stringify(dvalue.randomPick(d1, 3)))
 			});
 			examinations.insertOne(q, function (e2, d2) {
 				if(e2) {
