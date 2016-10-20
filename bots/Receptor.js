@@ -358,6 +358,10 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+	// Monarch Extraordinary register
+	this.router.post('/register/me', checkHashCash, function (req, res, next) {
+		
+	});
 	// user register
 	this.router.post('/register', checkHashCash, function (req, res, next) {
 		var user = {
@@ -1304,7 +1308,7 @@ Bot.prototype.init = function(config) {
 	});
 	// question
 	this.router.get('/question/:email/:name', function (req, res, next) {
-
+		next();
 	});
 };
 
