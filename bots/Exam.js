@@ -115,7 +115,10 @@ Bot.prototype.generateExamination = function (options, cb) {
 				questions: dvalue.randomPick(d1, 3)
 			});
 			examinations.insert(q, {}, function (e2, d2) {
-				if(e2) { e2.code = '01001'; }
+				if(e2) {
+					e2.code = '01001';
+					cb(e2);
+				}
 				else {
 					cb(null, q);
 				}
