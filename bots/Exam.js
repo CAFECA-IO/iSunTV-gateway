@@ -21,6 +21,7 @@ var formatExam = function (data) {
 };
 var descQuestion = function (data) {
 	var rs = dvalue.clone(data);
+	rs.exid = rs._id.toString
 	dvalue.shuffle(rs.selection);
 	delete rs._id;
 	return rs;
@@ -76,7 +77,7 @@ Bot.prototype.getExamination = function (options, cb) {
 			if(!d1.done) {
 				var q = d1.questions[d1.current];
 				dvalue.shuffle(q.selection);
-				q.exid = d1._id;
+				q._id = d1._id;
 				return cb(null, descQuestion(q));
 			}
 			else if(d1.result) {
@@ -96,7 +97,7 @@ Bot.prototype.getExamination = function (options, cb) {
 				else {
 					var q = d2.questions[d2.current];
 					dvalue.shuffle(q.selection);
-					q.exid = d2._id;
+					q._id = d2._id;
 					return cb(null, descQuestion(q));
 				}
 			});
@@ -114,7 +115,7 @@ Bot.prototype.generateExamination = function (options, cb) {
 				email: options.email,
 				questions: dvalue.randomPick(d1, 3)
 			});
-			examinations.insert(q, {}, function (e2, d2) {
+			examinations.insertOne(q, function (e2, d2) {
 				if(e2) {
 					e2.code = '01001';
 					cb(e2);
@@ -138,7 +139,7 @@ Bot.prototype.getQuestion = function (options, cb) {
 		}
 		else {
 			var rs, q = d1.questions[d1.current];
-			q.exid = d1._id;
+			q._id = d1._id;
 			rs = {
 				finish: false,
 				question: descQuestion(q)
@@ -164,7 +165,7 @@ Bot.prototype.submitAnswer = function (options, cb) {
 				if(++d1.current < d1.questions.length) {
 				// next question
 					var rs, updateQuery, q = d1.questions[d1.current];
-					q.exid = d1._id;
+					q._id = d1._id;
 					rs = {
 						finish: false,
 						question: descQuestion(q)
