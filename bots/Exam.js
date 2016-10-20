@@ -21,7 +21,7 @@ var formatExam = function (data) {
 };
 var descQuestion = function (data) {
 	var rs = dvalue.clone(data);
-	rs.exid = rs._id.toString();
+	rs.exid = data._id.toString();
 	dvalue.shuffle(rs.selection);
 	delete rs._id;
 	return rs;
