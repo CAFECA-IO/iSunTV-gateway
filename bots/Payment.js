@@ -363,6 +363,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 		if(e) { return cb(e); }
 		if(!Array.isArray(d) || d.length == 0) {
 			var pp = self.plans.find(function (v) { return v.type == 3; });
+			options.member = false;
 			options.paymentstatus = {
 				status: status[0],
 				gateway: 'free',

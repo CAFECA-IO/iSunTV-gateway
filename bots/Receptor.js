@@ -1306,9 +1306,61 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
-	// question
-	this.router.get('/question/:email/:name', function (req, res, next) {
-		next();
+	// create examination
+	this.router.post('/examination', function (req, res, next) {
+		var options = {
+			email: req.body.email,
+			name: req.body.name
+		};
+		self.getBot('Exam').getExamination(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Get examination');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// get question
+	this.router.get('/question/:exid', function (req, res, next) {
+		var options = {
+			exid: req.params.exid
+		}
+		self.getBot('Exam').getQuestion(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Get question');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
+	// submit answer
+	this.router.post('/question/:exid', function (req, res, next) {
+		var options = {
+			exid: req.params.exid,
+			answer: req.body.answer
+		};
+		self.getBot('Exam').submitAnswer(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Excellent!');
+				res.result.setData(d);
+			}
+			next();
+		});
 	});
 };
 
