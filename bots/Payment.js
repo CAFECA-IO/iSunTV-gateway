@@ -378,7 +378,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var now = new Date().getTime();
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
-			options.member = (now > ticket.expire);
+			options.member = (ticket.expire > now);
 			options.paymentstatus = {
 				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
