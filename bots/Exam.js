@@ -137,15 +137,15 @@ Bot.prototype.getQuestion = function (options, cb) {
 			e1.code = '04301';
 			return cb(e1);
 		}
-		else if(!d1.done) {
+		else if(d1.done) {
 			if(d1.result) {
-				e1 = new Error('examination failed');
-				e1.code = '04801';
+				e1 = new Error('already get invite code');
+				e1.code = '04901';
 				return cb(e1);
 			}
 			else {
-				e1 = new Error('already get invite code');
-				e1.code = '04901';
+				e1 = new Error('examination failed');
+				e1.code = '04801';
 				return cb(e1);
 			}
 		}
