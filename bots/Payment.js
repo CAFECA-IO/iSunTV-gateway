@@ -198,7 +198,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				type: 3,
 				title: 'VIP',
 				fee: {
-					price: 6.95,
+					price: 199,
 					currency: 'USD'
 				},
 				programs: [],
@@ -209,8 +209,8 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 					duration: 86400 * 1000 * 30
 				},
 				gpid: {
-					braintree: 'MonthVIP',
-					iosiap: 'MonthVIP'
+					braintree: 'YearVIP',
+					iosiap: 'EntranceFee'
 				}
 			},
 			{
@@ -270,9 +270,11 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				visible: false
 			}
 		];
-		self.plans = basicPlans;
 		var collection = self.db.collection('PaymentPlans');
-		collection.insertMany(formatPaymentPlan(basicPlans), {}, cb);
+		collection.insertMany(formatPaymentPlan(basicPlans), {}, function (e2, d2) {
+			self.plans = descPaymentPlan(d2.ops);
+			self.getBot('ResourceAgent').crawl({}, cb);
+		});
 	});
 };
 Bot.prototype.loadPaymentPlan = function (options, cb) {
@@ -872,7 +874,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 						var nextCharge = 0, trialPeriod = 0;
 						var subscribeOptions = {
 							paymentMethodToken: d3.paymentMethod.token,
-							planId: "MonthVIP"
+							planId: "YearVIP"
 						};
 						options.trial = options.trial || {};
 						if(options.trial.trialPeriod) {
@@ -913,7 +915,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 					else {
 						var subscribeOptions = {
 							paymentMethodToken: d3.paymentMethod.token,
-							planId: "MonthVIP"
+							planId: "YearVIP"
 						};
 						options.trial = options.trial || {};
 						if(options.trial.trialPeriod) {
