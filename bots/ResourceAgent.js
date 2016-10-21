@@ -40,20 +40,20 @@ Bot.prototype.start = function () {
 	var crawlerConfig = this.config.crawler || {};
 	var period = crawlerConfig.period || 86400000;
 
-	this.listPrgramType({}, function () {
-		var now = new Date().getTime();
-		timer = period - (now % period);
-		// self.crawl({}, console.log);
-		// crawl the program at the start of the day
-		setTimeout(function () {
-			self.crawl({}, function () {
-				logger.info.info('Crawl all programs from:', self.config.resourceAPI);
-				self.crawlerInterval = setInterval(function () {
-					self.crawl({}, function () {});
-				}, period);
-			});
-		}, timer);
-	});
+	this.listPrgramType({}, function () {});
+
+	var now = new Date().getTime();
+	timer = period - (now % period);
+	// self.crawl({}, console.log);
+	// crawl the program at the start of the day
+	setTimeout(function () {
+		self.crawl({}, function () {
+			logger.info.info('Crawl all programs from:', self.config.resourceAPI);
+			self.crawlerInterval = setInterval(function () {
+				self.crawl({}, function () {});
+			}, period);
+		});
+	}, timer);
 };
 
 
@@ -1059,7 +1059,11 @@ Bot.prototype.loadCustomData = function(query, cb){
 };
 
 Bot.prototype.crawl = function (options, cb) {
-	this.crawlSeries({}, cb);
+	var self = this;
+	if(!Array.isArray(this.errorProgram)) { this.errorProgram = []; }
+	this.listPrgramType({}, function () {
+		self.crawlSeries({}, cb);
+	});
 };
 /* require: options.ppid, options.pid */
 Bot.prototype.addToPlan = function (options) {
@@ -1162,7 +1166,7 @@ Bot.prototype.checkErrorProgram = function (program, cb) {
 				rejectUnauthorized: false
 			};
 
-			https.request(options, function (res) {
+			var req = https.request(options, function (res) {
 				if(res.statusCode > 400) {
 					program._error.push('404_stream');
 				}
@@ -1173,7 +1177,12 @@ Bot.prototype.checkErrorProgram = function (program, cb) {
 				else {
 					return cb();
 				}
-			}).end();
+			});
+			req.on('error', function (e) {
+				logger.info.warn('error:', program.stream);
+				return cb();
+			});
+			req.end();
 			break;
 		case 'series':
 			if(!Array.isArray(program.programs) || program.programs.length == 0) {
@@ -1190,7 +1199,6 @@ Bot.prototype.checkErrorProgram = function (program, cb) {
 	}
 };
 Bot.prototype.addErrorProgram = function (program) {
-	if(!Array.isArray(this.errorProgram)) { this.errorProgram = []; }
 	this.errorProgram.push(program);
 };
 Bot.prototype.reportErrorProgram = function () {
