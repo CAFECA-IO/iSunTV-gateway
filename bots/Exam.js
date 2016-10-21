@@ -9,12 +9,12 @@ var formatQuestion = function (data) {
 
 };
 var formatExam = function (data) {
-//_id, email, questions, current, done, result
+//_id, email, questions, current, finish, result
 	var rs = {
 		email: data.email,
 		questions: data.questions,
 		current: data.current || 0,
-		done: !!data.done,
+		finish: !!data.finish,
 		result: !!data.result
 	};
 	return rs;
@@ -63,7 +63,7 @@ Bot.prototype.initQuestions = function () {
 }
 
 /*
-_id, email, questions, current, done, result, invitation
+_id, email, questions, current, finish, result, invitation
  */
 
 // require: email, name
@@ -74,7 +74,7 @@ Bot.prototype.getExamination = function (options, cb) {
 	examinations.findOne(condition, function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else if(d1) {
-			if(!d1.done) {
+			if(!d1.finish) {
 				var q = d1.questions[d1.current];
 				dvalue.shuffle(q.selection);
 				q._id = d1._id;
@@ -137,7 +137,7 @@ Bot.prototype.getQuestion = function (options, cb) {
 			e1.code = '04301';
 			return cb(e1);
 		}
-		else if(d1.done) {
+		else if(d1.finish) {
 			if(d1.result) {
 				e1 = new Error('already get invite code');
 				e1.code = '04901';
@@ -171,7 +171,7 @@ Bot.prototype.submitAnswer = function (options, cb) {
 			e1.code = '04301';
 			return cb(e1);
 		}
-		else if(d1.done) {
+		else if(d1.finish) {
 			if(d1.result) {
 				e1 = new Error('already get invite code');
 				e1.code = '04901';
@@ -208,7 +208,7 @@ Bot.prototype.submitAnswer = function (options, cb) {
 					});
 				}
 				else {
-				// done
+				// finish
 					var updateQuery, rs;
 					rs = {
 						finish: true,
