@@ -243,7 +243,7 @@ Bot.prototype.addMailHistory = function (email) {
 };
 
 /* require: email, password(md5) */
-/* optional: nickname */
+/* optional: username */
 /* 1: invalid e-mail, 2: account exist */
 Bot.prototype.addUser = function (user, cb) {
 	var self = this;
@@ -280,6 +280,16 @@ Bot.prototype.addUser = function (user, cb) {
 			cb(e);
 	  })
 	 .done();
+};
+// require: email, password(md5), invitation
+// optional: username
+Bot.prototype.addUserWithInvitation = function (user, cb) {
+	var self = this;
+	var collection = this.db.collection("Invitations");
+	collection.findOne({code: user.invitation}, {}, function (e1, d1) {
+		if(e1) { e1.code = '01002'; }
+		self.addUser()
+	});
 };
 Bot.prototype.createUser = function (user) {
 	var deferred = q.defer();
