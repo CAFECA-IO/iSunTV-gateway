@@ -113,7 +113,7 @@ Bot.prototype.generateExamination = function (options, cb) {
 		else {
 			var q = formatExam({
 				email: options.email,
-				questions: JSON.parse(JSON.stringify(dvalue.randomPick(d1, 30)))
+				questions: JSON.parse(JSON.stringify(dvalue.randomPick(d1, 3)))
 			});
 			examinations.insertOne(q, function (e2, d2) {
 				if(e2) {
@@ -170,6 +170,18 @@ Bot.prototype.submitAnswer = function (options, cb) {
 			e1 = new Error('examination not found');
 			e1.code = '04301';
 			return cb(e1);
+		}
+		else if(d1.done) {
+			if(d1.result) {
+				e1 = new Error('already get invite code');
+				e1.code = '04901';
+				return cb(e1);
+			}
+			else {
+				e1 = new Error('examination failed');
+				e1.code = '04801';
+				return cb(e1);
+			}
 		}
 		else {
 			if(d1.questions[d1.current].selection[0] == options.answer) {
