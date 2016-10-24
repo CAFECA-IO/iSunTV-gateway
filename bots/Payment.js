@@ -844,7 +844,7 @@ Bot.prototype.subscribe = function (options, cb) {
 		}
 		else {
 			options.trial = {
-				trialPeriod: true,
+				trialPeriod: (trialPeriod > 0),
 				trialDuration: trialPeriod
 			};
 		}
@@ -923,8 +923,8 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 						if(options.trial.trialPeriod) {
 							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
 							duration = (duration > 0)? duration: 0;
-							subscribeOptions.trialPeriod = true;
-							subscribeOptions.trialDuration = duration;
+							subscribeOptions.trialPeriod = (duration > 0);
+							if (duration > 0) subscribeOptions.trialDuration = duration;
 						}
 						else if(options.trial.charge > 0) {
 							subscribeOptions.trialPeriod = false;
