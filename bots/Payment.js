@@ -8,8 +8,8 @@ const textype = require('textype');
 
 const request = require('../utils/Crawler.js').request;
 
-const defaultPeriod = 86400 * 1000 * 30;
-const trialPeriod = 86400  * 1000 * 7;
+var defaultPeriod = 86400 * 1000 * 365;
+var trialPeriod = 86400  * 1000 * 0;
 
 var logger;
 var requireEmailVerification = false;
@@ -142,6 +142,8 @@ util.inherits(Bot, ParentBot);
 Bot.prototype.init = function (config) {
 	Bot.super_.prototype.init.call(this, config);
 	logger = config.logger;
+	defaultPeriod = config.subscribe.period;
+	trialPeriod = config.subscribe.trial;
 	if(!config || !config.BrainTree) { return false; }
 
 	var btcfg = config.production? config.BrainTree.production: config.BrainTree.sandbox;
@@ -880,7 +882,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 						if(options.trial.trialPeriod) {
 							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
 							duration = (duration > 0)? duration: 0;
-							subscribeOptions.trialPeriod = true;
+							subscribeOptions.trialPeriod = (duration > 0);
 							subscribeOptions.trialDuration = duration;
 
 							nextCharge = new Date().getTime() + options.trial.trialDuration;
