@@ -948,6 +948,7 @@ Bot.prototype.changePassword = function (user, cb) {
 		e.code = '29101';
 		return cb(e);
 	}
+	var self = this;
 	var cond = {_id: new mongodb.ObjectID(user.uid), password: user.password_old};
 	var updateQuery = {$set: {password: user.password_new}};
 	var collection = this.db.collection('Users');
@@ -964,6 +965,10 @@ Bot.prototype.changePassword = function (user, cb) {
 				return cb(e);
 			}
 			else {
+				var template = self.getTemplate('mail_change_passowrd.html');
+				var subject = 'iSunTV - password has been changed';
+				var content = template;
+				self.getBot("Mailer").send(d.email, subject, content, function () {});
 				return cb(null, {});
 			}
 		}
