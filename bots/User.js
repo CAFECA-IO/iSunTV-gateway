@@ -432,6 +432,9 @@ Bot.prototype.getProfile = function (options, cb) {
 	collection.findOne(condition, {}, function (e, user) {
 		if(e) { e.code = '01002'; cb(e); }
 		else if(!user) { e = new Error('User not found'); e.code = '39102'; cb(e); }
+		else if(!!options.skip_detail) {
+			cb(null, user);
+		}
 		else {
 			bot.fillVIPInformation(descUser(user), function (e1, d) {
 				if(e) { cb(e1); }
