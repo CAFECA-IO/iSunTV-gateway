@@ -1360,6 +1360,26 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+
+	// referral
+	this.router.post('/referral', checkLogin, function (req, res, next) {
+		var options = {
+			uid: req.session.uid,
+			email: req.body.email
+		};
+		self.getBot('Invite').sendInvitation(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('You have a new referral');
+				res.result.setData(d);
+			}
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {
