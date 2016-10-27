@@ -965,7 +965,7 @@ Bot.prototype.changePassword = function (user, cb) {
 				return cb(e);
 			}
 			else {
-				var template = self.getTemplate('mail_change_passowrd.html');
+				var template = self.getTemplate('mail_change_password.html');
 				var subject = 'iSunTV - password has been changed';
 				var content = template;
 				self.getBot("Mailer").send(d.value.email, subject, content, function () {});
