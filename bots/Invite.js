@@ -75,10 +75,8 @@ Bot.prototype.sendInvitation = function (options, cb) {
 			if(e2) { e2.code = '01001'; cb(e2); return; }
 			var subject = dvalue.sprintf('Welcome to iSunTV! - Invitation from %s', d1.username);
 			var content = dvalue.sprintf(template, d1.username, code, code);
-			self.getBot('Mailer').send(email, subject, content, function (e3, d3) {
-				if(e3) { cb(e3); return; }
-				else { cb(null, {}); return; }
-			});
+			self.getBot('Mailer').send(email, subject, content, function (e3, d3) {});
+			cb(null, {}); return;
 		});
 	});
 };
