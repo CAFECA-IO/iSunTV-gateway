@@ -952,15 +952,15 @@ Bot.prototype.changePassword = function (user, cb) {
 			e.code = '01002';
 			return cb(e);
 		}
-		else if(!d) {
+		else if(!d1) {
 			new Error("incorrect old password");
-			e.code = '19103';
-			return cb(e);
+			e1.code = '19103';
+			return cb(e1);
 		}
 		else if (user.password_old === user.password_new) {
-			var e = new Error('duplicate password');
-			e.code = '29101';
-			return cb(e);
+			e1 = new Error('duplicate password');
+			e1.code = '29101';
+			return cb(e1);
 		}
 		collection.findAndModify(
 			cond,
