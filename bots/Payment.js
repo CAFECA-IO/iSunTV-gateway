@@ -207,8 +207,8 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				enable: true,
 				visible: true,
 				ticket: {
-					expire: 86400 * 1000 * 30,
-					duration: 86400 * 1000 * 30
+					expire: 86400 * 1000 * 365,
+					duration: 86400 * 1000 * 365
 				},
 				gpid: {
 					braintree: 'YearVIP',

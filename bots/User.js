@@ -904,7 +904,7 @@ Bot.prototype.resetPassword = function (options, cb) {
 			e.code = '19104';
 			return cb(e);
 		}
-		else if (user.password == options.password){
+		else if (user.password == options.password) {
 			self.cancelResetHistory(options.uid);
 			e = new Error("duplicate password");
 			e.code = '29101';
@@ -943,36 +943,47 @@ Bot.prototype.changePassword = function (user, cb) {
 		e.code = '19102';
 		return cb(e);
 	}
-	if (user.password_old === user.password_new) {
-		var e = new Error('duplicate password');
-		e.code = '29101';
-		return cb(e);
-	}
 	var self = this;
 	var cond = {_id: new mongodb.ObjectID(user.uid), password: user.password_old};
 	var updateQuery = {$set: {password: user.password_new}};
 	var collection = this.db.collection('Users');
-	collection.findAndModify(
-		cond,
-		{},
-		updateQuery,
-		{},
-		function (e, d) {
-			if(e) { e.code = 0; return cb(e); }
-			else if(!d.value) {
-				e = new Error("incorrect old password");
-				e.code = '19103';
-				return cb(e);
-			}
-			else {
-				var template = self.getTemplate('mail_change_password.html');
-				var subject = 'iSunTV - password has been changed';
-				var content = template;
-				self.getBot("Mailer").send(d.value.email, subject, content, function () {});
-				return cb(null, {});
-			}
+	collection.findOne(cond, {}, function (e1, d1) {
+		if(e) {
+			e.code = '01002';
+			return cb(e);
 		}
-	);
+		else if(!d) {
+			new Error("incorrect old password");
+			e.code = '19103';
+			return cb(e);
+		}
+		else if (user.password_old === user.password_new) {
+			var e = new Error('duplicate password');
+			e.code = '29101';
+			return cb(e);
+		}
+		collection.findAndModify(
+			cond,
+			{},
+			updateQuery,
+			{},
+			function (e, d) {
+				if(e) { e.code = '01003'; return cb(e); }
+				else if(!d.value) {
+					e = new Error("incorrect old password");
+					e.code = '19103';
+					return cb(e);
+				}
+				else {
+					var template = self.getTemplate('mail_change_password.html');
+					var subject = 'iSunTV - password has been changed';
+					var content = template;
+					self.getBot("Mailer").send(d.value.email, subject, content, function () {});
+					return cb(null, {});
+				}
+			}
+		);
+	});
 };
 
 /* fetch User data */
