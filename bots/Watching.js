@@ -107,7 +107,7 @@ Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
 	var self = this;
 	var collection = self.db.collection('Watching_programs');
 	var sort = [['atime', -1]];
-	collection.find(query).skip(skip).limit(limit).sort(sort).toArray(function (e, watchingPrograms) {
+	collection.find(query, {_id: 0}).skip(skip).limit(limit).sort(sort).toArray(function (e, watchingPrograms) {
 		if(e) { e.code = '01002'; return cb(e); }
 		// merge programs
 		var pids = watchingPrograms.map(function(program){ return program.pid });
