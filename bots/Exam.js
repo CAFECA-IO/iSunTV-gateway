@@ -214,7 +214,7 @@ Bot.prototype.getExamination = function (options, cb) {
 	var self = this;
 	var examinations = this.db.collection('Examinations');
 	var condition = {email: options.email};
-	examinations.findOne(condition, {_id: 0}, function (e1, d1) {
+	examinations.findOne(condition, {}, function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else if(d1) {
 			if(!d1.finish) {
