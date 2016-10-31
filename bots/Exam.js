@@ -214,7 +214,7 @@ Bot.prototype.getExamination = function (options, cb) {
 	var self = this;
 	var examinations = this.db.collection('Examinations');
 	var condition = {email: options.email};
-	examinations.findOne(condition, function (e1, d1) {
+	examinations.findOne(condition, {_id: 0}, function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else if(d1) {
 			if(!d1.finish) {
@@ -251,7 +251,7 @@ Bot.prototype.getExamination = function (options, cb) {
 Bot.prototype.generateExamination = function (options, cb) {
 	var questions = this.db.collection('Questions');
 	var examinations = this.db.collection('Examinations');
-	questions.find({}).toArray(function (e1, d1) {
+	questions.find({}, {_id: 0}).toArray(function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else {
 			var q = formatExam({
@@ -273,7 +273,7 @@ Bot.prototype.generateExamination = function (options, cb) {
 Bot.prototype.getQuestion = function (options, cb) {
 	var examinations = this.db.collection('Examinations');
 	var condition = {_id: new mongodb.ObjectID(options.exid)};
-	examinations.findOne(condition, {}, function (e1, d1) {
+	examinations.findOne(condition, {_id: 0}, function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else if(!d1) {
 			e1 = new Error('examination not found');
@@ -307,7 +307,7 @@ Bot.prototype.getQuestion = function (options, cb) {
 Bot.prototype.submitAnswer = function (options, cb) {
 	var examinations = this.db.collection('Examinations');
 	var condition = {_id: new mongodb.ObjectID(options.exid)};
-	examinations.findOne(condition, {}, function (e1, d1) {
+	examinations.findOne(condition, {_id: 0}, function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else if(!d1) {
 			e1 = new Error('examination not found');
