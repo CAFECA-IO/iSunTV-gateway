@@ -47,6 +47,10 @@ module.exports = {
 		resource: []
 	},
 	subscribe: {
+		member: {
+			price: 99,
+			currency: 'USD'
+		},
 		trial: 0,
 		period: 86400 * 1000 * 365
 	},
