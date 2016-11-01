@@ -948,12 +948,12 @@ Bot.prototype.changePassword = function (user, cb) {
 	var updateQuery = {$set: {password: user.password_new}};
 	var collection = this.db.collection('Users');
 	collection.findOne(cond, {}, function (e1, d1) {
-		if(e) {
-			e.code = '01002';
+		if(e1) {
+			e1.code = '01002';
 			return cb(e);
 		}
 		else if(!d1) {
-			new Error("incorrect old password");
+			e1 = new Error("incorrect old password");
 			e1.code = '19103';
 			return cb(e1);
 		}
