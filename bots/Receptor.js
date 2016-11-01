@@ -369,7 +369,7 @@ Bot.prototype.init = function(config) {
 			allowmail: !!req.body.allowmail
 		};
 		var bot = self.getBot('User');
-		bot.addUser(user, function (e, d) {
+		bot.addUserWithInvitation(user, function (e, d) {
 			if(e) {
 				res.result.setError(e);
 				logger.exception.warn(e);
