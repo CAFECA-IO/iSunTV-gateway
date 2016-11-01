@@ -29,16 +29,11 @@ Bot.prototype.initInvitation = function () {
 	invitations.count({}, function (e, d) {
 		if(d == 0) {
 			var is = [
-				{code: 'QEy9ZKrk', paymentPlan: {
-					fee: {price: 300, currency: 'USD'},
-					memberfee: {price: 100, currency: 'USD'},
-					rentfee: {price: 200, currency: 'USD'},
-				}, discount: []},
-				{code: 'yQiCiKtn', paymentPlan: {
-					fee: {price: 300, currency: 'USD'},
-					memberfee: {price: 100, currency: 'USD'},
-					rentfee: {price: 200, currency: 'USD'},
-				}, discount: []}
+				{code: 'QEy9ZKrk', info: 'Android', discount: []},
+				{code: 'yQiCiKtn', info: 'iOS', discount: []},
+				{code: 'eQuLJipCnIId', discount: ["memberfree"]},
+				{code: 'kWp4KvKJ5AHn', discount: ["rentfree"]},
+				{code: 'XEb79BSn8zlX', discount: ["memberfree", "rentfree"]}
 			];
 			invitations.insertMany(is, {}, function () {});
 		}
@@ -64,11 +59,7 @@ Bot.prototype.sendInvitation = function (options, cb) {
 		if(e1) { cb(e1); return; }
 		var invitation = {
 			code: code,
-			paymentPlan: {
-				fee: {price: 300, currency: 'USD'},
-				memberfee: {price: 100, currency: 'USD'},
-				rentfee: {price: 200, currency: 'USD'},
-			},
+			inviter: inviter,
 			discount: []
 		};
 		invitations.insert(invitation, {}, function (e2, d2) {
@@ -81,5 +72,26 @@ Bot.prototype.sendInvitation = function (options, cb) {
 	});
 };
 
+Bot.prototype.checkInvitation = function (options, cb) {
+	var self = this;
+	var condition = {code: options.code};
+	var invitations = this.db.collection('Invitations');
+	invitations.findOne(condition, {_id: 0}, function (e1, d1) {
+		if(e1) {
+			e1.code = '01002'; cb(e1);
+			return; 
+		}
+		else if(!d1) {
+			e1 = new Error('invalid invitation code');
+			e1.code = '10501';
+			cb(e1);
+			return;
+		}
+		else {
+			cb(null, d1);
+			return;
+		}
+	});
+}
 
 module.exports = Bot;
