@@ -363,16 +363,44 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 	var self = this;
 	var status = ['subscribe', 'cancel', 're-subscribe'];
 	var subcribeOptions = {uids: [options.uid]};
+	// add member fee
+	var memberprice = 0;
+	try {
+		memberprice = self.config.subscribe.member.price;
+	} catch(e2) {}
 	this.fetchSubscribeTickets(subcribeOptions, function (e, d) {
 		if(e) { return cb(e); }
 		if(!Array.isArray(d) || d.length == 0) {
 			var pp = self.plans.find(function (v) { return v.type == 3; });
+			var rentfee = pp.fee;
+			var memberfee = {
+				price: memberprice,
+				currency: rentfee.currency
+			};
+
+			// discount - no member fee
+			if(options.discount.indexOf("memberfree") > -1) {
+				memberfee.price = 0;
+			}
+
+			// discount - no rent fee
+			if(options.discount.indexOf("rentfree") > -1) {
+				rentfee.price = 0;
+			}
+
+			var totalfee = {
+				price: rentfee.price + memberfee.price,
+				currency: rentfee.currency
+			};
+
 			options.member = false;
 			options.paymentstatus = {
 				status: status[0],
 				gateway: 'free',
 				ppid: pp.ppid,
-				fee: pp.fee,
+				memberfee: memberfee,
+				rentfee: rentfee,
+				fee: totalfee,
 				expire: 0,
 				trial: 0,
 				next_charge: 0
@@ -383,12 +411,36 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var now = new Date().getTime();
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
+			var rentfee = pp.fee;
+			var memberfee = {
+				price: memberprice,
+				currency: rentfee.currency
+			};
+
+			// discount - no member fee
+			if(options.discount.indexOf("memberfree") > -1) {
+				memberfee.price = 0;
+			}
+
+			// discount - no rent fee
+			if(options.discount.indexOf("rentfree") > -1) {
+				rentfee.price = 0;
+			}
+			
+			var totalfee = {
+				price: rentfee.price + memberfee.price,
+				currency: rentfee.currency
+			};
+
 			options.member = (ticket.expire > now);
+			if(!options.member) { pp.fee.price += memberfee; }
 			options.paymentstatus = {
 				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
 				ppid: ticket.ppid,
-				fee: pp.fee,
+				memberfee: memberfee,
+				rentfee: rentfee,
+				fee: totalfee,
 				expire: ticket.expire,
 				trial: 0,
 				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: (ticket.charge > now? ticket.charge: ticket.expire)

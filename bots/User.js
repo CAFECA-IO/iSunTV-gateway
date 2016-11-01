@@ -66,6 +66,7 @@ var formatUser = function (user) {
 		photo: "",
 		ctime: new Date().getTime(),
 		ltime: 0,
+		discount: user.discount || [],
 		enable: true,
 		verified: false,
 		allowmail: false,
@@ -89,6 +90,7 @@ var descUser = function (user) {
 		photos: [],
 		ctime: new Date().getTime(),
 		ltime: 0,
+		discount: user.discount || [],
 		enable: false,
 		verified: false,
 		allowmail: false,
@@ -287,15 +289,14 @@ Bot.prototype.addUserWithInvitation = function (user, cb) {
 	if(!this.config.requireInvitation) { return this.addUser(user, cb); }
 
 	var self = this;
-	var collection = this.db.collection("Invitations");
-	var condition = {
-		code: user.invitation,
-		expire: {}
-	}
-	collection.findOne(condition, {}, function (e1, d1) {
-		if(e1) { e1.code = '01002'; return cb(e1); }
-		else if(!d1) { e1 = new Error('invalid invitation code'); }
-		else { self.addUser(user, cb); }
+	var checkOPT = {code: user.invitation};
+	this.getBot('Invite').checkInvitation(checkOPT, function (e1, d1) {
+		if(e1) {
+			cb(e1);
+			return;
+		}
+		user.discount = d1.discount || [];
+		self.addUser(user, cb);
 	});
 };
 Bot.prototype.createUser = function (user) {
