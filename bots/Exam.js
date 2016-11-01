@@ -307,7 +307,7 @@ Bot.prototype.getQuestion = function (options, cb) {
 Bot.prototype.submitAnswer = function (options, cb) {
 	var examinations = this.db.collection('Examinations');
 	var condition = {_id: new mongodb.ObjectID(options.exid)};
-	examinations.findOne(condition, {_id: 0}, function (e1, d1) {
+	examinations.findOne(condition, {}, function (e1, d1) {
 		if(e1) { e1.code = '01002'; return cb(e1); }
 		else if(!d1) {
 			e1 = new Error('examination not found');
