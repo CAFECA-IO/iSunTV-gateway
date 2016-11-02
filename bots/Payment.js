@@ -419,11 +419,13 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 
 			// discount - no member fee
 			if(options.discount.indexOf("memberfree") > -1) {
+				memberfee.original = memberfee.price;
 				memberfee.price = 0;
 			}
 
 			// discount - no rent fee
 			if(options.discount.indexOf("rentfree") > -1) {
+				rentfee.original = rentfee.price;
 				rentfee.price = 0;
 			}
 			
