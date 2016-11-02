@@ -123,6 +123,16 @@ var descBill = function (data) {
 	return bill;
 };
 
+var formatMember = function (data) {
+	return data;
+};
+
+var descMember = function (data) {
+	data.mcid = data._id.toString();
+	delete data._id;
+	return data;
+};
+
 var isPlayable = function (rule, pid) {
 	if(Array.isArray(rule)) {
 		return rule.some(function (v) { return new RegExp('^' + v + '$').test(pid); });
@@ -359,7 +369,57 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 };
 
 // require: options.uid
+Bot.prototype.generateMemberCard = function (options, cb) {
+	var self = this;
+	var promise = new Promise(function (resolve, reject) {
+		var member = formatMember(options);
+		var members = self.db.collection('Members');
+		members.insert(member, function (e, d) {
+			if(e) {
+				e.code = '01001';
+				reject(e);
+			}
+			else {
+				member = descMember(member);
+				resolve(member);
+			}
+		});
+	});
+
+	return promise;
+};
+
+// require: options.uid
+// return promise
+Bot.prototype.getMemberCard = function (options, cb) {
+	var self = this;
+	var promise = new Promise(function (resolve, reject) {
+		var members = self.db.collection('Members');
+		var condition = {uid: options.uid};
+		members.findOne(condition, {}, function (e, d) {
+			if(e) {
+				e.code = '01002';
+				reject(e);
+			}
+			else {
+				var member = descMember(d);
+				resolve(member);
+			}
+		});
+	});
+
+	return promise;
+};
+
+// require: options.uid
 Bot.prototype.getSubscribeOptions = function (opitons, cb) {
+	var self = this;
+	var members = this.db.collection("Members");
+
+	// has member card ?
+
+	// has discount ?
+
 
 };
 
@@ -425,16 +485,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			};
 
 			// discount - no member fee
-			if(options.discount.indexOf("memberfree") > -1) {
-				memberfee.original = memberfee.price;
-				memberfee.price = 0;
-			}
-
-			// discount - no rent fee
-			if(options.discount.indexOf("rentfree") > -1) {
-				rentfee.original = rentfee.price;
-				rentfee.price = 0;
-			}
+			memberfee.price = 0;
 			
 			var totalfee = {
 				price: rentfee.price + memberfee.price,
