@@ -358,6 +358,11 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 	}
 };
 
+// require: options.uid
+Bot.prototype.getSubscribeOptions = function (opitons, cb) {
+
+};
+
 /* require: options.uid */
 Bot.prototype.fillVIPInformation = function (options, cb) {
 	var self = this;
@@ -372,7 +377,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 		if(e) { return cb(e); }
 		if(!Array.isArray(d) || d.length == 0) {
 			var pp = self.plans.find(function (v) { return v.type == 3; });
-			var rentfee = pp.fee;
+			var rentfee = dvalue.clone(pp.fee);
 			var memberfee = {
 				price: memberprice,
 				currency: rentfee.currency
@@ -380,11 +385,13 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 
 			// discount - no member fee
 			if(options.discount.indexOf("memberfree") > -1) {
+				memberfee.original = memberfee.price;
 				memberfee.price = 0;
 			}
 
 			// discount - no rent fee
 			if(options.discount.indexOf("rentfree") > -1) {
+				rentfee.original = rentfee.price;
 				rentfee.price = 0;
 			}
 
@@ -411,7 +418,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			var now = new Date().getTime();
 			var ticket = d.reduce(function (pre, curr) { return curr.expire > pre.expire? curr: pre; }, {expire: 0});
 			var pp = self.plans.find(function (v) { return v.ppid == ticket.ppid; });
-			var rentfee = pp.fee;
+			var rentfee = dvalue.clone(pp.fee);
 			var memberfee = {
 				price: memberprice,
 				currency: rentfee.currency
@@ -466,7 +473,7 @@ Bot.prototype.fetchSubscribeTickets = function (options, cb) {
 		d = d.map(function (v) {
 			var pp = self.plans.find(function (v1) { return v1.ppid == v.ppid; });
 			if(!pp) { return undefined; }
-			v.fee = pp.fee;
+			v.fee = dvalue.clone(pp.fee);
 			return v;
 		}).filter(function (v) { return v != undefined; });
 		cb(null, d);
