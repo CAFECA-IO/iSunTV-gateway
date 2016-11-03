@@ -333,7 +333,7 @@ Bot.prototype.createUser = function (user) {
 				else {
 					subdeferred.resolve(USERPROFILE);
 					var bot = self.getBot('Mailer');
-					var opt = {email: user.email, validcode: USERPROFILE.validcode};
+					var opt = {email: user.email, validcode: USERPROFILE.validcode, uid: USERPROFILE._id.toString()};
 					self.sendVericicationMail(opt, function () {});
 				}
 			});
@@ -360,14 +360,17 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 
 	send = function (data) {
 		if(self.addMailHistory(data.email)) {
-			var content, template = self.getTemplate('mail_signup.html');
-			var tmp = url.parse(self.config.url);
-			var uri = dvalue.sprintf('/register/%s/%s/redirect', data.email, data.validcode);
-			tmp.pathname = path.join(tmp.pathname, uri);
-			data.comfirmURL = url.format(tmp);
-			content = dvalue.sprintf(template, data.email, data.comfirmURL, data.comfirmURL, data.validcode);
-			bot.send(data.email, 'Welcome to iSunTV - Account Verification', content, function (e, d) { if(e) { logger.exception.warn(e); }});
-			cb(null, {});
+			self.getBot('Payment').getSubscribeOptions(options, function (e, d) {
+				var content, template = self.getTemplate('mail_signup.html');
+				var tmp = url.parse(self.config.url);
+				var uri = dvalue.sprintf('/register/%s/%s/redirect', data.email, data.validcode);
+				var price = d.fee.currency + d.fee.price;
+				tmp.pathname = path.join(tmp.pathname, uri);
+				data.comfirmURL = url.format(tmp);
+				content = dvalue.sprintf(template, price, data.email, data.comfirmURL, data.comfirmURL, data.validcode);
+				bot.send(data.email, 'Welcome to iSunTV - Account Verification', content, function (e, d) { if(e) { logger.exception.warn(e); }});
+				cb(null, {});
+			});
 		}
 		else {
 			var e = new Error('e-mail sending quota exceeded');
