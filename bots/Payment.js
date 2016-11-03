@@ -128,6 +128,7 @@ var formatMember = function (data) {
 };
 
 var descMember = function (data) {
+	if(!data) { return undefined; }
 	data.mcid = data._id.toString();
 	delete data._id;
 	return data;
@@ -411,16 +412,85 @@ Bot.prototype.getMemberCard = function (options, cb) {
 	return promise;
 };
 
+// require: mcid
+Bot.prototype.getTicketByMemberCard = function (options, cb) {
+	var self = this;
+	var promise = new Promise(function (resolve, reject) {
+		if(!options) { resolve([]); return; }
+		var collection = self.db.collection('Tickets');
+		var now = new Date().getTime();
+		var mcid = options.mcid;
+		var condition = {type: 3, mcid: mcid};
+		collection.find(condition).toArray(function (e, d) {
+			if(e) { e.code = '01002'; reject(e); }
+			if(!Array.isArray(d)) { d = []; }
+			d = d.map(function (v) {
+				if(!v) { return undefined; }
+				var pp = self.plans.find(function (v1) { return v1.ppid == v.ppid; });
+				if(!pp) { return undefined; }
+				v.fee = dvalue.clone(pp.fee);
+				return v;
+			}).filter(function (v) { return v != undefined; });
+			resolve(d);
+		});
+	});
+
+	return promise;
+};
+
+// require: uid
+//++ require: mcid
+Bot.prototype.getPriceWithDiscount = function (options, cb) {
+	var self = this;
+	var promise = new Promise(function (resolve, reject) {
+		var pp = self.plans.find(function (v) { return v.type == 3; });
+		var member = self.config.subscribe.member;
+		var annual = pp.fee.price;
+		var users = self.db.collection("Users");
+		var userOpts = {_id: new mongodb.ObjectId(options.uid)};
+		users.findOne(userOpts, {}, function (e, d) {
+			if(e) {
+				e.code = '01002';
+				reject(e);
+			}
+			else if(!d) {
+				e = new Error('User not found');
+				e.code = '39102';
+				reject(e);
+			}
+			else {
+				discount = d.discount;
+				var fee = {
+					memberfee: {price: member.price, currency: member.currency},
+					annualfee: {price: pp.fee.price, currency: pp.fee.currency}
+				};
+				if(d.discount.indexOf("memberfree") > -1) { fee.memberfee.price = 0; }
+				if(d.discount.indexOf("rentfree") > -1) { fee.annualfee.price = 0; }
+				fee.fee = {price: fee.memberfee.price + fee.annualfee.price, currency: fee.memberfee.currency};
+				resolve(fee);
+			}
+		});
+	});
+
+	return promise;
+}
+
 // require: options.uid
-Bot.prototype.getSubscribeOptions = function (opitons, cb) {
+Bot.prototype.getSubscribeOptions = function (options, cb) {
 	var self = this;
 	var members = this.db.collection("Members");
 
 	// has member card ?
-
-	// has discount ?
-
-
+	this.getMemberCard(options).then(function (d) {
+		return self.getTicketByMemberCard(d);
+	}).then(function (d) {
+		return self.getPriceWithDiscount(options);
+	}).then(function (d) {
+		cb(null, d);
+	}).catch(function (e) {
+		console.log(e);
+		cb(e);
+	});
 };
 
 /* require: options.uid */
