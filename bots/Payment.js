@@ -480,17 +480,20 @@ Bot.prototype.getPriceWithDiscount = function (options, cb) {
 Bot.prototype.getSubscribeOptions = function (options, cb) {
 	var self = this;
 	var members = this.db.collection("Members");
-
-	// has member card ?
-	this.getMemberCard(options).then(function (d) {
-		return self.getTicketByMemberCard(d);
-	}).then(function (d) {
-		return self.getPriceWithDiscount(options);
-	}).then(function (d) {
-		cb(null, d);
-	}).catch(function (e) {
-		cb(e);
+	var promise = new Promise(function (resolve, reject) {
+		// has member card ?
+		this.getMemberCard(options).then(function (d) {
+			return self.getTicketByMemberCard(d);
+		}).then(function (d) {
+			return self.getPriceWithDiscount(options);
+		}).then(function (d) {
+			resolve(d);
+		}).catch(function (e) {
+			reject(e);
+		});
 	});
+
+	return promise;
 };
 
 /* require: options.uid */
@@ -1044,8 +1047,8 @@ Bot.prototype.subscribe = function (options, cb) {
 
 Bot.prototype.subscribeBraintree = function (options, cb) {
 	var self = this;
-	this.getPriceWithDiscount(options).then(function (d) {
-		var discount = d.discount;
+	this.getSubscribeOptions(options).then(function (d) {
+		console.log(d);
 		self.createBrainTreeID(options, function (e1, d1) {
 			if(e1) { e1.code = '87201'; return cb(e1); }
 			self.gateway.customer.find(d1, function(e2, customer) {
