@@ -1127,7 +1127,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 							}
 							// annual discount
 							if(subscribeDetail.discount.indexOf("rentfree") > -1) {
-								subscribeOptions.discount = {add: [ {inheritedFromId: 'MonarchExtraordinary'} ]};
+								subscribeOptions.discounts = {add: [ {inheritedFromId: 'MonarchExtraordinary'} ]};
 							}
 
 							options.trial = options.trial || {};
@@ -1145,7 +1145,6 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 								subscribeOptions.trialPeriod = false;
 							}
 							self.gateway.subscription.create(subscribeOptions, function (e4, d4) {
-console.log(d4);
 								if(e4) {
 									e4.code = '87201';
 									logger.exception.warn(e4);
