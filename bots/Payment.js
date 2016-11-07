@@ -482,7 +482,7 @@ Bot.prototype.getSubscribeOptions = function (options, cb) {
 	var members = this.db.collection("Members");
 	var promise = new Promise(function (resolve, reject) {
 		// has member card ?
-		this.getMemberCard(options).then(function (d) {
+		self.getMemberCard(options).then(function (d) {
 			return self.getTicketByMemberCard(d);
 		}).then(function (d) {
 			return self.getPriceWithDiscount(options);
