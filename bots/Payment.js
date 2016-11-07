@@ -461,6 +461,7 @@ Bot.prototype.getPriceWithDiscount = function (options, cb) {
 			else {
 				discount = d.discount;
 				var fee = {
+					discount: d.discount,
 					memberfee: {price: member.price, currency: member.currency},
 					annualfee: {price: pp.fee.price, currency: pp.fee.currency}
 				};
@@ -479,18 +480,20 @@ Bot.prototype.getPriceWithDiscount = function (options, cb) {
 Bot.prototype.getSubscribeOptions = function (options, cb) {
 	var self = this;
 	var members = this.db.collection("Members");
-
-	// has member card ?
-	this.getMemberCard(options).then(function (d) {
-		return self.getTicketByMemberCard(d);
-	}).then(function (d) {
-		return self.getPriceWithDiscount(options);
-	}).then(function (d) {
-		cb(null, d);
-	}).catch(function (e) {
-		console.log(e);
-		cb(e);
+	var promise = new Promise(function (resolve, reject) {
+		// has member card ?
+		this.getMemberCard(options).then(function (d) {
+			return self.getTicketByMemberCard(d);
+		}).then(function (d) {
+			return self.getPriceWithDiscount(options);
+		}).then(function (d) {
+			resolve(d);
+		}).catch(function (e) {
+			reject(e);
+		});
 	});
+
+	return promise;
 };
 
 /* require: options.uid */
@@ -1044,104 +1047,109 @@ Bot.prototype.subscribe = function (options, cb) {
 
 Bot.prototype.subscribeBraintree = function (options, cb) {
 	var self = this;
-	self.createBrainTreeID(options, function (e1, d1) {
-		if(e1) { e1.code = '87201'; return cb(e1); }
-		self.gateway.customer.find(d1, function(e2, customer) {
-			if(e2) { e2.code = '87201'; return cb(e2); }
-			else {
-				self.gateway.paymentMethod.create({customerId: customer.id, paymentMethodNonce: options.nonce}, function (e3, d3) {
-					if(e3) {e3.code = '87201'; return cb(e2); }
-					else if(!d3.success) {
-					//++ create payment method failed
-						logger.exception.warn('--- subscribe failed ---');
-						logger.exception.warn(d3);
-						var nextCharge = 0, trialPeriod = 0;
-						var subscribeOptions = {
-							paymentMethodToken: d3.paymentMethod.token,
-							planId: "YearVIP"
-						};
-						options.trial = options.trial || {};
-						if(options.trial.trialPeriod) {
-							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
-							duration = (duration > 0)? duration: 0;
-							subscribeOptions.trialPeriod = (duration > 0);
-							subscribeOptions.trialDuration = duration;
+	this.getSubscribeOptions(options).then(function (d) {
+		console.log(d);
+		self.createBrainTreeID(options, function (e1, d1) {
+			if(e1) { e1.code = '87201'; return cb(e1); }
+			self.gateway.customer.find(d1, function(e2, customer) {
+				if(e2) { e2.code = '87201'; return cb(e2); }
+				else {
+					self.gateway.paymentMethod.create({customerId: customer.id, paymentMethodNonce: options.nonce}, function (e3, d3) {
+						if(e3) {e3.code = '87201'; return cb(e2); }
+						else if(!d3.success) {
+						//++ create payment method failed
+							logger.exception.warn('--- subscribe failed ---');
+							logger.exception.warn(d3);
+							var nextCharge = 0, trialPeriod = 0;
+							var subscribeOptions = {
+								paymentMethodToken: d3.paymentMethod.token,
+								planId: "YearVIP"
+							};
+							options.trial = options.trial || {};
+							if(options.trial.trialPeriod) {
+								var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
+								duration = (duration > 0)? duration: 0;
+								subscribeOptions.trialPeriod = (duration > 0);
+								subscribeOptions.trialDuration = duration;
 
-							nextCharge = new Date().getTime() + options.trial.trialDuration;
-						}
-						else if(options.trial.charge > 0) {
-							subscribeOptions.trialPeriod = false;
-							subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
+								nextCharge = new Date().getTime() + options.trial.trialDuration;
+							}
+							else if(options.trial.charge > 0) {
+								subscribeOptions.trialPeriod = false;
+								subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
 
-							nextCharge = options.trial.charge;
-						}
-						else {
-							subscribeOptions.trialPeriod = false;
-
-							nextCharge = new Date().getTime();
-						}
-						self.gateway.transaction.sale({
-							amount: options.fee.price,
-							paymentMethodNonce: options.nonce,
-							options: {
-							  submitForSettlement: true
-							}
-						}, function (e, result) {
-							if(e || !result.success) { e = new Error('payment failed'); e.code = '87201'; cb(e); }
-							else {
-								result._subscribe = '#once';
-								result._charge = nextCharge;
-								result._trial = options.trial.trialDuration > 0? nextCharge: options.trial.keep > 0? options.trial.keep: 0;
-								cb(null, result);
-							}
-						});
-					}
-					else {
-						var subscribeOptions = {
-							paymentMethodToken: d3.paymentMethod.token,
-							planId: "YearVIP"
-						};
-						options.trial = options.trial || {};
-						if(options.trial.trialPeriod) {
-							var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
-							duration = (duration > 0)? duration: 0;
-							subscribeOptions.trialPeriod = (duration > 0);
-							if (duration > 0) subscribeOptions.trialDuration = duration;
-						}
-						else if(options.trial.charge > 0) {
-							subscribeOptions.trialPeriod = false;
-							subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
-						}
-						else {
-							subscribeOptions.trialPeriod = false;
-						}
-						self.gateway.subscription.create(subscribeOptions, function (e4, d4) {
-							if(e4) {
-								e4.code = '87201';
-								logger.exception.warn(e4);
-								return cb(e4);
-							}
-							else if(!d4.success) {
-								logger.exception.warn(d4);
-								e4 = new Error('payment failed');
-								e4.code = '87201';
-								return cb(e4);
+								nextCharge = options.trial.charge;
 							}
 							else {
-								try {
-									d4._subscribe = d4.subscription.id;
-									d4._charge = new Date(d4.subscription.firstBillingDate).getTime();
-									d4._trial = options.trial.trialDuration > 0? d4._charge: options.trial.keep > 0? options.trial.keep: 0;
+								subscribeOptions.trialPeriod = false;
+
+								nextCharge = new Date().getTime();
+							}
+							self.gateway.transaction.sale({
+								amount: options.fee.price,
+								paymentMethodNonce: options.nonce,
+								options: {
+								  submitForSettlement: true
 								}
-								catch(e5) {}
-								return cb(null, d4);
+							}, function (e, result) {
+								if(e || !result.success) { e = new Error('payment failed'); e.code = '87201'; cb(e); }
+								else {
+									result._subscribe = '#once';
+									result._charge = nextCharge;
+									result._trial = options.trial.trialDuration > 0? nextCharge: options.trial.keep > 0? options.trial.keep: 0;
+									cb(null, result);
+								}
+							});
+						}
+						else {
+							var subscribeOptions = {
+								paymentMethodToken: d3.paymentMethod.token,
+								planId: "YearVIP"
+							};
+							options.trial = options.trial || {};
+							if(options.trial.trialPeriod) {
+								var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
+								duration = (duration > 0)? duration: 0;
+								subscribeOptions.trialPeriod = (duration > 0);
+								if (duration > 0) subscribeOptions.trialDuration = duration;
 							}
-						});
-					}
-				});
-			}
+							else if(options.trial.charge > 0) {
+								subscribeOptions.trialPeriod = false;
+								subscribeOptions.firstBillingDate = new Date(options.trial.charge).toJSON().split('T')[0];
+							}
+							else {
+								subscribeOptions.trialPeriod = false;
+							}
+							self.gateway.subscription.create(subscribeOptions, function (e4, d4) {
+								if(e4) {
+									e4.code = '87201';
+									logger.exception.warn(e4);
+									return cb(e4);
+								}
+								else if(!d4.success) {
+									logger.exception.warn(d4);
+									e4 = new Error('payment failed');
+									e4.code = '87201';
+									return cb(e4);
+								}
+								else {
+									try {
+										d4._subscribe = d4.subscription.id;
+										d4._charge = new Date(d4.subscription.firstBillingDate).getTime();
+										d4._trial = options.trial.trialDuration > 0? d4._charge: options.trial.keep > 0? options.trial.keep: 0;
+									}
+									catch(e5) {}
+									return cb(null, d4);
+								}
+							});
+						}
+					});
+				}
+			});
 		});
-	});
+	}).catch(e) {
+		cb(e);
+	}
 };
 Bot.prototype.subscribeIOSIAP = function (options, cb) {
 	var now = new Date().getTime();

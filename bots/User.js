@@ -360,7 +360,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 
 	send = function (data) {
 		if(self.addMailHistory(data.email)) {
-			self.getBot('Payment').getSubscribeOptions(options, function (e, d) {
+			self.getBot('Payment').getSubscribeOptions(options).then(function (d) {
 				var content, template = self.getTemplate('mail_signup.html');
 				var tmp = url.parse(self.config.url);
 				var uri = dvalue.sprintf('/register/%s/%s/redirect', data.email, data.validcode);
@@ -370,6 +370,8 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 				content = dvalue.sprintf(template, price, data.email, data.comfirmURL, data.comfirmURL, data.validcode);
 				bot.send(data.email, 'Welcome to iSunTV - Account Verification', content, function (e, d) { if(e) { logger.exception.warn(e); }});
 				cb(null, {});
+			}).catch(function (e) {
+				cb(e);
 			});
 		}
 		else {
