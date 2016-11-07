@@ -415,8 +415,9 @@ Bot.prototype.getMemberCard = function (options, cb) {
 // require: mcid
 Bot.prototype.getTicketByMemberCard = function (options, cb) {
 	var self = this;
+	var tickets = [];
 	var promise = new Promise(function (resolve, reject) {
-		if(!options) { resolve([]); return; }
+		if(!options) { resolve(tickets); return; }
 		var collection = self.db.collection('Tickets');
 		var now = new Date().getTime();
 		var mcid = options.mcid;
@@ -424,14 +425,14 @@ Bot.prototype.getTicketByMemberCard = function (options, cb) {
 		collection.find(condition).toArray(function (e, d) {
 			if(e) { e.code = '01002'; reject(e); }
 			if(!Array.isArray(d)) { d = []; }
-			d = d.map(function (v) {
+			tickets = d.map(function (v) {
 				if(!v) { return undefined; }
 				var pp = self.plans.find(function (v1) { return v1.ppid == v.ppid; });
 				if(!pp) { return undefined; }
 				v.fee = dvalue.clone(pp.fee);
 				return v;
 			}).filter(function (v) { return v != undefined; });
-			resolve(d);
+			resolve(tickets);
 		});
 	});
 
@@ -480,14 +481,28 @@ Bot.prototype.getPriceWithDiscount = function (options, cb) {
 Bot.prototype.getSubscribeOptions = function (options, cb) {
 	var self = this;
 	var members = this.db.collection("Members");
+	var result = {
+		mcid: false,
+		tickets: [],
+		discount: [],
+		fee: {},
+		memberfee: {},
+		annualfee: {}
+	};
 	var promise = new Promise(function (resolve, reject) {
 		// has member card ?
 		self.getMemberCard(options).then(function (d) {
+			if(d) { result.mcid = d.mcid; }
 			return self.getTicketByMemberCard(d);
 		}).then(function (d) {
+			result.tickets = d;
 			return self.getPriceWithDiscount(options);
 		}).then(function (d) {
-			resolve(d);
+			result.discount = d.discount;
+			result.fee = d.fdd;
+			result.memberfee = d.memberfee;
+			result.annualfee = d.annualfee;
+			resolve(result);
 		}).catch(function (e) {
 			reject(e);
 		});
