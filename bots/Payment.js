@@ -1122,8 +1122,8 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 							};
 
 							// member fee
-							if(!subscribeDetail.member && subscribeDetail.discount.indexOf("memberfree") == -1) {
-								subscribeOptions.addOns = {add: [ {inheritedFromId: 'MemberFee'} ]};
+							if(subscribeDetail.member || subscribeDetail.discount.indexOf("memberfree") > -1) {
+								subscribeOptions.addOns = {remove: ['MemberFee']};
 							}
 							// annual discount
 							if(subscribeDetail.discount.indexOf("rentfree") > -1) {
