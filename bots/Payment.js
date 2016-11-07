@@ -499,7 +499,7 @@ Bot.prototype.getSubscribeOptions = function (options, cb) {
 			return self.getPriceWithDiscount(options);
 		}).then(function (d) {
 			result.discount = d.discount;
-			result.fee = d.fdd;
+			result.fee = d.fee;
 			result.memberfee = d.memberfee;
 			result.annualfee = d.annualfee;
 			resolve(result);
@@ -1062,8 +1062,7 @@ Bot.prototype.subscribe = function (options, cb) {
 
 Bot.prototype.subscribeBraintree = function (options, cb) {
 	var self = this;
-	this.getSubscribeOptions(options).then(function (d) {
-		console.log(d);
+	this.getSubscribeOptions(options).then(function (subscribeDetail) {
 		self.createBrainTreeID(options, function (e1, d1) {
 			if(e1) { e1.code = '87201'; return cb(e1); }
 			self.gateway.customer.find(d1, function(e2, customer) {
@@ -1121,6 +1120,16 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 								paymentMethodToken: d3.paymentMethod.token,
 								planId: "YearVIP"
 							};
+
+							// member fee
+							if(!subscribeDetail.member && subscribeDetail.discount.indexOf("memberfree") == -1) {
+								subscribeOptions.addOns = {add: [ {inheritedFromId: 'MemberFee'} ]};
+							}
+							// annual discount
+							if(subscribeDetail.discount.indexOf("rentfree") > -1) {
+								subscribeOptions.discount = {add: [ {inheritedFromId: 'MonarchExtraordinary'} ]};
+							}
+
 							options.trial = options.trial || {};
 							if(options.trial.trialPeriod) {
 								var duration = parseInt(options.trial.trialDuration / 86400 / 1000);
@@ -1136,6 +1145,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 								subscribeOptions.trialPeriod = false;
 							}
 							self.gateway.subscription.create(subscribeOptions, function (e4, d4) {
+console.log(d4);
 								if(e4) {
 									e4.code = '87201';
 									logger.exception.warn(e4);
