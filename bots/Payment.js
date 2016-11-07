@@ -158,7 +158,7 @@ Bot.prototype.init = function (config) {
 	if(!config || !config.BrainTree) { return false; }
 
 	var btcfg = config.production? config.BrainTree.production: config.BrainTree.sandbox;
-	btcfg.environment = braintree.Environment.Sandbox;
+	btcfg.environment = config.production? braintree.Environment.Production: braintree.Environment.Sandbox;
 	this.gateway = braintree.connect(btcfg);
 	this.plans = [];
 };
