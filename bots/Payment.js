@@ -1147,9 +1147,9 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 				}
 			});
 		});
-	}).catch(e) {
+	}).catch(function (e) {
 		cb(e);
-	}
+	});
 };
 Bot.prototype.subscribeIOSIAP = function (options, cb) {
 	var now = new Date().getTime();
