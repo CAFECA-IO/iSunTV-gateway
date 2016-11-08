@@ -460,14 +460,14 @@ Bot.prototype.getPriceWithDiscount = function (options, cb) {
 				reject(e);
 			}
 			else {
-				discount = d.discount;
+				discount = d.discount || [];
 				var fee = {
-					discount: d.discount,
+					discount: discount,
 					memberfee: {price: member.price, currency: member.currency},
 					annualfee: {price: pp.fee.price, currency: pp.fee.currency}
 				};
-				if(d.discount.indexOf("memberfree") > -1) { fee.memberfee.price = 0; }
-				if(d.discount.indexOf("rentfree") > -1) { fee.annualfee.price = 0; }
+				if(discount.indexOf("memberfree") > -1) { fee.memberfee.price = 0; }
+				if(discount.indexOf("rentfree") > -1) { fee.annualfee.price = 0; }
 				fee.fee = {price: fee.memberfee.price + fee.annualfee.price, currency: fee.memberfee.currency};
 				resolve(fee);
 			}
