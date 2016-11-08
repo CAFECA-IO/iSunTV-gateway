@@ -285,7 +285,45 @@ Bot.prototype.getExamination = function (options, cb) {
 		}
 	});
 };
-// require: email, name
+
+/**
+* @class Exam
+* <h1>[API 602] create examination</h1>
+*
+*<b>POST</b> https://api.isuntv.com/<mark>examination</mark>
+*
+* Header: 
+*
+*     @example 
+*     Content-Type: application/json
+*
+*
+* Raw-body:
+*
+* @param {Object} options An raw-body describing email and username:
+* @param {String} options.email The email address.
+* @param {String} options.username The username.
+*
+*     @example 
+*     {
+*       "email": "kkbox@gmail.com",
+*       "username": "Travis Lo"
+*     }
+*
+* @return {Object} Object with properties:
+* @return {Number} return.result Return 1 on successful, otherwise 0.
+* @return {String} return.message The error message.
+* @return {Object} return.data Empty data.
+* @return {Long} return.cost The API running time.
+*
+*     @example 
+*     {
+*       "result": 1,
+*       "message": "Get examination",
+*       "data": {},
+*       "cost": 209
+*     }
+*/
 Bot.prototype.generateExamination = function (options, cb) {
 	var questions = this.db.collection('Questions');
 	var examinations = this.db.collection('Examinations');
@@ -308,6 +346,7 @@ Bot.prototype.generateExamination = function (options, cb) {
 		}
 	});
 };
+//api 603
 Bot.prototype.getQuestion = function (options, cb) {
 	var examinations = this.db.collection('Examinations');
 	var condition = {_id: new mongodb.ObjectID(options.exid)};
@@ -341,6 +380,7 @@ Bot.prototype.getQuestion = function (options, cb) {
 		}
 	});
 };
+//api 604
 // require: exid, answer
 Bot.prototype.submitAnswer = function (options, cb) {
 	var examinations = this.db.collection('Examinations');
