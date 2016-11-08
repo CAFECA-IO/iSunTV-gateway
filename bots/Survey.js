@@ -22,6 +22,7 @@ Bot.prototype.start = function () {
 
 };
 
+//api 601
 Bot.prototype.add = function (options, cb) {
 	var table = 'Survey_' + options.topic;
 	var collection = this.db.collection(table);
