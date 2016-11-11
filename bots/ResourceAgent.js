@@ -1106,7 +1106,7 @@ Bot.prototype.crawlSeries = function (options, cb) {
 			}
 		};
 		request(seriesUrl, function (e1, d1) {
-			if(!Array.isArray(d1.data)) { return cb(null, 0); }
+			if(!d1 || !Array.isArray(d1.data)) { return cb(null, 0); }
 			// filter programTypes
 			d1 = d1.data;
 			todo += d1.length;
