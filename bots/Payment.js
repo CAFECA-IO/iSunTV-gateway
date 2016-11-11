@@ -1069,9 +1069,11 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 				if(e2) { e2.code = '87201'; return cb(e2); }
 				else {
 					self.gateway.paymentMethod.create({customerId: customer.id, paymentMethodNonce: options.nonce}, function (e3, d3) {
-						if(e3) {e3.code = '87201'; return cb(e2); }
+						if(e3) {e3.code = '87201'; return cb(e3); }
 						else if(!d3.success) {
-						//++ create payment method failed
+							e3 = new Error('payment failed');
+							e3.code = '87201'; return cb(e3);
+							/*
 							logger.exception.warn('--- subscribe failed ---');
 							logger.exception.warn(d3);
 							var nextCharge = 0, trialPeriod = 0;
@@ -1114,6 +1116,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 									cb(null, result);
 								}
 							});
+							*/
 						}
 						else {
 							var subscribeOptions = {
