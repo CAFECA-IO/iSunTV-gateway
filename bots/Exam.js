@@ -434,7 +434,7 @@ Bot.prototype.submitAnswer = function (options, cb) {
 					rs = {
 						finish: true,
 						question: undefined,
-						invitation: dvalue.randomID(8)
+						invitation: 'kWp4KvKJ5AHn'
 					};
 					updateQuery = {$set: {
 						finish: true,
