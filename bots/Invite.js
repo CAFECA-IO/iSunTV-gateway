@@ -29,6 +29,7 @@ Bot.prototype.initInvitation = function () {
 	invitations.count({}, function (e, d) {
 		if(d == 0) {
 			var is = [
+				{code: '8U5AZlNp', info: 'Web', discount: []},
 				{code: 'QEy9ZKrk', info: 'Android', discount: []},
 				{code: 'yQiCiKtn', info: 'iOS', discount: []},
 				{code: 'eQuLJipCnIId', discount: ["memberfree"]},
