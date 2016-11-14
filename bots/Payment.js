@@ -178,7 +178,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: '單租',
 				fee: {
 					price: 0.99,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
@@ -197,7 +197,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: '單租',
 				fee: {
 					price: 0.99,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
@@ -212,7 +212,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: 'VIP',
 				fee: {
 					price: 60,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
@@ -231,7 +231,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: 'Free',
 				fee: {
 					price: 0,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
@@ -246,7 +246,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: 'Free',
 				fee: {
 					price: 0,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
@@ -261,7 +261,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: 'adFree',
 				fee: {
 					price: 0,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
@@ -276,7 +276,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				title: 'shareFree',
 				fee: {
 					price: 0,
-					currency: 'USD'
+					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
