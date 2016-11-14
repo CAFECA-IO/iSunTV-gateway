@@ -855,7 +855,7 @@ Bot.prototype.fetchTransactionDetail = function (options, cb) {
 	options.transaction = options.transaction? options.transaction.toString(): '';
 	switch(options.gateway) {
 		case 'iosiap':
-			var verifiedUrl = this.config.production? this.config.ios.productionUrl: this.config.ios.sandBoxUrl;
+			var verifiedUrl = this.config.productioniOS? this.config.ios.productionUrl: this.config.ios.sandBoxUrl;
 			var requestOptions = url.parse(verifiedUrl);
 			requestOptions.method = 'POST';
 			requestOptions.post = {'password': this.config.ios.password, 'receipt-data': options.nonce};

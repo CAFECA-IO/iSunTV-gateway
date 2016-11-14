@@ -55,5 +55,6 @@ module.exports = {
 		period: 86400 * 1000 * 365
 	},
 	requireInvitation: false,
+	productioniOS: false,
 	production: false
 };
