@@ -51,6 +51,7 @@ Bot.prototype.start = function () {
 			logger.info.info('Crawl all programs from:', self.config.resourceAPI);
 			self.crawlerInterval = setInterval(function () {
 				self.crawl({}, function () {});
+				self.getBot('VersionSupport').loadVersion({}, function () {});
 			}, period);
 		});
 	}, timer);
