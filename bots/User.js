@@ -368,7 +368,7 @@ Bot.prototype.sendVericicationMail = function (options, cb) {
 				tmp.pathname = path.join(tmp.pathname, uri);
 				data.comfirmURL = url.format(tmp);
 				content = dvalue.sprintf(template, price, data.email, data.comfirmURL, data.comfirmURL, data.validcode);
-				bot.send(data.email, 'Welcome to iSunTV - Account Verification', content, function (e, d) { if(e) { logger.exception.warn(e); }});
+				bot.send(data.email, '歡迎來到 iSunTV 陽光網視', content, function (e, d) { if(e) { logger.exception.warn(e); }});
 				cb(null, {});
 			}).catch(function (e) {
 				cb(e);
