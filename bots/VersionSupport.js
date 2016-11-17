@@ -21,7 +21,7 @@ Bot.prototype.start = function () {
 
 
 /*
-{type: 'iOS', version: ['1.5.2(53)']}
+{type: 'iOS', version: ['1.0.0(56)']}
 {type: 'Android', version: ['1.0.10']}
  */
 Bot.prototype.loadVersion = function (options, cb) {
@@ -30,7 +30,7 @@ Bot.prototype.loadVersion = function (options, cb) {
 	versions.find({}).toArray(function (e, d) {
 		if(!Array.isArray(d) || d.length == 0) {
 			self.versions = [
-				{type: 'iOS', versions: ['1.5.2(53)']},
+				{type: 'iOS', versions: ['1.0.0(56)']},
 				{type: 'Android', versions: ['1.0.10']}
 			];
 			versions.insertMany(self.versions, {}, function () {});

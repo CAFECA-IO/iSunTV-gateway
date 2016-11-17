@@ -19,13 +19,15 @@ const ecresult = require('ecresult');
 const dvalue = require('dvalue');
 const textype = require('textype');
 
+const request = require('../utils/Crawler.js').request;
+
 const hashcashLevel = 3;
 const allowDelay = 10000 * 1000;
 
 
 var pathCert = path.join(__dirname, '../config/cert.pfx'),
-		pathPw = path.join(__dirname, '../config/pw.txt'),
-		logger;
+	pathPw = path.join(__dirname, '../config/pw.txt'),
+	logger, logServer;
 
 var checkLogin, checkHashCash, errorHandler, returnData;
 checkLogin = function (req, res, next) {
@@ -162,8 +164,30 @@ returnData = function(req, res, next) {
 	}
 
 	var rs = json.errorcode? [json.result, json.errorcode].join(':'): json.result;
+	var ev = req.url.split('/')[1];
+	var event = {
+		"session": req.sessionID,
+		"user": req.session.uid || '?',
+		"event": req.method + ' ' + ev,
+		"success": !!json.result,
+		"error": json.errorcode,
+		"data": json.data
+	};
+	logEvent(event);
 	logger.info.info(req.method, req.url, rs, req.session.ip, json.cost);
 };
+logEvent = function (data) {
+	var loggerURL = url.resolve(logServer, '/logger/isuntv');
+	var promise = new Promise(function (resolve, reject) {
+		var options = url.parse(loggerURL);
+		options.headers = {'Content-Type': 'application/json'};
+		options.method = 'POST';
+		options.post = data;
+		request(options, function (e, d) { console.log(e, d); resolve(); });
+	});
+	return promise;
+};
+
 
 var Bot = function(config) {
 	this.init(config);
@@ -180,6 +204,7 @@ Bot.prototype.init = function(config) {
 	this.monitorData = {};
 	this.monitorData.traffic = {in: 0, out: 0};
 	logger = config.logger;
+	logServer = config.notice;
 
 	var folders = config.path || {};
 	var upload = folders.upload || "./uploads/";
@@ -264,6 +289,7 @@ Bot.prototype.init = function(config) {
 		res.result.setResult(1);
 		res.result.setMessage('Application Information');
 		res.result.setData(self.config.package);
+		self.logEvent();
 		next();
 	});
 	// get app versions
