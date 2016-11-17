@@ -51,9 +51,9 @@ Bot.prototype.checkVersion = function (options) {
 		var app = self.versions.find(function (v) { return v.type == type; }) || {versions: ['0.0.0']};
 		var result = {
 			latest: app.versions[0],
-			forceUpdate: !app.type? false: (app.versions.indexOf(version) == -1),
+			forceUpdate: !app.type? false: ((app.versions.indexOf(version) == -1) && app.versions[0] > version),
 			suggestUpdate: !app.type? false:  (app.versions.indexOf(version) != 0)
-		}
+		};
 		resolve(result);
 	});
 
