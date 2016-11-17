@@ -183,7 +183,7 @@ logEvent = function (data) {
 		options.headers = {'Content-Type': 'application/json'};
 		options.method = 'POST';
 		options.post = data;
-		request(options, function (e, d) { console.log(e, d); resolve(); });
+		request(options, function (e, d) { resolve(); });
 	});
 	return promise;
 };
