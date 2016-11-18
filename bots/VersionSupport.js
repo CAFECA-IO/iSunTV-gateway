@@ -45,14 +45,21 @@ Bot.prototype.loadVersion = function (options, cb) {
 // response: latest, forceUpdate, suggestUpdate
 Bot.prototype.checkVersion = function (options) {
 	var self = this;
+	var compareVersion = function (a, b) {
+		var avarr = a.match(/[0-9]+/g);
+		var bvarr = b.match(/[0-9]+/g);
+		for(var i = 0; i < avarr.length || i < bvarr.length; i++) {
+			if(parseInt(avarr[i]) > parseInt(bvarr[i])) { return true; }
+		}
+	};
 	var promise = new Promise(function (resolve, reject) {
 		var type = options.type || '';
 		var version = options.version || '';
 		var app = self.versions.find(function (v) { return v.type == type; }) || {versions: ['0.0.0']};
 		var result = {
-			latest: app.versions[0],
-			forceUpdate: !app.type? false: ((app.versions.indexOf(version) == -1) && app.versions[0] > version),
-			suggestUpdate: !app.type? false:  (app.versions.indexOf(version) != 0)
+			latest: compareVersion(version, app.versions[0])? version: app.versions[0],
+			forceUpdate: (!app.type || compareVersion(version, app.versions[0]))? false: (app.versions.indexOf(version) == -1),
+			suggestUpdate: (!app.type || compareVersion(version, app.versions[0]))? false:  (app.versions.indexOf(version) != 0)
 		};
 		resolve(result);
 	});
