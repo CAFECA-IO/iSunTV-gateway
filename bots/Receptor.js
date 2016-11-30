@@ -1399,6 +1399,24 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+
+	// user activities
+	this.router.get('/user/activities/:token', function (req, res, next) {
+		var options = {
+			token: req.params.token,
+			page: req.query.page,
+			limit: req.query.limit
+		};
+		self.getBot('User').listUserActivities(options).then(function (d) {
+			res.result.setResult(1);
+			res.result.setMessage('check app version:', req.params.type);
+			res.result.setData(d);
+			next();
+		}).catch(function (e) {
+			res.result.setError(e);
+			next();
+		});
+	});
 };
 
 Bot.prototype.start = function(cb) {

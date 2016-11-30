@@ -1060,4 +1060,13 @@ Bot.prototype.notice = function (options, cb) {
 	request(reqopts, cb);
 };
 
+// require: token
+// optional: page, limit
+Bot.prototype.listUserActivities = function (options) {
+	var promise = new Promise(function (resolve, reject) {
+		resolve([]);
+	});
+	return promise;
+};
+
 module.exports = Bot;
