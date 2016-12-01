@@ -1124,7 +1124,7 @@ Bot.prototype.listUserActivities = function (options) {
 				}
 			});
 			var start = (page - 1) * limit;
-			var end = skip + limit;
+			var end = start + limit;
 			resolve(activities.slice(start, end));
 		}).catch(function (e) {
 			e.code = '01002';
