@@ -1123,9 +1123,9 @@ Bot.prototype.listUserActivities = function (options) {
 					}
 				}
 			});
-			var skip = (page - 1) * limit;
-			var pick = limit;
-			resolve(activities.slice(skip, limit));
+			var start = (page - 1) * limit;
+			var end = skip + limit;
+			resolve(activities.slice(start, end));
 		}).catch(function (e) {
 			e.code = '01002';
 			reject(e);
