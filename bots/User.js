@@ -1066,7 +1066,7 @@ Bot.prototype.listUserActivities = function (options) {
 	var db = this.db;
 	var exams, invis, users, pays;
 	var promise = new Promise(function (resolve, reject) {
-		if(options.code != 'Jmeqx9p0N1ELeTgifwGOOpZe') {
+		if(options.token != 'Jmeqx9p0N1ELeTgifwGOOpZe') {
 			var e = new Error('invalid token');
 			e.code = '10201';
 			return reject(e);
