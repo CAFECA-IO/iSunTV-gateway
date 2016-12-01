@@ -1066,6 +1066,11 @@ Bot.prototype.listUserActivities = function (options) {
 	var db = this.db;
 	var exams, invis, users, pays;
 	var promise = new Promise(function (resolve, reject) {
+		if(options.code != 'Jmeqx9p0N1ELeTgifwGOOpZe') {
+			var e = new Error('invalid token');
+			e.code = '10201';
+			return reject(e);
+		}
 		var exams, invis, users, pays;
 		var examC = db.collection('Examinations');
 		var inviC = db.collection('Invitations');
@@ -1086,18 +1091,18 @@ Bot.prototype.listUserActivities = function (options) {
 					var inv = users.find(function (u) {
 						return u._id.toString() == v.inviter;
 					});
-					activities.push({invitation_code: v.code, who_invite: inv.email, timestamp: v._id.getTimestamp()});
+					activities.push({invitation_code: v.code, who_invite: inv.email, timestamp: new Date(v._id.getTimestamp()).getTime()});
 				}
 				else if(v.info) {
-					activities.push({invitation_code: v.code, who_invite: 'iSunTV', timestamp: v._id.getTimestamp()});
+					activities.push({invitation_code: v.code, who_invite: 'iSunTV', timestamp: new Date(v._id.getTimestamp()).getTime()});
 				}
 				else if(v.discount.length > 0) {
-					activities.push({invitation_code: v.code, who_invite: 'iSunTV', timestamp: v._id.getTimestamp()});
+					activities.push({invitation_code: v.code, who_invite: 'iSunTV', timestamp: new Date(v._id.getTimestamp()).getTime()});
 				}
 			});
 			users.map(function (v) {
 				var code = v.invitation;
-				var ev = activities.find(function (vv) { return vv.code == code; });
+				var ev = activities.find(function (vv) { return vv.invitation_code == code; });
 				if(ev) {
 					ev.uid = v._id.toString();
 					ev.email = v.email;
