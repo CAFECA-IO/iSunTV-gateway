@@ -1065,6 +1065,8 @@ Bot.prototype.notice = function (options, cb) {
 Bot.prototype.listUserActivities = function (options) {
 	var db = this.db;
 	var exams, invis, users, pays;
+	var page = parseInt(options.page) || 1;
+	var limit = parseInt(options.limit) || 20;
 	var promise = new Promise(function (resolve, reject) {
 		if(options.token != 'Jmeqx9p0N1ELeTgifwGOOpZe') {
 			var e = new Error('invalid token');
@@ -1121,7 +1123,9 @@ Bot.prototype.listUserActivities = function (options) {
 					}
 				}
 			});
-			resolve(activities);
+			var skip = (page - 1) * limit;
+			var pick = limit;
+			resolve(activities.slice(skip, limit));
 		}).catch(function (e) {
 			e.code = '01002';
 			reject(e);
