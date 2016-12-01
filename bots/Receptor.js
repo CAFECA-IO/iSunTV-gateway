@@ -1401,7 +1401,7 @@ Bot.prototype.init = function(config) {
 	});
 
 	// user activities
-	this.router.get(['/user/activities/:token','/user/activities/:token/:page','/user/activities/:token/:page:limit'], function (req, res, next) {
+	this.router.get(['/user/activities/:token','/user/activities/:token/:page','/user/activities/:token/:page/:limit'], function (req, res, next) {
 		var options = {
 			token: req.params.token,
 			page: req.query.page || req.params.page,
@@ -1409,7 +1409,7 @@ Bot.prototype.init = function(config) {
 		};
 		self.getBot('User').listUserActivities(options).then(function (d) {
 			res.result.setResult(1);
-			res.result.setMessage('check app version:', req.params.type);
+			res.result.setMessage('list user activities');
 			res.result.setData(d);
 			next();
 		}).catch(function (e) {
