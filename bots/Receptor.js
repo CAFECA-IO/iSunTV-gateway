@@ -1401,11 +1401,11 @@ Bot.prototype.init = function(config) {
 	});
 
 	// user activities
-	this.router.get('/user/activities/:token', function (req, res, next) {
+	this.router.get(['/user/activities/:token','/user/activities/:token/:page','/user/activities/:token/:page:limit'], function (req, res, next) {
 		var options = {
 			token: req.params.token,
-			page: req.query.page,
-			limit: req.query.limit
+			page: req.query.page || req.params.page,
+			limit: req.query.limit || req.params.limit
 		};
 		self.getBot('User').listUserActivities(options).then(function (d) {
 			res.result.setResult(1);
