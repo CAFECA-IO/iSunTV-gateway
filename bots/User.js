@@ -1063,8 +1063,64 @@ Bot.prototype.notice = function (options, cb) {
 // require: token
 // optional: page, limit
 Bot.prototype.listUserActivities = function (options) {
+	var db = this.db;
+	var exams, invis, users, pays;
 	var promise = new Promise(function (resolve, reject) {
-		resolve([]);
+		var exams, invis, users, pays;
+		var examC = db.collection('Examinations');
+		var inviC = db.collection('Invitations');
+		var userC = db.collection('Users');
+		var ordeC = db.collection('Orders');
+		Promise.all([examC.find({}).toArray(), inviC.find({}).toArray(), userC.find({}).toArray(), ordeC.find({}).toArray()]).then(values => {
+			exams = values[0];
+			invis = values[1];
+			users = values[2];
+			orders = values[3];
+			var activities = [];
+			exams.map(function (v) {
+				activities.push({email: v.email, passed_question: v.result, invitation_code: v.invitation, timestamp: v._id.getTimestamp()});
+			});
+			invis.map(function (v) {
+				v.iid = v._id.toString();
+				if(!!v.inviter) {
+					var inv = users.find(function (u) {
+						return u._id.toString() == v.inviter;
+					});
+					activities.push({invitation_code: v.code, who_invite: inv.email, timestamp: v._id.getTimestamp()});
+				}
+				else if(v.info) {
+					activities.push({invitation_code: v.code, who_invite: 'iSunTV', timestamp: v._id.getTimestamp()});
+				}
+				else if(v.discount.length > 0) {
+					activities.push({invitation_code: v.code, who_invite: 'iSunTV', timestamp: v._id.getTimestamp()});
+				}
+			});
+			users.map(function (v) {
+				var code = v.invitation;
+				var ev = activities.find(function (vv) { return vv.code == code; });
+				if(ev) {
+					ev.uid = v._id.toString();
+					ev.email = v.email;
+					ev.name = v.username;
+					ev.timestamp = v.ltime;
+					ev.campaign_url = 'https://www.isuntv.com/signin';
+				}
+			});
+			orders.map(function (v) {
+				var ev = activities.find(function (vv) { return vv.uid == v.uid; });
+				if(ev) {
+					if(ev.stay_in_payment_page == undefined) { ev.stay_in_payment_page = true; }
+					if(v.receipt) {
+						ev.stay_in_payment_page = false;
+						ev.payment_method = v.receipt.gateway;
+					}
+				}
+			});
+			resolve(activities);
+		}).catch(function (e) {
+			e.code = '01002';
+			reject(e);
+		});
 	});
 	return promise;
 };
