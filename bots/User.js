@@ -1085,7 +1085,7 @@ Bot.prototype.listUserActivities = function (options) {
 			orders = values[3];
 			var activities = [];
 			exams.map(function (v) {
-				activities.push({email: v.email, passed_question: v.result, invitation_code: v.invitation, timestamp: v._id.getTimestamp()});
+				activities.push({email: v.email, passed_question: v.result, invitation_code: v.invitation, timestamp: new Date(v._id.getTimestamp()).getTime()});
 			});
 			invis.map(function (v) {
 				v.iid = v._id.toString();
