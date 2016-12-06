@@ -223,7 +223,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				},
 				gpid: {
 					braintree: 'YearVIP',
-					iosiap: 'EntranceFee'
+					iosiap: 'EntranceFeeAndOneYearFree'
 				}
 			},
 			{
@@ -468,6 +468,7 @@ Bot.prototype.getPriceWithDiscount = function (options, cb) {
 				};
 				if(discount.indexOf("memberfree") > -1) { fee.memberfee.price = 0; }
 				if(discount.indexOf("rentfree") > -1) { fee.annualfee.price = 0; }
+				if(discount.indexOf("rent-4001") > -1) { fee.annualfee.price = 19.99; }
 				fee.fee = {price: fee.memberfee.price + fee.annualfee.price, currency: fee.memberfee.currency};
 				resolve(fee);
 			}
@@ -541,6 +542,12 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			if(options.discount.indexOf("rentfree") > -1) {
 				rentfee.original = rentfee.price;
 				rentfee.price = 0;
+			}
+
+			// discount - 19.99 rent fee
+			if(options.discount.indexOf("rent-4001") > -1) {
+				rentfee.original = rentfee.price;
+				rentfee.price = 19.99;
 			}
 
 			var totalfee = {
@@ -1131,6 +1138,10 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 							// annual discount
 							if(subscribeDetail.discount.indexOf("rentfree") > -1) {
 								subscribeOptions.discounts = {add: [ {inheritedFromId: 'MonarchExtraordinary'} ]};
+							}
+							// annual discount
+							if(subscribeDetail.discount.indexOf("rent-4001") > -1) {
+								subscribeOptions.discounts = {add: [ {inheritedFromId: 'rent-4001'} ]};
 							}
 
 							options.trial = options.trial || {};
