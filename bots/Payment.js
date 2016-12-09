@@ -1022,7 +1022,7 @@ Bot.prototype.subscribe = function (options, cb) {
 	var condition = {uid: options.uid, type: 3};
 	Tickets.find(condition).toArray(function (e, d) {
 		if(e) { e.code = '01002'; return cb(e); }
-		else if(d.some(function (v) { return v.subscribe; })) {
+		else if(options.gateway != 'iosiap' && d.some(function (v) { return v.subscribe; })) {
 			e = new Error('duplicate subscribe');
 			e.code = '97002';
 			return cb(e);
