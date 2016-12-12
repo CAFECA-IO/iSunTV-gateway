@@ -227,6 +227,25 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				}
 			},
 			{
+				type: 3,
+				title: 'VIP',
+				fee: {
+					price: 59.99,
+					currency: 'US$'
+				},
+				programs: [],
+				enable: true,
+				visible: true,
+				ticket: {
+					expire: 86400 * 1000 * 365,
+					duration: 86400 * 1000 * 365
+				},
+				gpid: {
+					braintree: 'YearVIP',
+					iosiap: 'OneYearFee'
+				}
+			},
+			{
 				type: 4,
 				title: 'Free',
 				fee: {
