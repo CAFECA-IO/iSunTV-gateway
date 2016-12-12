@@ -617,7 +617,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				fee: totalfee,
 				expire: ticket.expire,
 				trial: 0,
-				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: (ticket.charge > now? ticket.charge: ticket.expire)
+				next_charge: (now > ticket.expire || !ticket.subscribe)? 0: (ticket.charge > now && ticket.gateway != 'iosiap'? ticket.charge: ticket.expire)
 			};
 			if(ticket.trial > now) { options.paymentstatus.trial = ticket.trial; }
 			return cb(null, options);
