@@ -1421,7 +1421,7 @@ Bot.prototype.init = function(config) {
 	// check invitation
 	this.router.get('/check/invitation/:code', checkHashCash, function (req, res, next) {
 		var options = {code: req.params.code};
-		self.getBot('Invite').checkInvitation(function (e, d) {
+		self.getBot('Invite').checkInvitation(options, function (e, d) {
 			if(e) {
 				res.result.setError(e);
 				logger.exception.warn(e);
