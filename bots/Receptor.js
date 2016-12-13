@@ -1417,6 +1417,22 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	});
+
+	// check invitation
+	this.router.get('/check/invitation/:code', checkHashCash, function (req, res, next) {
+		var options = {code: req.params.code};
+		self.getBot('Invite').checkInvitation(function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Valid invitation code:', req.params.code);
+			}
+			next();
+		})
+	})
 };
 
 Bot.prototype.start = function(cb) {
