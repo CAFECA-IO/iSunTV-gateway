@@ -76,7 +76,8 @@ Bot.prototype.sendInvitation = function (options, cb) {
 
 Bot.prototype.checkInvitation = function (options, cb) {
 	var self = this;
-	var condition = {code: options.code};
+	var RegCode = new RegExp('^' + options.code + '$', 'i');
+	var condition = {code: RegCode};
 	var invitations = this.db.collection('Invitations');
 	invitations.findOne(condition, {_id: 0}, function (e1, d1) {
 		if(e1) {
