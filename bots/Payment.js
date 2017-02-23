@@ -211,38 +211,19 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				type: 3,
 				title: 'VIP',
 				fee: {
-					price: 60,
+					price: 4.99,
 					currency: 'US$'
 				},
 				programs: [],
 				enable: true,
 				visible: true,
 				ticket: {
-					expire: 86400 * 1000 * 365,
-					duration: 86400 * 1000 * 365
+					expire: 86400 * 1000 * 30,
+					duration: 86400 * 1000 * 30
 				},
 				gpid: {
-					braintree: 'YearVIP',
-					iosiap: 'EntranceFeeAndOneYearFree'
-				}
-			},
-			{
-				type: 3,
-				title: 'VIP',
-				fee: {
-					price: 59.99,
-					currency: 'US$'
-				},
-				programs: [],
-				enable: true,
-				visible: true,
-				ticket: {
-					expire: 86400 * 1000 * 365,
-					duration: 86400 * 1000 * 365
-				},
-				gpid: {
-					braintree: 'YearVIP',
-					iosiap: 'OneYearFee'
+					braintree: 'MonthVIP',
+					iosiap: 'subscribemonthlyfee'
 				}
 			},
 			{
@@ -561,12 +542,6 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			if(options.discount.indexOf("rentfree") > -1) {
 				rentfee.original = rentfee.price;
 				rentfee.price = 0;
-			}
-
-			// discount - 19.99 rent fee
-			if(options.discount.indexOf("rent-4001") > -1) {
-				rentfee.original = rentfee.price;
-				rentfee.price = 19.99;
 			}
 
 			var totalfee = {

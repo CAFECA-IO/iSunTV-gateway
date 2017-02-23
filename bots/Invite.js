@@ -32,10 +32,10 @@ Bot.prototype.initInvitation = function () {
 				{code: '8U5AZlNp', info: 'Web', discount: []},
 				{code: 'QEy9ZKrk', info: 'Android', discount: []},
 				{code: 'yQiCiKtn', info: 'iOS', discount: []},
-				{code: 'eQuLJipCnIId', discount: ["memberfree"]},
-				{code: 'kWp4KvKJ5AHn', discount: ["rentfree"]},
-				{code: 'XEb79BSn8zlX', discount: ["memberfree", "rentfree"]},
-				{code: 'MERRYXMAS', discount: ["memberfree", "rent-4001"]}
+				{code: 'eQuLJipCnIId', discount: []},
+				{code: 'kWp4KvKJ5AHn', discount: []},
+				{code: 'XEb79BSn8zlX', discount: []},
+				{code: 'MERRYXMAS', discount: []}
 			];
 			invitations.insertMany(is, {}, function () {});
 		}
