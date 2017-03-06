@@ -582,7 +582,6 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 			};
 
 			options.member = (ticket.expire > now);
-			if(!options.member) { pp.fee.price += memberfee; }
 			options.paymentstatus = {
 				status: ticket.expire > 0? ticket.subscribe? status[1]: status[2] : status[0],
 				gateway: now > ticket.expire? 'free': ticket.gateway,
