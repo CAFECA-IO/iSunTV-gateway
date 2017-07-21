@@ -1062,6 +1062,8 @@ Bot.prototype.subscribe = function (options, cb) {
 
 Bot.prototype.subscribeBraintree = function (options, cb) {
 	var self = this;
+	const ppid = options.ppid;
+	const braintreePlan = this.plans.find(v => { return v.ppid == ppid }).gpid.braintree;
 	this.getSubscribeOptions(options).then(function (subscribeDetail) {
 		self.createBrainTreeID(options, function (e1, d1) {
 			if(e1) { e1.code = '87201'; return cb(e1); }
@@ -1121,7 +1123,7 @@ Bot.prototype.subscribeBraintree = function (options, cb) {
 						else {
 							var subscribeOptions = {
 								paymentMethodToken: d3.paymentMethod.token,
-								planId: "YearVIP"
+								planId: braintreePlan
 							};
 
 							// member fee
