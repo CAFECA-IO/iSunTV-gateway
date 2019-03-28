@@ -83,7 +83,7 @@ Bot.prototype.facebook_callback = function (req, res, next) {
 		var passto = function (query) {
 			if(self.config.frontend) {
 				var redirectURL, tmp = url.parse(self.config.frontend + '/cn/fbCheck');
-				query.data = new Buffer.alloc(JSON.stringify(query.data)).toString('base64');
+				query.data = Buffer.from(JSON.stringify(query.data)).toString('base64');
 				tmp.query = query;
 				res.result.setResult(302);
 				res.result.setData({Location: url.format(tmp)});
