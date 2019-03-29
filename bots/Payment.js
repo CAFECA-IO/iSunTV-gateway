@@ -363,7 +363,7 @@ Bot.prototype.fillPaymentInformation = function (options, cb) {
 		var options = {uid: options.uid, pid: programs.pid};
 		this.checkPlayable(options, function (e, d) {
 			programs.playable = !!d;
-			if(!programs.playable) { programs.stream = ''; }
+			// if(!programs.playable) { programs.stream = ''; }
 			cb(null, programs);
 		});
 	}
