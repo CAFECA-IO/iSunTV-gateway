@@ -42,6 +42,6 @@
     "serve-favicon": "^2.3.0",
     "spdy": "^3.4.4",
     "textype": "^1.0.6",
-    "tingodb": "^0.4.2"
+    "tingodb": "^0.6.1"
   }
 }
