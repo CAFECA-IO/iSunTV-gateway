@@ -56,5 +56,9 @@ module.exports = {
 	},
 	requireInvitation: false,
 	productioniOS: false,
-	production: false
+	production: false,
+	aes: {
+		key: '',
+		iv: '',
+	},
 };
