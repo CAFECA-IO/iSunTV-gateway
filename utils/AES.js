@@ -14,7 +14,7 @@ const Encrypt = function (cleardata) {
 const Decrypt = function (cleardata) {
   crypted = new Buffer(cleardata, 'base64').toString('binary');
   let decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-  return decipher.update(crypted, 'binary', 'utf8') + decipher.final('utf8');
+  return JSON.parse(decipher.update(crypted, 'binary', 'utf8') + decipher.final('utf8'));
 }
 
 /**

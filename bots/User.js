@@ -9,7 +9,9 @@ const crypto = require('crypto');
 const raid2x = require('raid2x');
 const dvalue = require('dvalue');
 const textype = require('textype');
+const jwt = require('jsonwebtoken')
 const request = require('../utils/Crawler.js').request;
+const AES = require('../utils/AES.js');
 
 var tokenLife = 86400 * 1000;
 var renewLife = 86400 * 100 * 1000;
@@ -1133,5 +1135,130 @@ Bot.prototype.listUserActivities = function (options) {
 	});
 	return promise;
 };
+
+Bot.prototype.getIsunoneJWT = function (options, cb) {
+	var self = this;
+	if(!options.token) { 
+		var e = new Error("Invalid token");
+		return cb(e);
+	};
+	
+	const JWTdecoded = jwt.decode(options.token);
+	const data = AES.Decrypt(JWTdecoded.data);
+	
+	q.fcall(function () {
+		return self.checkUserExist({ 
+			account: data.isunone.username, 
+			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+			enable: true, 
+		});
+	}).then(function (d) {
+		if(!d) {
+			e = new Error("incorrect account/password");
+			e.code = '19101';
+			return cb(e);
+		}
+		if(!d.enable) {
+			e = new Error("Account not verified");
+			e.code = '69101';
+			e.uid = d._id.toString();
+			return cb(e);
+		}
+		self.cleanLoginHistory(d.account);
+		self.createToken(d, cb);
+	});
+}
+
+Bot.prototype.createIsunoneUser = function (options, cb) {
+	var self = this;
+	if(!options.token) { 
+		return cb(400, {
+			"status": false,
+			"code": "OTHER_EXCEPTION",
+		});
+	};
+	
+	const JWTdecoded = jwt.decode(options.token);
+	const data = AES.Decrypt(JWTdecoded.data);
+	
+	// 1. create a user record
+	//   check user is exit
+	q.fcall(function () {
+		return self.checkUserExist({ 
+			account: data.isunone.username, 
+			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+			enable: true, 
+		});
+	}).then(function (d) {
+		if(d) {
+			return cb(400, {
+				"status": false,
+				"code": "EXIST_LINKAGE_OR_USER",
+			});
+		}
+		//   generate a random password and use platform_username as your user record unique id, e.g. email for tidebit
+
+		//   get LinkageID from UnitIDTable
+		//   findAndModify LinkageID in UnitIDTable
+		
+		var collection = this.db.collection('UnitID');
+
+		collection.findAndModify( { "key": "isunoneLinkageID" }, null, { $inc: { value: 1 } }, { new: true, upsert: true }, function(err, result){
+			if (err) {
+				return cb(400, {
+					"status": false,
+					"code": "OTHER_EXCEPTION",
+				});
+			}
+			
+			// 2. create link_accounts record
+			let linkageID = result.value.value
+			var user = {
+				condition: {
+					account: data.isunone.username,
+					'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+					enable: true, 
+				},
+				profile: {
+					account: data.isunone.username,
+					username: data.isunone.username,
+					email: data.isunone.email,
+					emails: [data.isunone.email],
+					photo: "",
+					photos: [],
+					allowmail: false,
+					isunone: {
+						status: "approved",
+						isuntv_linkage_id: linkageID,
+						binddata: data,
+					},
+				}
+			};
+			
+			self.getUserBy3rdParty(user, function (err, result) {
+				if (err) {
+					return cb(400, {
+						"status": false,
+						"code": "CREATE_USER_FAIL",
+					});
+				}
+			});
+
+			// 3. respond to isunone
+			return cb(200, {
+				"status": true,
+				"data": {
+					"platform": {
+						"name":      "rockme",
+						"linkage_id": linkageID,
+					},
+					"isunone": {
+						"linkage_id": data.isunone.linkage_id,
+					},
+				},
+			});
+		});
+	});
+}
 
 module.exports = Bot;
