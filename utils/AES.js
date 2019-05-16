@@ -1,7 +1,14 @@
 const crypto = require('crypto');
 const config = require('../config/');
-const iv = new Buffer(config.aes.iv);
-const key = config.aes.key;
+
+let iv, key;
+try {
+  iv = new Buffer(config.aes.iv);
+  key = config.aes.key;
+} catch (error) {
+  config.logger.exception.error('AES key not correct');
+  process.exit(1);
+}
   
 // Encrypted to AES 256 by part of private and public keys
 const Encrypt = function (cleardata) {
