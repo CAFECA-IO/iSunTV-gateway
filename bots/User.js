@@ -1180,6 +1180,7 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 	
 	const JWTdecoded = jwt.decode(options.token);
 	const data = AES.Decrypt(JWTdecoded.data);
+	const collection = this.db.collection('UnitID');
 	
 	// 1. create a user record
 	//   check user is exit
@@ -1201,7 +1202,6 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 		//   get LinkageID from UnitIDTable
 		//   findAndModify LinkageID in UnitIDTable
 		
-		var collection = this.db.collection('UnitID');
 
 		collection.findAndModify( { "key": "isunoneLinkageID" }, null, { $inc: { value: 1 } }, { new: true, upsert: true }, function(err, result){
 			if (err) {
@@ -1222,8 +1222,8 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 				profile: {
 					account: data.isunone.username,
 					username: data.isunone.username,
-					email: data.isunone.email,
-					emails: [data.isunone.email],
+					email: data.isunone.email || "default@isunone.com",
+					emails: [data.isunone.email|| "default@isunone.com"],
 					photo: "",
 					photos: [],
 					allowmail: false,
