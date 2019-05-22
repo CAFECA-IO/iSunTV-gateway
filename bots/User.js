@@ -1257,7 +1257,7 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 				"status": true,
 				"data": {
 					"platform": {
-						"name":      "rockme",
+						"name":      "isunvideo",
 						"linkage_id": linkageID,
 					},
 					"isunone": {
