@@ -1178,9 +1178,17 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 		});
 	};
 	
-	const JWTdecoded = jwt.decode(options.token);
-	const data = AES.Decrypt(JWTdecoded.data);
-	const collection = this.db.collection('UnitID');
+	let JWTdecoded, data, collection
+	try {
+		JWTdecoded = jwt.decode(options.token);
+		data = AES.Decrypt(JWTdecoded.data);
+		collection = this.db.collection('UnitID');
+	} catch (error) {
+		return cb(400, {
+			"status": false,
+			"code": "OTHER_EXCEPTION",
+		});
+	}
 	
 	// 1. create a user record
 	//   check user is exit
