@@ -1139,12 +1139,22 @@ Bot.prototype.listUserActivities = function (options) {
 Bot.prototype.getIsunoneJWT = function (options, cb) {
 	var self = this;
 	if(!options.token) { 
-		var e = new Error("Invalid token");
-		return cb(e);
+		return cb(400, {
+			"status": false,
+			"code": "DECRYPTED_TOKEN_FAIL",
+		});
 	};
 	
-	const JWTdecoded = jwt.decode(options.token);
-	const data = AES.Decrypt(JWTdecoded.data);
+	let JWTdecoded, data
+	try {
+		JWTdecoded = jwt.decode(options.token);
+		data = AES.Decrypt(JWTdecoded.data);
+	} catch (error) {
+		return cb(400, {
+			"status": false,
+			"code": "OTHER_EXCEPTION",
+		});
+	}
 	
 	q.fcall(function () {
 		return self.checkUserExist({ 
@@ -1153,16 +1163,11 @@ Bot.prototype.getIsunoneJWT = function (options, cb) {
 			enable: true, 
 		});
 	}).then(function (d) {
-		if(!d) {
-			e = new Error("incorrect account/password");
-			e.code = '19101';
-			return cb(e);
-		}
-		if(!d.enable) {
-			e = new Error("Account not verified");
-			e.code = '69101';
-			e.uid = d._id.toString();
-			return cb(e);
+		if(!d || !d.enable) {
+			return cb(400, {
+				"status": false,
+				"code": "OTHER_EXCEPTION",
+			});
 		}
 		self.cleanLoginHistory(d.account);
 		self.createToken(d, cb);

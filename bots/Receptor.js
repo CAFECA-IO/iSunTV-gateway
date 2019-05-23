@@ -1435,14 +1435,14 @@ Bot.prototype.init = function(config) {
 
 	// get isunone jwt
 	this.router.post('/oauth/isunone', function (req, res, next) {
-		var options = {token: req.body.token};
+		var options = {token: req.body.token || ''};
 		
 		var bot = self.getBot('User');
 		bot.getIsunoneJWT(options, function (e, d) {
-			if(e) {
-				res.result.setError(e);
-				res.result.setData({uid: e.uid});
-				logger.exception.warn(e);
+			if(e != null && e !== 200) {
+				logger.exception.warn('login isunone rockme user error:', d.code);
+				res.status(e);
+				res.json(d);
 			}
 			else {
 				res.result.setResult(1);
@@ -1456,7 +1456,7 @@ Bot.prototype.init = function(config) {
 
 	// create isunone rockme user 
 	this.router.get('/isunones/new', function (req, res, next) {
-		var options = {token: req.query.token};
+		var options = {token: req.query.token || ''};
 		var bot = self.getBot('User');
 		bot.createIsunoneUser(options, function (statusCode, body) {
 			if(statusCode != 200) {
