@@ -1158,7 +1158,7 @@ Bot.prototype.getIsunoneJWT = function (options, cb) {
 	
 	q.fcall(function () {
 		return self.checkUserExist({ 
-			account: data.isunone.username, 
+			account: data.platform.username, 
 			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
 			enable: true, 
 		});
@@ -1194,16 +1194,23 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 			"code": "OTHER_EXCEPTION",
 		});
 	}
+	console.log('data:', data);
 	
 	// 1. create a user record
 	//   check user is exit
 	q.fcall(function () {
 		return self.checkUserExist({ 
-			account: data.isunone.username, 
+			account: data.platform.username, 
 			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
 			enable: true, 
 		});
 	}).then(function (d) {
+		console.log('conpare:', { 
+			account: data.platform.username, 
+			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+			enable: true, 
+		});
+		
 		if(d) {
 			return cb(400, {
 				"status": false,
@@ -1228,15 +1235,15 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 			let linkageID = result.value.value
 			var user = {
 				condition: {
-					account: data.isunone.username,
+					account: data.platform.username,
 					'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
 					enable: true, 
 				},
 				profile: {
-					account: data.isunone.username,
-					username: data.isunone.username,
-					email: data.isunone.email || "default@isunone.com",
-					emails: [data.isunone.email|| "default@isunone.com"],
+					account: data.platform.username,
+					username: data.platform.username,
+					email: data.platform.username || '',
+					emails: [data.platform.username || ''],
 					photo: "",
 					photos: [],
 					allowmail: false,
