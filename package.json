@@ -20,6 +20,7 @@
   "license": "MIT",
   "homepage": "https://bitbucket.org/tidenet/isuntv-gateway#readme",
   "dependencies": {
+    "axios": "^0.18.0",
     "body-parser": "^1.15.2",
     "braintree": "^1.41.0",
     "dvalue": "latest",

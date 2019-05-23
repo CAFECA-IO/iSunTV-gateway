@@ -1,4 +1,5 @@
 // Watching APIs (Business logic)
+const axios = require('axios');
 const util = require('util');
 
 const mongodb = require('mongodb');
@@ -61,6 +62,9 @@ Bot.prototype.recordWatchingProgram = function (options, cb) {
 		if(e) { e.code = '01002'; return cb(e); }
 		else if(!program) { e = new Error('Program not found'); e.code = '39201'; return cb(e); }
 		else {
+			// add bolt trust
+			BOLTTrustAsset.call(self, { 'data': formatWatching(options) })
+
 			// Update Watching_programs
 			var criteria = { uid: options.uid, pid: options.pid };
 			var update = { $set: formatWatching(options) };
@@ -122,5 +126,66 @@ Bot.prototype._listWatchedProgram = function (query, skip, limit, cb) {
 	});
 }
 
+function BOLTTrustAsset(data, count = 0) {
+	const self = this
+	let apiOptions = {
+		method: 'POST',
+		headers: { 'token': self.config.boltPlatform.token },
+		url: self.config.boltPlatform.TrustUrl + '/asset',
+	};
+	axios(apiOptions)
+	.then(async function (res) {
+		if (res.data.code == 5) {
+			//  token expire, renew token
+
+			apiOptions = {
+				method: 'POST',
+				headers: { 'token': self.config.boltPlatform.token },
+				data: {
+					tokenSecret: self.config.boltPlatform.tokenSecret
+				},
+				url: self.config.boltPlatform.PlatformUrl + '/renewToken',
+			};
+			await axios(apiOptions)
+			.then(function (res) {
+				console.log('res.data:', res.data);
+				
+				self.config.boltPlatform.token = res.data.token;
+				self.config.boltPlatform.tokenSecret = res.data.tokenSecret;
+			})
+			.catch(function (error) {
+				console.error(error);
+			});
+		}
+		return res.data.itemID
+	})
+	.then(function (itemID) {
+		apiOptions = {
+			method: 'POST',
+			headers: { 'token': self.config.boltPlatform.token },
+			data,
+			url: self.config.boltPlatform.TrustUrl  + '/asset22/' + itemID + '/data',
+		};
+		axios(apiOptions)
+		.catch(function (error) {
+			console.error('BOLTTrustAsset saveData error:', error.message);
+			if (count < 3) {
+				setTimeout(() => {
+					console.error('BOLTTrustAsset saveData error & retry ', count);
+					BOLTTrustAsset.call(self, { 'data': formatWatching(options) }, count+=1)
+				}, 1000);
+			}
+		});
+	})
+	.catch(function (error) {
+		console.error('BOLTTrustAsset create error:', error.message);
+		if (count < 3) {
+			setTimeout(() => {
+				console.error('BOLTTrustAsset create error & retry ', count);
+				BOLTTrustAsset.call(self, { 'data': formatWatching(options) }, count+=1)
+			}, 1000);
+		}
+	});
+}
 
 module.exports = Bot;
