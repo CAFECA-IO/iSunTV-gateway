@@ -1194,7 +1194,6 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 			"code": "OTHER_EXCEPTION",
 		});
 	}
-	console.log('data:', data);
 	
 	// 1. create a user record
 	//   check user is exit
@@ -1205,12 +1204,6 @@ Bot.prototype.createIsunoneUser = function (options, cb) {
 			enable: true, 
 		});
 	}).then(function (d) {
-		console.log('conpare:', { 
-			account: data.platform.username, 
-			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
-			enable: true, 
-		});
-		
 		if(d) {
 			return cb(400, {
 				"status": false,
