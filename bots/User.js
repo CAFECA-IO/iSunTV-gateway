@@ -1158,7 +1158,7 @@ Bot.prototype.getIsunoneJWT = function (options, cb) {
 	
 	q.fcall(function () {
 		return self.checkUserExist({ 
-			account: data.platform.username, 
+			account: data.isunone.username+"@tideisun.com", 
 			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
 			enable: true, 
 		});
