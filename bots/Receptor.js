@@ -1470,6 +1470,24 @@ Bot.prototype.init = function(config) {
 			}
 		});
 	})
+
+	// create all user wallet 
+	this.router.get('/tmp/create', function (req, res, next) {
+		// var options = {token: req.query.token || ''};
+		var bot = self.getBot('User');
+		bot.createAllUserWallet(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('successful password change');
+				// res.result.setData(d);
+			}
+			next();
+		});
+	})
 };
 
 Bot.prototype.start = function(cb) {
