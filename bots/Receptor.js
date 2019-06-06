@@ -1430,8 +1430,63 @@ Bot.prototype.init = function(config) {
 				res.result.setResult(1);
 				res.result.setMessage('Valid invitation code:', req.params.code);
 			}
-			next();
 		})
+	})
+
+	// get isunone jwt
+	this.router.post('/oauth/isunone', function (req, res, next) {
+		var options = {token: req.body.token || ''};
+		
+		var bot = self.getBot('User');
+		bot.getIsunoneJWT(options, function (e, d) {
+			if(e != null && e !== 200) {
+				logger.exception.warn('login isunone rockme user error:', d.code);
+				res.status(e);
+				res.json(d);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('login successfully');
+				res.result.setData(d);
+				res.result.setSession({uid: d.uid});
+			}
+			next();
+		});
+	})
+
+	// create isunone rockme user 
+	this.router.get('/isunones/new', function (req, res, next) {
+		var options = {token: req.query.token || ''};
+		var bot = self.getBot('User');
+		bot.createIsunoneUser(options, function (statusCode, body) {
+			if(statusCode != 200) {
+				logger.exception.warn('create isunone rockme user error:', body.code);
+				res.status(statusCode);
+				res.json(body);
+			}
+			else {
+				res.status(statusCode);
+				res.json(body);
+			}
+		});
+	})
+
+	// create all user wallet 
+	this.router.get('/tmp/create', function (req, res, next) {
+		// var options = {token: req.query.token || ''};
+		var bot = self.getBot('User');
+		bot.createAllUserWallet(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('successful password change');
+				// res.result.setData(d);
+			}
+			next();
+		});
 	})
 };
 
