@@ -223,7 +223,7 @@ function BOLTTrustAsset(data, count = 0) {
 			.then((item) => {
 				// Update Watching_programs
 				var criteria = { uid: data.data['\nuid'], pid: data.data['\npid'] };
-				var update = { $set: { 'lightTxHash:': item.data.receipt.lightTxHash } };
+				var update = { $set: { 'lightTxHash': item.data.receipt.lightTxHash } };
 				var updatedOptions = { upsert: true };
 				var collection = self.db.collection('Watching_programs');
 				collection.updateOne(criteria, update, updatedOptions, function(e, result){
