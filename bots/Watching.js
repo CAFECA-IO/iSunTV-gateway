@@ -218,7 +218,21 @@ function BOLTTrustAsset(data, count = 0) {
 				data,
 				url: self.config.boltPlatform.TrustUrl  + '/asset/' + itemID + '/data',
 			};
+			
 			axios(apiOptions)
+			.then((item) => {
+				// Update Watching_programs
+				var criteria = { uid: data.data['\nuid'], pid: data.data['\npid'] };
+				var update = { $set: { 'lightTxHash:': item.data.receipt.lightTxHash } };
+				var updatedOptions = { upsert: true };
+				var collection = self.db.collection('Watching_programs');
+				collection.updateOne(criteria, update, updatedOptions, function(e, result){
+					if(e) {
+						console.log('Update Watching_programs lightTxHash error:', e);
+						throw e;
+					}
+				});
+			})
 			.catch(function (error) {
 				console.error('BOLTTrustAsset saveData error:', error.message);
 				if (count < 3) {
