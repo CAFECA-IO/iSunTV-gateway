@@ -577,11 +577,6 @@ Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 			}
 			collection.insert(USERPROFILE, {}, function (e, d) {
 				if(e) { deferred.reject(e); }
-				else {
-					deferred.resolve(USERPROFILE);
-					var opt = {email: user.email, validcode: USERPROFILE.validcode, uid: USERPROFILE._id.toString()};
-					self.sendVericicationMail(opt, function () {});
-				}
 			});
 		})
 		.catch((e) => {
