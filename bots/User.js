@@ -44,7 +44,7 @@ var CRCTable = (function() {
 })();
 var CRC32 = function(buffer) {
 	var b, crc, i, len, code;
-	if(!Buffer.isBuffer(buffer)) { buffer = new Buffer(new String(buffer)); }
+	if(!Buffer.isBuffer(buffer)) { buffer = Buffer.from(new String(buffer)); }
 	if(buffer.length > 10000) return CRC32_8(buffer);
 
 	for(var crc = -1, i = 0, len = buffer.length - 3; i < len;) {
