@@ -106,21 +106,6 @@ var loadConfig = function () {
 	return config;
 };
 
-// // init bot token
-// var initBoltPlateform = function (config) {
-// 	axios.post(config.boltPlatform.PlatformUrl + '/createToken', {
-// 		'apiKey': config.boltPlatform.apiKey,
-// 		'apiSecret': config.boltPlatform.apiSecret,
-// 	})
-//   .then(function (res) {
-// 		config.boltPlatform.token = res.data.token;
-// 		config.boltPlatform.tokenSecret = res.data.tokenSecret;
-//   })
-//   .catch(function (error) {
-//     console.error(error);
-//   });
-// }
-
 // connect database
 var connectDB = function (config, cb) {
 	config = dvalue.default(config, {});
@@ -168,7 +153,6 @@ var startBot = function (config) {
 		});
 	});
 	
-	// console.log('config.boltPlatform:', config.boltPlatform.token)
 };
 
 
