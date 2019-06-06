@@ -152,7 +152,9 @@ var startBot = function (config) {
 			b.start();
 		});
 	});
+	
 };
+
 
 var config = loadConfig();
 startBot(config);
