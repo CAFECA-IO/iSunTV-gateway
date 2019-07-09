@@ -9,7 +9,10 @@ const crypto = require('crypto');
 const raid2x = require('raid2x');
 const dvalue = require('dvalue');
 const textype = require('textype');
+const axios = require('axios');
+const jwt = require('jsonwebtoken')
 const request = require('../utils/Crawler.js').request;
+const AES = require('../utils/AES.js');
 
 var tokenLife = 86400 * 1000;
 var renewLife = 86400 * 100 * 1000;
@@ -315,7 +318,7 @@ Bot.prototype.createUser = function (user) {
 	// create account
 	// send mail
 	q.fcall(function () { return self.checkUserExist(condition); })
-	 .then(function (v) {
+	.then(function (v) {
 		var subdeferred = q.defer();
 		if(v) {
 			var e = new Error("Occupied e-mail");
@@ -323,20 +326,38 @@ Bot.prototype.createUser = function (user) {
 			subdeferred.reject(e);
 		}
 		else if(self.addMailHistory(user.email)) {
-			var collection = self.db.collection('Users');
-			USERPROFILE.validcode = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
-			collection.insert(USERPROFILE, {}, function (e, d) {
-				if(e) {
-					e.code = '01001';
+			// register user by BOLT-KEYSTONE
+			axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
+				'userID': user.email,
+				'password': user.password,
+				'profile': {},
+			})
+				.then((keystone) => {
+					var collection = self.db.collection('Users');
+
+					USERPROFILE.wallet = {
+						'apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
+						'apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),
+					}
+					USERPROFILE.validcode = dvalue.randomCode(6, {number: 1, lower: 0, upper: 0, symbol: 0});
+					collection.insert(USERPROFILE, {}, function (e, d) {
+						if(e) {
+							e.code = '01001';
+							subdeferred.reject(e);
+						}
+						else {
+							subdeferred.resolve(USERPROFILE);
+							var opt = {email: user.email, validcode: USERPROFILE.validcode, uid: USERPROFILE._id.toString()};
+							self.sendVericicationMail(opt, function () {});
+						}
+					});
+				})
+				.catch((e) => {
+					console.log('register error:', e);
+					var e = new Error("user wallet create error");
+					e.code = '10102';
 					subdeferred.reject(e);
-				}
-				else {
-					subdeferred.resolve(USERPROFILE);
-					var bot = self.getBot('Mailer');
-					var opt = {email: user.email, validcode: USERPROFILE.validcode, uid: USERPROFILE._id.toString()};
-					self.sendVericicationMail(opt, function () {});
-				}
-			});
+				})
 		}
 		else {
 			var e = new Error("e-mail sending quota exceeded");
@@ -539,10 +560,31 @@ Bot.prototype.mergeUser = function (condition, profile) {
 Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 	var deferred = q.defer();
 	var collection = this.db.collection('Users');
-	collection.insert(USERPROFILE, {}, function (e, d) {
-		if(e) { deferred.reject(e); }
-		else { deferred.resolve(USERPROFILE); }
-	});
+	var self = this;
+
+	// register user by BOLT-KEYSTONE
+	axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
+		'userID': USERPROFILE.email,
+		'password': USERPROFILE.password,
+		'profile': {},
+	})
+		.then((keystone) => {
+			var collection = self.db.collection('Users');
+
+			USERPROFILE.wallet = {
+				'apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
+				'apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),
+			}
+			collection.insert(USERPROFILE, {}, function (e, d) {
+				if(e) { deferred.reject(e); }
+			});
+		})
+		.catch((e) => {
+			console.log('register error:', e);
+			var e = new Error("user wallet create error");
+			e.code = '10102';
+			deferred.reject(e);
+		})
 
 	return deferred.promise;
 };
@@ -1133,5 +1175,181 @@ Bot.prototype.listUserActivities = function (options) {
 	});
 	return promise;
 };
+
+Bot.prototype.getIsunoneJWT = function (options, cb) {
+	var self = this;
+	if(!options.token) { 
+		return cb(400, {
+			"status": false,
+			"code": "DECRYPTED_TOKEN_FAIL",
+		});
+	};
+	
+	let JWTdecoded, data
+	try {
+		JWTdecoded = jwt.decode(options.token);
+		data = AES.Decrypt(JWTdecoded.data);
+	} catch (error) {
+		return cb(400, {
+			"status": false,
+			"code": "OTHER_EXCEPTION",
+		});
+	}
+	
+	q.fcall(function () {
+		return self.checkUserExist({ 
+			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+			enable: true, 
+		});
+	}).then(function (d) {
+		if(!d || !d.enable) {
+			return cb(400, {
+				"status": false,
+				"code": "OTHER_EXCEPTION",
+			});
+		}
+		self.cleanLoginHistory(d.account);
+		self.createToken(d, cb);
+	});
+}
+
+Bot.prototype.createIsunoneUser = function (options, cb) {
+	var self = this;
+	if(!options.token) { 
+		return cb(400, {
+			"status": false,
+			"code": "OTHER_EXCEPTION",
+		});
+	};
+	
+	let JWTdecoded, data, collection
+	try {
+		JWTdecoded = jwt.decode(options.token);
+		data = AES.Decrypt(JWTdecoded.data);
+		collection = this.db.collection('UnitID');
+	} catch (error) {
+		return cb(400, {
+			"status": false,
+			"code": "OTHER_EXCEPTION",
+		});
+	}
+	
+	// 1. create a user record
+	//   check user is exit
+	q.fcall(function () {
+		return self.checkUserExist({ 
+			'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+			enable: true, 
+		});
+	}).then(function (d) {
+		if(d) {
+			return cb(400, {
+				"status": false,
+				"code": "EXIST_LINKAGE_OR_USER",
+			});
+		}
+		//   generate a random password and use platform_username as your user record unique id, e.g. email for tidebit
+
+		//   get LinkageID from UnitIDTable
+		//   findAndModify LinkageID in UnitIDTable
+		
+
+		collection.findAndModify( { "key": "isunoneLinkageID" }, null, { $inc: { value: 1 } }, { new: true, upsert: true }, function(err, result){
+			if (err) {
+				return cb(400, {
+					"status": false,
+					"code": "OTHER_EXCEPTION",
+				});
+			}
+			
+			// 2. create link_accounts record
+			let linkageID = result.value.value
+			var user = {
+				condition: {
+					account: data.platform.username,
+					'isunone.binddata.isunone.linkage_id': data.isunone.linkage_id,
+					enable: true, 
+				},
+				profile: {
+					account: data.platform.username,
+					username: data.platform.username,
+					email: data.platform.username || '',
+					emails: [data.platform.username || ''],
+					photo: "",
+					photos: [],
+					allowmail: false,
+					isunone: {
+						status: "approved",
+						isuntv_linkage_id: linkageID,
+						binddata: data,
+					},
+				}
+			};
+			
+			self.getUserBy3rdParty(user, function (err, result) {
+				if (err) {
+					return cb(400, {
+						"status": false,
+						"code": "CREATE_USER_FAIL",
+					});
+				}
+			});
+
+			// 3. respond to isunone
+			return cb(200, {
+				"status": true,
+				"data": {
+					"platform": {
+						"name":      "isuntv",
+						"linkage_id": linkageID,
+					},
+					"isunone": {
+						"linkage_id": data.isunone.linkage_id,
+					},
+				},
+			});
+		});
+	});
+}
+
+Bot.prototype.createAllUserWallet = function (options, cb) {
+	// cb = dvalue.default(cb, function () {});
+	var self = this;
+	var collection = this.db.collection('Users');
+	collection.find({}).toArray(function (e, d) {
+		if(e) {
+			console.log('find error:', e);
+		}
+		else {
+			var list = d.map(function (v) {
+				console.log(`${v.email} register BOLT`);
+				
+				axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
+					'userID': v.email,
+					'password': v.password,
+					'profile': {},
+				})
+					.then((keystone) => {
+						var criteria = { email: v.email };
+						var update = { $set: {
+							'wallet.apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
+							'wallet.apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),
+						}};
+						var updatedOptions = { upsert: true };
+						var collection = self.db.collection('Users');
+						collection.updateOne(criteria, update, updatedOptions, function(err, result){
+							if(err) { 
+								console.log('update db error:', err)
+							}
+						});
+					})
+					.catch((e) => {
+						console.log(`register ${v.email} error: ${e}`);
+					})
+			});
+		}
+	});
+	cb(null, {})
+}
 
 module.exports = Bot;
