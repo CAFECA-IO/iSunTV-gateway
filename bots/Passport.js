@@ -83,7 +83,7 @@ Bot.prototype.facebook_callback = function (req, res, next) {
 		var passto = function (query) {
 			if(self.config.frontend) {
 				var redirectURL, tmp = url.parse(self.config.frontend + '/cn/fbCheck');
-				query.data = new Buffer(JSON.stringify(query.data)).toString('base64');
+				query.data = Buffer.from(JSON.stringify(query.data)).toString('base64');
 				tmp.query = query;
 				res.result.setResult(302);
 				res.result.setData({Location: url.format(tmp)});
@@ -157,6 +157,30 @@ Bot.prototype.facebook_token = function (req, res, next) {
 			});
 		}
 	})(req, res, next);
+};
+Bot.prototype.isunone_authenticate = function (req, res, next) {
+	const self = this;
+	let user = {
+		isunone: req.sessionID
+	};
+	if(!user) {
+		// auth failed
+		var e = new Error('iSunOne authorization failed');
+		e.code = '68101';
+		res.result.setErrorCode(e.code);
+		res.result.setMessage(e.message);
+		next();
+	} else {
+		self.getUserBy3rdParty(user, (e, u) => {
+			self.getToken(u, (ee, t) => {
+				res.result.setResult(1);
+				res.result.setMessage('Login with iSunOne');
+				res.result.setData(t);
+				res.result.setSession({uid: d.uid});
+				next();
+			})
+		});
+	}
 };
 Bot.prototype.getUserID = function (user, cb) {
 	var bot = this.getBot('User');

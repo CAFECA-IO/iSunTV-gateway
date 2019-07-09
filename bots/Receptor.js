@@ -619,6 +619,27 @@ Bot.prototype.init = function(config) {
 	this.router.get('/auth/facebook/callback', function (req, res, next) { passportBot.facebook_callback(req, res, next); });
 	this.router.get('/auth/facebook/token/:access_token', checkHashCash, function (req, res, next) { passportBot.facebook_token(req, res, next); });
 
+	// iSunOne
+	//this.router.get('/auth/isunone', function (req, res, next) { passportBot.isunone_authenticate(req, res, next); });
+	this.router.get('/auth/isunone', function(req, res, next) {
+		var user = {account: 'test@tideisun', password: 'df406d0bf995ffafcd7966110b9173fe'};
+		var bot = self.getBot('User');
+		bot.login(user, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				res.result.setData({uid: e.uid});
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('login successfully');
+				res.result.setData(d);
+				res.result.setSession({uid: d.uid});
+			}
+			next();
+		});
+	});
+
 	// channel list
 	this.router.get('/channel/', function (req, res, next) {
 		var bot = self.getBot('ResourceAgent');
