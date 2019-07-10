@@ -1324,26 +1324,27 @@ Bot.prototype.createAllUserWallet = function (options, cb) {
 			console.log('find error:', e);
 		}
 		else {
-			var list = d.map(function (v) {
-				console.log(`${v.email} register BOLT`);				
+			var list = d.map(function (v) {				
 				axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
 					'userID': v._id,
 					'password': v.password,
 					'profile': {},
 				})
 					.then((keystone) => {
-						var criteria = { _id: v._id };
-						var update = { $set: {
-							'wallet.apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
-							'wallet.apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),
-						}};
-						var updatedOptions = { upsert: true };
-						var collection = self.db.collection('Users');
-						collection.updateOne(criteria, update, updatedOptions, function(err, result){
-							if(err) { 
-								console.log('update db error:', err)
-							}
-						});
+						if (!keystone.data.message.includes("is already register")) {
+							var criteria = { _id: v._id };
+							var update = { $set: {
+								'wallet.apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
+								'wallet.apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),
+							}};
+							var updatedOptions = { upsert: true };
+							var collection = self.db.collection('Users');
+							collection.updateOne(criteria, update, updatedOptions, function(err, result){
+								if(err) { 
+									console.log('update db error:', err)
+								}
+							});
+						}
 					})
 					.catch((e) => {
 						console.log(`register ${v.email} error: ${e}`);
