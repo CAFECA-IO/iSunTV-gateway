@@ -61,6 +61,7 @@ var CRC32 = function(buffer) {
 
 var formatUser = function (user) {
 	user = dvalue.default(user, {
+		_id: new mongodb.ObjectID(),
 		account: "",
 		password: "",
 		username: "",
@@ -327,8 +328,9 @@ Bot.prototype.createUser = function (user) {
 		}
 		else if(self.addMailHistory(user.email)) {
 			// register user by BOLT-KEYSTONE
+			USERPROFILE._id = new mongodb.ObjectID();
 			axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
-				'userID': user.email,
+				'userID': USERPROFILE._id.toHexString() || user.email,
 				'password': user.password,
 				'profile': {},
 			})
@@ -563,8 +565,9 @@ Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 	var self = this;
 
 	// register user by BOLT-KEYSTONE
+	USERPROFILE._id = new mongodb.ObjectID();
 	axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
-		'userID': USERPROFILE.email,
+		'userID': USERPROFILE._id.toHexString() || USERPROFILE.email,
 		'password': USERPROFILE.password,
 		'profile': {},
 	})
@@ -1322,15 +1325,14 @@ Bot.prototype.createAllUserWallet = function (options, cb) {
 		}
 		else {
 			var list = d.map(function (v) {
-				console.log(`${v.email} register BOLT`);
-				
+				console.log(`${v.email} register BOLT`);				
 				axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
-					'userID': v.email,
+					'userID': v._id,
 					'password': v.password,
 					'profile': {},
 				})
 					.then((keystone) => {
-						var criteria = { email: v.email };
+						var criteria = { _id: v._id };
 						var update = { $set: {
 							'wallet.apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
 							'wallet.apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),

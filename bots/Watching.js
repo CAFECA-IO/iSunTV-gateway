@@ -132,6 +132,7 @@ function BOLTTrustAsset(data, count = 0) {
 
 	// get user BOLT token
 	var collection = self.db.collection('Users');
+	const originData = Object.assign({}, data);
 	
 	collection.findOne({ _id: new mongodb.ObjectID(data.data.uid) })
 	.then((item) => {
@@ -238,7 +239,7 @@ function BOLTTrustAsset(data, count = 0) {
 				if (count < 3) {
 					setTimeout(() => {
 						console.error('BOLTTrustAsset saveData error & retry ', count);
-						BOLTTrustAsset.call(self, data, count+=1)
+						BOLTTrustAsset.call(self, originData, count+=1)
 					}, 1000);
 				}
 			});
@@ -248,7 +249,7 @@ function BOLTTrustAsset(data, count = 0) {
 			if (count < 3) {
 				setTimeout(() => {
 					console.error('BOLTTrustAsset create error & retry ', count);
-					BOLTTrustAsset.call(self, data, count+=1)
+					BOLTTrustAsset.call(self, originData, count+=1)
 				}, 1000);
 			}
 		});
