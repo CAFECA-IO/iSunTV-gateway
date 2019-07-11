@@ -1324,14 +1324,14 @@ Bot.prototype.createAllUserWallet = function (options, cb) {
 			console.log('find error:', e);
 		}
 		else {
-			var list = d.map(function (v) {		
+			var list = d.map(function (v) {
 				axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
 					'userID': v._id,
 					'password': v.password,
 					'profile': {},
 				})
 					.then((keystone) => {
-						if (!keystone.data.message.includes("is already register")) {
+						if (!keystone.data.hasOwnProperty('message') || !keystone.data.message.includes("is already register")) {
 							var criteria = { _id: v._id };
 							var update = { $set: {
 								'wallet.apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
