@@ -1319,7 +1319,7 @@ Bot.prototype.createAllUserWallet = function (options, cb) {
 	// cb = dvalue.default(cb, function () {});
 	var self = this;
 	var collection = this.db.collection('Users');
-	collection.find({}).toArray(function (e, d) {
+	collection.find({"wallet": { "$exists" : false }}).toArray(function (e, d) {
 		if(e) {
 			console.log('find error:', e);
 		}
@@ -1349,50 +1349,6 @@ Bot.prototype.createAllUserWallet = function (options, cb) {
 					.catch((e) => {
 						console.log(`register ${v.email} error: ${e}`);
 					})
-			});
-		}
-	});
-	cb(null, {})
-}
-
-Bot.prototype.createOtherUserWallet = function (options, cb) {
-	// cb = dvalue.default(cb, function () {});
-	var self = this;
-	var collection = this.db.collection('Users');
-	collection.find({}).toArray(function (e, d) {
-		if(e) {
-			console.log('find error:', e);
-		}
-		else {
-			var list = d.map(function (v) {		
-				if (!v.hasOwnProperty('wallet')) {
-					axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
-						'userID': v.email,
-						'password': v.password,
-						'profile': {},
-					})
-						.then((keystone) => {
-							if (!keystone.data.message.includes("is already register")) {
-								console.log(v._id + " is already register");
-								
-								var criteria = { _id: v._id };
-								var update = { $set: {
-									'wallet.apiKey': AES.Encrypt(JSON.stringify({ 'apiKey': keystone.data.profile.apiKey})),
-									'wallet.apiSecret': AES.Encrypt(JSON.stringify({ 'apiSecret': keystone.data.profile.apiSecret })),
-								}};
-								var updatedOptions = { upsert: true };
-								var collection = self.db.collection('Users');
-								collection.updateOne(criteria, update, updatedOptions, function(err, result){
-									if(err) { 
-										console.log('update db error:', err)
-									}
-								});
-							}
-						})
-						.catch((e) => {
-							console.log(`register ${v.email} error: ${e}`);
-						})
-				}
 			});
 		}
 	});

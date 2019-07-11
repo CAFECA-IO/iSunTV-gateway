@@ -1509,24 +1509,6 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	})
-
-	// create all user wallet 
-	this.router.get('/tmp/create2', function (req, res, next) {
-		// var options = {token: req.query.token || ''};
-		var bot = self.getBot('User');
-		bot.createOtherUserWallet(options, function (e, d) {
-			if(e) {
-				res.result.setError(e);
-				logger.exception.warn(e);
-			}
-			else {
-				res.result.setResult(1);
-				res.result.setMessage('successful password change');
-				// res.result.setData(d);
-			}
-			next();
-		});
-	})
 };
 
 Bot.prototype.start = function(cb) {
