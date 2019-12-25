@@ -1,0 +1,302 @@
+
+{
+  "header": {
+    "event": "Allocation failed - JavaScript heap out of memory",
+    "trigger": "FatalError",
+    "filename": "report.20190711.111718.9618.0.001.json",
+    "dumpEventTime": "2019-07-11T11:17:18Z",
+    "dumpEventTimeStamp": "1562843838672",
+    "processId": 9618,
+    "cwd": "/etc/isuntv-gateway",
+    "commandLine": [
+      "node",
+      "/opt/nodejs/node-v6.7.0-linux-x64/lib/node_modules/pm2/lib/ProcessContainerFork.js"
+    ],
+    "nodejsVersion": "v12.4.0",
+    "glibcVersionRuntime": "2.19",
+    "glibcVersionCompiler": "2.17",
+    "wordSize": 64,
+    "arch": "x64",
+    "platform": "linux",
+    "componentVersions": {
+      "node": "12.4.0",
+      "v8": "7.4.288.27-node.18",
+      "uv": "1.29.1",
+      "zlib": "1.2.11",
+      "brotli": "1.0.7",
+      "ares": "1.15.0",
+      "modules": "72",
+      "nghttp2": "1.38.0",
+      "napi": "4",
+      "llhttp": "1.1.3",
+      "http_parser": "2.8.0",
+      "openssl": "1.1.1b",
+      "cldr": "35.1",
+      "icu": "64.2",
+      "tz": "2019a",
+      "unicode": "12.1"
+    },
+    "release": {
+      "name": "node",
+      "headersUrl": "https://nodejs.org/download/release/v12.4.0/node-v12.4.0-headers.tar.gz",
+      "sourceUrl": "https://nodejs.org/download/release/v12.4.0/node-v12.4.0.tar.gz"
+    },
+    "osName": "Linux",
+    "osRelease": "3.13.0-92-generic",
+    "osVersion": "#139-Ubuntu SMP Tue Jun 28 20:42:26 UTC 2016",
+    "osMachine": "x86_64",
+    "host": "ip-172-31-12-117"
+  },
+  "javascriptStack": {
+    "message": "No stack.",
+    "stack": [
+      "Unavailable."
+    ]
+  },
+  "nativeStack": [
+    {
+      "pc": "0x0000000000aadaf5",
+      "symbol": "report::TriggerNodeReport(v8::Isolate*, node::Environment*, char const*, char const*, std::string const&, v8::Local<v8::String>) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x000000000098fec3",
+      "symbol": "node::OnFatalError(char const*, char const*) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000b1552e",
+      "symbol": "v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, bool) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000b158a9",
+      "symbol": "v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, bool) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000f20105",
+      "symbol": " [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000f2aa6b",
+      "symbol": "v8::internal::Heap::PerformGarbageCollection(v8::internal::GarbageCollector, v8::GCCallbackFlags) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000f2b787",
+      "symbol": "v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000f2e225",
+      "symbol": "v8::internal::Heap::AllocateRawWithRetryOrFail(int, v8::internal::AllocationType, v8::internal::AllocationAlignment) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000000ef9250",
+      "symbol": "v8::internal::Factory::NewFillerObject(int, bool, v8::internal::AllocationSpace) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x00000000011cb0ce",
+      "symbol": "v8::internal::Runtime_AllocateInNewSpace(int, unsigned long*, v8::internal::Isolate*) [node /etc/isuntv-gateway]"
+    },
+    {
+      "pc": "0x0000000001a93942",
+      "symbol": " [node /etc/isuntv-gateway]"
+    }
+  ],
+  "javascriptHeap": {
+    "totalMemory": 528703488,
+    "totalCommittedMemory": 524323712,
+    "usedMemory": 492585232,
+    "availableMemory": 13049600,
+    "memoryLimit": 532676608,
+    "heapSpaces": {
+      "read_only_space": {
+        "memorySize": 524288,
+        "committedMemory": 32024,
+        "capacity": 523976,
+        "used": 31712,
+        "available": 492264
+      },
+      "new_space": {
+        "memorySize": 8388608,
+        "committedMemory": 7340592,
+        "capacity": 4191808,
+        "used": 288640,
+        "available": 3903168
+      },
+      "old_space": {
+        "memorySize": 391766016,
+        "committedMemory": 391193536,
+        "capacity": 368793320,
+        "used": 368304080,
+        "available": 489240
+      },
+      "code_space": {
+        "memorySize": 3309568,
+        "committedMemory": 2916192,
+        "capacity": 2369472,
+        "used": 2369472,
+        "available": 0
+      },
+      "map_space": {
+        "memorySize": 3149824,
+        "committedMemory": 1276184,
+        "capacity": 892640,
+        "used": 892640,
+        "available": 0
+      },
+      "large_object_space": {
+        "memorySize": 121516032,
+        "committedMemory": 121516032,
+        "capacity": 120695232,
+        "used": 120695232,
+        "available": 0
+      },
+      "code_large_object_space": {
+        "memorySize": 49152,
+        "committedMemory": 49152,
+        "capacity": 3456,
+        "used": 3456,
+        "available": 0
+      },
+      "new_large_object_space": {
+        "memorySize": 0,
+        "committedMemory": 0,
+        "capacity": 4191808,
+        "used": 0,
+        "available": 4191808
+      }
+    }
+  },
+  "resourceUsage": {
+    "userCpuSeconds": 250.996,
+    "kernelCpuSeconds": 22.6084,
+    "cpuConsumptionPercent": 0.321215,
+    "maxRss": 635162624,
+    "pageFaults": {
+      "IORequired": 40,
+      "IONotRequired": 3812603
+    },
+    "fsActivity": {
+      "reads": 8128,
+      "writes": 6768
+    }
+  },
+  "uvthreadResourceUsage": {
+    "userCpuSeconds": 210.317,
+    "kernelCpuSeconds": 16.8901,
+    "cpuConsumptionPercent": 0.266744,
+    "fsActivity": {
+      "reads": 8112,
+      "writes": 0
+    }
+  },
+  "libuv": [
+  ],
+  "environmentVariables": {
+    "LC_CTYPE": "UTF-8",
+    "pm_id": "0",
+    "exit_code": "0",
+    "node_version": "12.4.0",
+    "versioning": "null",
+    "unstable_restarts": "0",
+    "restart_time": "27",
+    "created_at": "1562758659752",
+    "axm_dynamic": "[object Object]",
+    "axm_options": "[object Object]",
+    "axm_monitor": "[object Object]",
+    "axm_actions": "",
+    "pm_uptime": "1562758659853",
+    "status": "launching",
+    "PM2_HOME": "/home/ubuntu/.pm2",
+    "XDG_SESSION_ID": "62",
+    "TERM": "xterm-256color",
+    "SHELL": "/bin/bash",
+    "SSH_CLIENT": "211.20.1.174 57811 22",
+    "SSH_TTY": "/dev/pts/1",
+    "USER": "ubuntu",
+    "LS_COLORS": "rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:",
+    "MAIL": "/var/mail/ubuntu",
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+    "PWD": "/etc/isuntv-gateway",
+    "LANG": "en_US.UTF-8",
+    "SHLVL": "1",
+    "HOME": "/home/ubuntu",
+    "LOGNAME": "ubuntu",
+    "SSH_CONNECTION": "211.20.1.174 57811 172.31.12.117 22",
+    "LESSOPEN": "| /usr/bin/lesspipe %s",
+    "XDG_RUNTIME_DIR": "/run/user/1000",
+    "LESSCLOSE": "/usr/bin/lesspipe %s %s",
+    "_": "/usr/local/bin/pm2",
+    "PM2_USAGE": "CLI",
+    "vizion_running": "false",
+    "NODE_APP_INSTANCE": "0",
+    "pm_pid_path": "/home/ubuntu/.pm2/pids/iSunTV-0.pid",
+    "pm_err_log_path": "/home/ubuntu/.pm2/logs/iSunTV-error-0.log",
+    "pm_out_log_path": "/home/ubuntu/.pm2/logs/iSunTV-out-0.log",
+    "exec_interpreter": "node",
+    "pm_cwd": "/etc/isuntv-gateway",
+    "env": "[object Object]",
+    "pm_exec_path": "/etc/isuntv-gateway",
+    "node_args": "",
+    "exec_mode": "fork_mode",
+    "watch": "false",
+    "treekill": "true",
+    "autorestart": "true",
+    "automation": "true",
+    "pmx": "true",
+    "vizion": "true",
+    "name": "iSunTV"
+  },
+  "userLimits": {
+    "core_file_size_blocks": {
+      "soft": 0,
+      "hard": "unlimited"
+    },
+    "data_seg_size_kbytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "file_size_blocks": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_locked_memory_bytes": {
+      "soft": 65536,
+      "hard": 65536
+    },
+    "max_memory_size_kbytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "open_files": {
+      "soft": 4096,
+      "hard": 4096
+    },
+    "stack_size_bytes": {
+      "soft": 8388608,
+      "hard": "unlimited"
+    },
+    "cpu_time_seconds": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    },
+    "max_user_processes": {
+      "soft": 7862,
+      "hard": 7862
+    },
+    "virtual_memory_kbytes": {
+      "soft": "unlimited",
+      "hard": "unlimited"
+    }
+  },
+  "sharedObjects": [
+    "/lib/x86_64-linux-gnu/libdl.so.2",
+    "/lib/x86_64-linux-gnu/librt.so.1",
+    "/usr/lib/x86_64-linux-gnu/libstdc++.so.6",
+    "/lib/x86_64-linux-gnu/libm.so.6",
+    "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+    "/lib/x86_64-linux-gnu/libpthread.so.0",
+    "/lib/x86_64-linux-gnu/libc.so.6",
+    "/lib64/ld-linux-x86-64.so.2",
+    "/lib/x86_64-linux-gnu/libnss_files.so.2",
+    "/lib/x86_64-linux-gnu/libnss_dns.so.2",
+    "/lib/x86_64-linux-gnu/libresolv.so.2"
+  ]
+}

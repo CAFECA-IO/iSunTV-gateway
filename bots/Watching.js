@@ -195,7 +195,6 @@ function BOLTTrustAsset(data, count = 0) {
 		})
 		.then(async function (itemID) {
 			// formatMetadata
-
 			// find program name
 			var collection = self.db.collection('Programs');
 			const item = await collection.findOne({ pid: data.data.pid })

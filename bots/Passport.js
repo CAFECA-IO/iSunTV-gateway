@@ -171,7 +171,7 @@ Bot.prototype.isunone_authenticate = function (req, res, next) {
 		res.result.setMessage(e.message);
 		next();
 	} else {
-		self.getUserBy3rdParty(user, (e, u) => {
+		self.getUserID(user, (e, u) => {
 			self.getToken(u, (ee, t) => {
 				res.result.setResult(1);
 				res.result.setMessage('Login with iSunOne');
