@@ -211,7 +211,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				type: 3,
 				title: 'VIP',
 				fee: {
-					price: 4.99,
+					price: 6.99,
 					currency: 'US$'
 				},
 				programs: [],

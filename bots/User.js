@@ -1355,8 +1355,6 @@ Bot.prototype.createAllUserWallet = function (options, cb) {
 	cb(null, {})
 }
 
-<<<<<<< HEAD
-=======
 Bot.prototype.createOtherUserWallet = function (options, cb) {
 	// cb = dvalue.default(cb, function () {});
 	var self = this;
@@ -1400,5 +1398,4 @@ Bot.prototype.createOtherUserWallet = function (options, cb) {
 	cb(null, {})
 }
 
->>>>>>> 4158db0... update some
 module.exports = Bot;
