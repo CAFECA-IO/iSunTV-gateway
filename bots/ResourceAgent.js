@@ -44,7 +44,7 @@ Bot.prototype.start = function () {
 
 	var now = new Date().getTime();
 	timer = period - (now % period);
-	// self.crawl({}, console.log);
+	self.crawl({}, console.log);
 	// crawl the program at the start of the day
 	setTimeout(function () {
 		self.crawl({}, function () {
@@ -1264,8 +1264,18 @@ Bot.prototype.crawlEpisodes = function (options, cb) {
 						tmpData.programType = options.programType;
 
 						// fetch streaming
-						if(tmpData.ipad_stream_url && tmpData.ipad_stream_url.length > 0 && !textype.isURL(tmpData.ipad_stream_url)) { tmpData.ipad_stream_url = url.resolve(self.config.cdn, tmpData.ipad_stream_url) + '.m3u8'; }
-						if(tmpData.stream_url && tmpData.stream_url.length > 0 && !textype.isURL(tmpData.stream_url)) { tmpData.stream_url = url.resolve(self.config.cdn, tmpData.stream_url) + '.m3u8'; }
+						if(tmpData.ipad_stream_url && tmpData.ipad_stream_url.length > 0 && !textype.isURL(tmpData.ipad_stream_url)) { 
+							tmpData.ipad_stream_url = url.resolve(self.config.cdn, tmpData.ipad_stream_url) 
+							if (tmpData.ipad_stream_url.indexOf(".mp4") == -1) {
+								tmpData.ipad_stream_url += '.m3u8';
+							}
+						}
+						if(tmpData.stream_url && tmpData.stream_url.length > 0 && !textype.isURL(tmpData.stream_url)) { 
+							tmpData.stream_url = url.resolve(self.config.cdn, tmpData.stream_url)
+							if (tmpData.stream_url.indexOf(".mp4") == -1) {
+								tmpData.stream_url += '.m3u8'; 
+							}
+						}
 
 						tmpData = descProgram(tmpData, true);
 						// check program correction

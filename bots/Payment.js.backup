@@ -211,7 +211,7 @@ Bot.prototype.initialPaymentPlan = function (options, cb) {
 				type: 3,
 				title: 'VIP',
 				fee: {
-					price: 6.99,
+					price: 4.99,
 					currency: 'US$'
 				},
 				programs: [],
@@ -549,7 +549,7 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				currency: rentfee.currency
 			};
 
-			options.member = (1577836800000 > new Date().getTime());
+			options.member = false;
 			options.paymentstatus = {
 				status: status[0],
 				gateway: 'free',
@@ -557,9 +557,9 @@ Bot.prototype.fillVIPInformation = function (options, cb) {
 				memberfee: memberfee,
 				rentfee: rentfee,
 				fee: totalfee,
-				expire: 1577836800000,
+				expire: 0,
 				trial: 0,
-				next_charge: 1577836800000
+				next_charge: 0
 			};
 			return cb(null, options);
 		}
@@ -1256,7 +1256,7 @@ Bot.prototype.isVIPUser = function (uid, cb) {
 	this.fetchSubscribeTickets({uids: [uid]}, function (e, d) {
 		d = d || [{}];
 		var now = new Date().getTime();
-		cb(null, d.some(function (v) { return v.expire > now || 1577836800000 > now; }));
+		cb(null, d.some(function (v) { return v.expire > now; }));
 	})
 };
 
@@ -1264,12 +1264,6 @@ Bot.prototype.isVIPUser = function (uid, cb) {
 Bot.prototype.findPlan = function (keyword) {
 	var plans = [];
 	switch(keyword) {
-		default:
-			var p = dvalue.clone(this.plans.find(function (v) { return v.type == 4; }));
-			delete p.programs;
-			plans.push(p);
-			break;
-		/*
 		case 'VIP':
 			var p = dvalue.clone(this.plans.find(function (v) { return v.type == 3; }));
 			delete p.programs;
@@ -1285,7 +1279,6 @@ Bot.prototype.findPlan = function (keyword) {
 			delete p.programs;
 			plans.push(p);
 			break;
-		*/
 	}
 	if(plans.length == 0) {
 		var p = dvalue.clone(this.plans.find(function (v) { return v.type == 4; }));
