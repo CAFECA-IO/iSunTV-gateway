@@ -11,6 +11,9 @@ const descProgram = require('../utils/ResourceAgent.js').descProgram;
 const fetchImage = require('../utils/ResourceAgent.js').fetchImage;
 const request = require('../utils/Crawler.js').request;
 
+const https = require('https');
+https.globalAgent.maxSockets = 200;
+
 var logger;
 
 
@@ -44,7 +47,7 @@ Bot.prototype.start = function () {
 
 	var now = new Date().getTime();
 	timer = period - (now % period);
-	self.crawl({}, console.log);
+	// self.crawl({}, function () {});
 	// crawl the program at the start of the day
 	setTimeout(function () {
 		self.crawl({}, function () {
@@ -1148,12 +1151,14 @@ Bot.prototype.crawlSeries = function (options, cb) {
 	};
 	crawlByPage(1);
 };
+
 Bot.prototype.checkErrorProgram = function (program, cb) {
 	var self = this;
 	program._error = [];
 	if(!textype.isURL(program.cover)) { program._error.push('no_image');  }
 	switch(program.type) {
 		case 'episode':
+		case 'Free':
 			var https = require('https');
 			if(!textype.isURL(program.stream)) {
 				program._error.push('no_stream');
@@ -1173,14 +1178,17 @@ Bot.prototype.checkErrorProgram = function (program, cb) {
 				}
 				if(program._error.length > 0) {
 					self.addErrorProgram(program);
+					req.abort()
 					return cb(true);
 				}
 				else {
+					req.abort()
 					return cb();
 				}
 			});
 			req.on('error', function (e) {
 				logger.info.warn('error:', program.stream);
+				req.abort()
 				return cb();
 			});
 			req.end();

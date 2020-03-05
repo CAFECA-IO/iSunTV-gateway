@@ -45,3 +45,6 @@ private.*
 
 # Public folder
 public
+
+# error log
+report.*

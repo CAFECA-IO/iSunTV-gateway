@@ -1,10 +1,10 @@
 // Crawler
 const http = require('http');
+http.globalAgent.maxSockets = 200;
 const https = require('https');
+https.globalAgent.maxSockets = 200;
 const url = require('url');
-
 const dvalue = require('dvalue');
-
 
 var request = function (options, cb) {
 	var operator;
