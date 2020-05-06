@@ -104,7 +104,7 @@ Bot.prototype.getReport = function(options, cb) {
 	return Promise.all(arr).then((results) => {
 		let r = {};
 		results.map((result) => r = {...r, ...result});
-		return cb(null, r)}
-		);
+		return cb(null, r)
+	}).catch((e)=> cb(e));
 }
 module.exports = Bot;
