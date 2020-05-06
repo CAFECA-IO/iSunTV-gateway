@@ -22,6 +22,22 @@ Bot.prototype.start = function () {
 
 };
 
+Bot.prototype.getAllUserCount = function () {
+	const collection = this.db.collection('Users');
+	const condition = {};
+	return new Promise((resolve, reject) => {
+		collection.count(condition, function (e, d) {
+			if(e) {
+				e.code = 0;
+				return reject(e);
+			}
+			else {
+				return resolve({TotalUserCount: d});
+			}
+		});
+	});
+};
+
 Bot.prototype.getUserIncreasement = function (startTime, endTime) {
 	const collection = this.db.collection('Users');
 	const condition = {ctime: {$gte: startTime, $lt: endTime}};
@@ -56,7 +72,7 @@ Bot.prototype.getOrderIncreasement = function(startTime, endTime) {
 
 Bot.prototype.getPayedOrderIncreasement = function(startTime, endTime) {
 	const collection = this.db.collection('Orders');
-	const condition = {atime: {$gte: startTime, $lt: endTime}, receipt: {$exists:true}};
+	const condition = {atime: {$gte: startTime, $lt: endTime}, 'receipt.detail.success': true};
 	return new Promise((resolve, reject) => {
 		collection.count(condition, function (e, d) {
 			if(e) {
@@ -93,6 +109,7 @@ Bot.prototype.getReport = function(options, cb) {
 	if (!stime) stime = etime - timeInterval;
 	const arr = [];
 
+	arr.push(this.getAllUserCount());
 	arr.push(this.getUserIncreasement(stime, etime));
 	arr.push(this.getOrderIncreasement(stime, etime));
 	arr.push(this.getPayedOrderIncreasement(stime, etime));
