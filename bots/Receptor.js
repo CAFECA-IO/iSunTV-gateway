@@ -1509,6 +1509,23 @@ Bot.prototype.init = function(config) {
 			next();
 		});
 	})
+
+	this.router.get('/getReport', function (req, res, next) {
+		const bot = self.getBot('ReportGenerator');
+		const options = { startTime: parseInt(req.body.startTime), endTime: parseInt(req.body.endTime)}
+		bot.getReport(options, function (e, d) {
+			if(e) {
+				res.result.setError(e);
+				logger.exception.warn(e);
+			}
+			else {
+				res.result.setResult(1);
+				res.result.setMessage('Get Report');
+				res.result.setData(d);
+			}
+			next();
+		})
+	})
 };
 
 Bot.prototype.start = function(cb) {
