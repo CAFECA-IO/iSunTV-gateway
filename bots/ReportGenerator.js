@@ -1,8 +1,5 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
-const mongodb = require('mongodb');
-const dvalue = require('dvalue');
-const textype = require('textype');
 
 // 30 Days Interval = 1000 * 60 * 60 * 24 * 30
 const timeInterval = 2592000000;
