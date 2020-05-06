@@ -86,6 +86,23 @@ Bot.prototype.getPayedOrderIncreasement = function(startTime, endTime) {
 	});
 };
 
+Bot.prototype.getTotalSubscribeCount = function() {
+	const collection = this.db.collection('Orders');
+	const nowDate = new Date().toISOString();
+	const condition = {'receipt.detail.subscription.billingPeriodEndDate': {$gte: nowDate}, 'receipt.detail.success': true};
+	return new Promise((resolve, reject) => {
+		collection.count(condition, function (e, d) {
+			if(e) {
+				e.code = 0;
+				return reject(e);
+			}
+			else {
+				return resolve({TotalSubscribeCount: d});
+			}
+		});
+	});
+};
+
 Bot.prototype.getTotalVedioWatchingCount = function(startTime, endTime) {
 	const collection = this.db.collection('Watching_programs');
 	const condition = {atime: {$gte: startTime, $lt: endTime}};
@@ -113,6 +130,7 @@ Bot.prototype.getReport = function(options, cb) {
 	arr.push(this.getUserIncreasement(stime, etime));
 	arr.push(this.getOrderIncreasement(stime, etime));
 	arr.push(this.getPayedOrderIncreasement(stime, etime));
+	arr.push(this.getTotalSubscribeCount());
 	arr.push(this.getTotalVedioWatchingCount(stime, etime));
 
 	return Promise.all(arr).then((results) => {
