@@ -56,6 +56,42 @@ Bot.prototype.getUserIncreasement = function (startTime, endTime) {
 	});
 };
 
+Bot.prototype.getEachDayUserIncreasement = function (startTime, endTime) {
+	const collection = this.db.collection('Users');
+	const match = {$match: {'ctime': {$gte: startTime, $lt: endTime}}};
+	const group = {$group: {
+		_id: {
+			'date': {'$subtract' :[
+				{'$divide': ['$ctime', dayInterval]},
+				{'$mod': [{'$divide': ['$ctime', dayInterval]},1]}
+			]},
+	},
+		'count': {'$sum': 1}
+	}};
+
+	return new Promise((resolve, reject) => {
+		collection.aggregate([match, group], function (e, d) {
+			if(e) {
+				e.code = 0;
+				return reject(e);
+			}
+			else {
+				let result = [];
+				d.map((data) => {
+					const dateOb = new Date(data._id.date * dayInterval);
+					const date = dateOb.getDate();
+					const month = dateOb.getMonth();
+					const year = dateOb.getFullYear();
+					const formatDate = `${year}-${month}-${date}`;
+					data._id.date = formatDate;
+					result.push(data);
+				})
+				return resolve({EachDayUserIncreasement: result});
+			}
+		});
+	});
+};
+
 Bot.prototype.getOrderIncreasement = function(startTime, endTime) {
 	const collection = this.db.collection('Orders');
 	const condition = {ctime: {$gte: startTime, $lt: endTime}};
@@ -167,6 +203,7 @@ Bot.prototype.getReport = function(options, cb) {
 
 	arr.push(this.getAllUserCount());
 	arr.push(this.getUserIncreasement(stime, etime));
+	arr.push(this.getEachDayUserIncreasement(stime, etime));
 	arr.push(this.getOrderIncreasement(stime, etime));
 	arr.push(this.getPayedOrderIncreasement(stime, etime));
 	arr.push(this.getTotalSubscribeCount());
