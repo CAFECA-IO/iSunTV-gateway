@@ -1,8 +1,10 @@
 const ParentBot = require('./_Bot.js');
 const util = require('util');
 
+// Day Interval = 1000 * 60 * 60 * 24
+const dayInterval = 86400000;
 // 30 Days Interval = 1000 * 60 * 60 * 24 * 30
-const timeInterval = 2592000000;
+const monthInterval = 2592000000;
 
 var logger;
 
@@ -119,11 +121,48 @@ Bot.prototype.getTotalVedioWatchingCount = function(startTime, endTime) {
 	});
 }
 
+Bot.prototype.getEachVedioDaysWatchingCount = function(startTime, endTime) {
+	const collection = this.db.collection('Watching_programs');
+	const match = {$match: {'atime': {$gte: startTime, $lt: endTime}}};
+	const group = {$group: {
+		_id: {
+			pid:'$pid',
+			'date': {'$subtract' :[
+				{'$divide': ['$atime', dayInterval]},
+				{'$mod': [{'$divide': ['$atime', dayInterval]},1]}
+			]},
+	},
+		'count': {'$sum': 1}
+	}};
+
+	return new Promise((resolve, reject) => {
+		collection.aggregate([match, group], function (e, d) {
+			if(e) {
+				e.code = 0;
+				return reject(e);
+			}
+			else {
+				let result = [];
+				d.map((data) => {
+					const dateOb = new Date(data._id.date * dayInterval);
+					const date = dateOb.getDate();
+					const month = dateOb.getMonth();
+					const year = dateOb.getFullYear();
+					const formatDate = `${year}-${month}-${date}`;
+					data._id.date = formatDate;
+					result.push(data);
+				})
+				return resolve({EachVedioDaysWatchingCount: result});
+			}
+		});
+	});
+}
+
 Bot.prototype.getReport = function(options, cb) {
 	let etime = options.endTime;
 	let stime = options.startTime;
 	if (!etime) etime = Date.now();
-	if (!stime) stime = etime - timeInterval;
+	if (!stime) stime = etime - monthInterval;
 	const arr = [];
 
 	arr.push(this.getAllUserCount());
@@ -132,6 +171,7 @@ Bot.prototype.getReport = function(options, cb) {
 	arr.push(this.getPayedOrderIncreasement(stime, etime));
 	arr.push(this.getTotalSubscribeCount());
 	arr.push(this.getTotalVedioWatchingCount(stime, etime));
+	arr.push(this.getEachVedioDaysWatchingCount(stime, etime));
 
 	return Promise.all(arr).then((results) => {
 		let r = {};
