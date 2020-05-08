@@ -141,7 +141,7 @@ Bot.prototype.getTotalSubscribeCount = function() {
 	});
 };
 
-Bot.prototype.getTotalVedioWatchingCount = function(startTime, endTime) {
+Bot.prototype.getTotalVideoWatchingCount = function(startTime, endTime) {
 	const collection = this.db.collection('Watching_programs');
 	const condition = {atime: {$gte: startTime, $lt: endTime}};
 	return new Promise((resolve, reject) => {
@@ -151,13 +151,13 @@ Bot.prototype.getTotalVedioWatchingCount = function(startTime, endTime) {
 				return reject(e);
 			}
 			else {
-				return resolve({TotalVedioWatchingCount: d});
+				return resolve({TotalVideoWatchingCount: d});
 			}
 		});
 	});
 }
 
-Bot.prototype.getEachVedioDaysWatchingCount = function(startTime, endTime) {
+Bot.prototype.getEachVideoDaysWatchingCount = function(startTime, endTime) {
 	const collection = this.db.collection('Watching_programs');
 	const match = {$match: {'atime': {$gte: startTime, $lt: endTime}}};
 	const lookup = {$lookup: {
@@ -195,7 +195,7 @@ Bot.prototype.getEachVedioDaysWatchingCount = function(startTime, endTime) {
 					data._id.date = formatDate;
 					result.push(data);
 				})
-				return resolve({EachVedioDaysWatchingCount: result});
+				return resolve({EachVideoDaysWatchingCount: result});
 			}
 		});
 	});
@@ -214,8 +214,8 @@ Bot.prototype.getReport = function(options, cb) {
 	arr.push(this.getOrderIncreasement(stime, etime));
 	arr.push(this.getPayedOrderIncreasement(stime, etime));
 	arr.push(this.getTotalSubscribeCount());
-	arr.push(this.getTotalVedioWatchingCount(stime, etime));
-	arr.push(this.getEachVedioDaysWatchingCount(stime, etime));
+	arr.push(this.getTotalVideoWatchingCount(stime, etime));
+	arr.push(this.getEachVideoDaysWatchingCount(stime, etime));
 
 	return Promise.all(arr).then((results) => {
 		let r = {};
