@@ -160,9 +160,16 @@ Bot.prototype.getTotalVedioWatchingCount = function(startTime, endTime) {
 Bot.prototype.getEachVedioDaysWatchingCount = function(startTime, endTime) {
 	const collection = this.db.collection('Watching_programs');
 	const match = {$match: {'atime': {$gte: startTime, $lt: endTime}}};
+	const lookup = {$lookup: {
+		from: 'Programs',
+		localField: 'pid',
+		foreignField: 'pid',
+		as: 'fromItems'
+	}};
+	const unwind = {$unwind: '$fromItems'};
 	const group = {$group: {
 		_id: {
-			pid:'$pid',
+			'Program': '$fromItems.title',
 			'date': {'$subtract' :[
 				{'$divide': ['$atime', dayInterval]},
 				{'$mod': [{'$divide': ['$atime', dayInterval]},1]}
@@ -172,7 +179,7 @@ Bot.prototype.getEachVedioDaysWatchingCount = function(startTime, endTime) {
 	}};
 
 	return new Promise((resolve, reject) => {
-		collection.aggregate([match, group], function (e, d) {
+		collection.aggregate([match, lookup, unwind, group], function (e, d) {
 			if(e) {
 				e.code = 0;
 				return reject(e);
