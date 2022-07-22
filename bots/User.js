@@ -329,6 +329,19 @@ Bot.prototype.createUser = function (user) {
 		else if(self.addMailHistory(user.email)) {
 			// register user by BOLT-KEYSTONE
 			USERPROFILE._id = new mongodb.ObjectID();
+			collection.insert(USERPROFILE, {}, function (e, d) {
+				if(e) {
+					e.code = '01001';
+					subdeferred.reject(e);
+				}
+				else {
+					subdeferred.resolve(USERPROFILE);
+					var opt = {email: user.email, validcode: USERPROFILE.validcode, uid: USERPROFILE._id.toString()};
+					self.sendVericicationMail(opt, function () {});
+				}
+			});
+
+			/* remove boltchain
 			axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
 				'userID': USERPROFILE._id.toHexString() || user.email,
 				'password': user.password,
@@ -360,6 +373,7 @@ Bot.prototype.createUser = function (user) {
 					e.code = '10102';
 					subdeferred.reject(e);
 				})
+			*/
 		}
 		else {
 			var e = new Error("e-mail sending quota exceeded");
@@ -566,6 +580,13 @@ Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 
 	// register user by BOLT-KEYSTONE
 	USERPROFILE._id = new mongodb.ObjectID();
+
+	collection.insert(USERPROFILE, {}, function (e, d) {
+		if(e) {
+			deferred.reject(e);
+		}
+	});
+	/* remove boltchin
 	axios.post(self.config.boltPlatform.PlatformUrl + '/register', {
 		'userID': USERPROFILE._id.toHexString() || USERPROFILE.email,
 		'password': USERPROFILE.password,
@@ -588,6 +609,7 @@ Bot.prototype.addUserBy3rdParty = function (USERPROFILE, cb) {
 			e.code = '10102';
 			deferred.reject(e);
 		})
+	*/
 
 	return deferred.promise;
 };
