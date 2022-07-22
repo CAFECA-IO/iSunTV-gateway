@@ -329,6 +329,7 @@ Bot.prototype.createUser = function (user) {
 		else if(self.addMailHistory(user.email)) {
 			// register user by BOLT-KEYSTONE
 			USERPROFILE._id = new mongodb.ObjectID();
+			const collection = self.db.collection('Users');
 			collection.insert(USERPROFILE, {}, function (e, d) {
 				if(e) {
 					e.code = '01001';
